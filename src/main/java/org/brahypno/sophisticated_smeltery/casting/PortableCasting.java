@@ -43,6 +43,12 @@ public final class PortableCasting {
     private int coolingTime;
     private int timer;
     private boolean loading = true;
+    private ItemStack previewInput = ItemStack.EMPTY;
+    private FluidStack previewFluid = FluidStack.EMPTY;
+    @Nullable private ICastingRecipe previewRecipe;
+    @Nullable private Level previewLevel;
+    private Mode previewMode;
+    private int previewEpoch = -1;
     private final ICastingContainer context = new ICastingContainer() {
         @Override public ItemStack getStack() {
             ItemStack stack = inventory.getStackInSlot(0);
@@ -80,6 +86,7 @@ public final class PortableCasting {
     public ItemStackHandler inventory() { return inventory; }
     public Mode mode() { return mode; }
     public FluidStack fluid() { return fluid.copy(); }
+    public boolean hasFluid() { return !fluid.isEmpty(); }
     public int required() { return required; }
     public int timer() { return timer; }
     public int coolingTime() { return coolingTime; }
@@ -197,8 +204,17 @@ public final class PortableCasting {
         FluidStack previous = recipeFluid;
         recipeFluid = selected;
         try {
-            return level.getRecipeManager().getRecipeFor(mode.recipes(), context, level)
-                    .map(found -> found.assemble(context, level.registryAccess())).orElse(ItemStack.EMPTY);
+            ItemStack input = inventory.getStackInSlot(0);
+            if (previewLevel != level || previewEpoch != recipeEpoch || previewMode != mode
+                    || !ItemStack.matches(previewInput, input) || !previewFluid.isFluidEqual(selected)) {
+                previewLevel = level;
+                previewEpoch = recipeEpoch;
+                previewMode = mode;
+                previewInput = input.copy();
+                previewFluid = selected.copy();
+                previewRecipe = level.getRecipeManager().getRecipeFor(mode.recipes(), context, level).orElse(null);
+            }
+            return previewRecipe == null ? ItemStack.EMPTY : previewRecipe.assemble(context, level.registryAccess());
         } finally { recipeFluid = previous; }
     }
 

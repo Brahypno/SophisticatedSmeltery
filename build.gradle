@@ -122,12 +122,16 @@ minecraft {
                     "${mod_id}" { source sourceSets.test }
                 }
             }
-            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke')) {
+            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke') || project.hasProperty('castingUpgradeSmoke')) {
                 property 'sophisticatedsmeltery.heatingSwitchSmoke', 'true'
                 workingDirectory project.file('build/heating-switch-run')
                 if (project.hasProperty('meltingInteractionSmoke')) {
                     property 'sophisticatedsmeltery.meltingInteractionSmoke', 'true'
                     workingDirectory project.file('build/melting-interactions-run')
+                }
+                if (project.hasProperty('castingUpgradeSmoke')) {
+                    property 'sophisticatedsmeltery.castingUpgradeSmoke', 'true'
+                    workingDirectory project.file('build/casting-upgrade-run')
                 }
                 mods {
                     "${mod_id}" { source sourceSets.test }

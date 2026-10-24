@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "sophisticatedbackpacks:item/upgrade_base",
+    "layer1": "tconstruct:item/cast/ingot"
+  }
+}

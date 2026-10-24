@@ -11,7 +11,8 @@
     "HeatingMaterialsAccess",
     "MantleBlockEntityMixin",
     "MeltingModuleMixin",
-    "MeltingInventoryMixin"
+    "MeltingInventoryMixin",
+    "CastingUpgradeExtractionMixin"
   ],
   "client": [
   ],

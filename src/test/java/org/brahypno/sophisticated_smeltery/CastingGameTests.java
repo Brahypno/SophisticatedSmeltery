@@ -141,6 +141,25 @@ public final class CastingGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "casting_reload")
+    public static void recipePreviewTracksModeCastAndDatapackChanges(GameTestHelper helper) {
+        var manager = helper.getLevel().getRecipeManager();
+        var original = new ArrayList<>(manager.getRecipes());
+        var casting = table(cast("ingot_cast"));
+        FluidStack iron = new FluidStack(TinkerFluids.moltenIron.get(), 90);
+        helper.assertTrue(casting.preview(helper.getLevel(), iron).is(Items.IRON_INGOT), "Preview the actual table recipe without consuming anything");
+        casting.setMode(Mode.BASIN);
+        casting.inventory().setStackInSlot(0, ItemStack.EMPTY);
+        helper.assertTrue(casting.preview(helper.getLevel(), iron).is(Items.IRON_BLOCK), "Changing mode and cast must invalidate the preview");
+        try {
+            manager.replaceRecipes(List.of());
+            PortableCasting.invalidateRecipes();
+            helper.assertTrue(casting.preview(helper.getLevel(), iron).isEmpty(), "Data reload must remove a cached preview even when its input is unchanged");
+            helper.assertTrue(casting.fluid().isEmpty() && casting.inventory().getStackInSlot(1).isEmpty(), "Previews cannot hold fluid or create actual output");
+        } finally { manager.replaceRecipes(original); PortableCasting.invalidateRecipes(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "casting_reload")
     public static void removedCastingRecipeCannotProduceOrLoseFluid(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var original = new ArrayList<>(manager.getRecipes());

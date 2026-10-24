@@ -27,6 +27,9 @@ import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import org.slf4j.Logger;
 
 @Mod(SophisticatedSmeltery.MODID)
@@ -35,6 +38,7 @@ public class SophisticatedSmeltery {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
+    public static final RegistryObject<CastingUpgradeItem> CASTING_UPGRADE = ITEMS.register("casting_upgrade", CastingUpgradeItem::new);
     public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MODID);
     public static final RegistryObject<RecipeSerializer<ControllerBindingRecipe>> BIND_CONTROLLER = RECIPES.register(
             "bind_controller", () -> new SimpleCraftingRecipeSerializer<>(ControllerBindingRecipe::new));
@@ -42,6 +46,8 @@ public class SophisticatedSmeltery {
             "controller_binding", VisibleControllerBindingRecipe.Serializer::new);
     public static final UpgradeContainerType<MeltingUpgradeWrapper, MeltingUpgradeContainer> MELTING_CONTAINER =
             new UpgradeContainerType<>(MeltingUpgradeContainer::new);
+    public static final UpgradeContainerType<CastingUpgradeWrapper, CastingUpgradeContainer> CASTING_CONTAINER =
+            new UpgradeContainerType<>(CastingUpgradeContainer::new);
 
     public SophisticatedSmeltery() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -57,11 +63,17 @@ public class SophisticatedSmeltery {
     }
 
     private void setup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER));
+        event.enqueueWork(() -> {
+            UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
+            UpgradeContainerRegistry.register(CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+        });
     }
 
     private void creativeItems(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) event.accept(MELTING_UPGRADE.get());
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(MELTING_UPGRADE.get());
+            event.accept(CASTING_UPGRADE.get());
+        }
     }
 
     public static ResourceLocation id(String path) { return new ResourceLocation(MODID, path); }

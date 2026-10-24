@@ -107,7 +107,8 @@ public final class HeatingSwitchClientTest {
                 stage = 3;
             } else {
                 SophisticatedSmeltery.LOGGER.info("ACTUAL BACKPACK UI PASSED: scroll/no-scroll, off/on/off server synchronization, native icon anchors and open-tab captures");
-                if (Boolean.getBoolean("sophisticatedsmeltery.meltingInteractionSmoke")) MeltingInteractionClientTest.start();
+                if (Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke")) CastingUpgradeClientTest.start();
+                else if (Boolean.getBoolean("sophisticatedsmeltery.meltingInteractionSmoke")) MeltingInteractionClientTest.start();
                 else { mc.player.closeContainer(); mc.stop(); }
                 stage = 9;
             }

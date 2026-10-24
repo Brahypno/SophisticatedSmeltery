@@ -18,6 +18,7 @@ import net.p3pp3rf1y.sophisticatedbackpacks.api.CapabilityBackpackWrapper;
 import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeWrapper;
 import slimeknights.tconstruct.fluids.TinkerFluids;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
@@ -31,10 +32,14 @@ public final class ManualTestCommand {
                 .requires(source -> source.hasPermission(2))
                 .executes(context -> give(context, false))
                 .then(Commands.literal("smeltery").executes(context -> give(context, false)))
+                .then(Commands.literal("casting").executes(context -> give(context, false, true)))
                 .then(Commands.literal("foundry").executes(context -> give(context, true))));
     }
 
     private static int give(CommandContext<CommandSourceStack> context, boolean foundry) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        return give(context, foundry, Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke"));
+    }
+    private static int give(CommandContext<CommandSourceStack> context, boolean foundry, boolean casting) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         ItemStack backpack = new ItemStack(ModItems.NETHERITE_BACKPACK.get());
         var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
@@ -54,6 +59,13 @@ public final class ManualTestCommand {
         if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
             storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
                     .get(new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"))));
+        }
+        if (casting) {
+            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
+            storage.getUpgradeHandler().setStackInSlot(3, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
+            var castingWrapper = (CastingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(2);
+            castingWrapper.casting().inventory().setStackInSlot(0, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .get(new net.minecraft.resources.ResourceLocation("tconstruct", "ingot_cast"))));
         }
         storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 3));
         storage.getInventoryHandler().setStackInSlot(1, new ItemStack(Items.RAW_IRON, 3));

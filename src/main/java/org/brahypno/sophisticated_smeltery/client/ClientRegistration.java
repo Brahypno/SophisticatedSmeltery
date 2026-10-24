@@ -14,6 +14,7 @@ public final class ClientRegistration {
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.MELTING_CONTAINER, MeltingUpgradeTab::new);
+            UpgradeGuiManager.registerTab(SophisticatedSmeltery.CASTING_CONTAINER, CastingUpgradeTab::new);
             UpgradeGuiManager.registerInventoryControl(MeltingUpgradeItem.TYPE, screen ->
                     screen.getMenu().getUpgradeContainers().values().stream()
                             .filter(MeltingUpgradeContainer.class::isInstance)
