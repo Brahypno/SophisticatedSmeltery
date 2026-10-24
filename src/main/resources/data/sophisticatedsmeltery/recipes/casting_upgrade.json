@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["BFT", "CUC", "FCF"],
+  "key": {
+    "B": {"item": "tconstruct:seared_basin"},
+    "F": {"item": "tconstruct:seared_faucet"},
+    "T": {"item": "tconstruct:seared_table"},
+    "C": {"item": "tconstruct:seared_channel"},
+    "U": {"item": "sophisticatedbackpacks:upgrade_base"}
+  },
+  "result": {"item": "sophisticatedsmeltery:casting_upgrade"}
+}

@@ -61,7 +61,7 @@ public final class ManualTestCommand {
                     .get(new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"))));
         }
         if (casting) {
-            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
+            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get()));
             storage.getUpgradeHandler().setStackInSlot(3, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
             var castingWrapper = (CastingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(2);
             castingWrapper.casting().inventory().setStackInSlot(0, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
@@ -71,6 +71,8 @@ public final class ManualTestCommand {
         storage.getInventoryHandler().setStackInSlot(1, new ItemStack(Items.RAW_IRON, 3));
         storage.getInventoryHandler().setStackInSlot(2, new ItemStack(Items.GOLD_INGOT, 3));
         if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
+            if (Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke"))
+                player.getInventory().setItem(11, new ItemStack(ModItems.UPGRADE_BASE.get()));
             player.getInventory().selected = 0;
             player.getInventory().setItem(0, backpack);
             player.inventoryMenu.broadcastChanges();

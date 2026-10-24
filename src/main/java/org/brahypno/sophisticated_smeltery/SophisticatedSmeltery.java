@@ -22,6 +22,7 @@ import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerRegistry;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerType;
 import org.brahypno.sophisticated_smeltery.recipe.ControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.VisibleControllerBindingRecipe;
+import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
@@ -39,11 +40,14 @@ public class SophisticatedSmeltery {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
     public static final RegistryObject<CastingUpgradeItem> CASTING_UPGRADE = ITEMS.register("casting_upgrade", CastingUpgradeItem::new);
+    public static final RegistryObject<CastingUpgradeItem> ADVANCED_CASTING_UPGRADE = ITEMS.register("advanced_casting_upgrade", () -> new CastingUpgradeItem(true));
     public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MODID);
     public static final RegistryObject<RecipeSerializer<ControllerBindingRecipe>> BIND_CONTROLLER = RECIPES.register(
             "bind_controller", () -> new SimpleCraftingRecipeSerializer<>(ControllerBindingRecipe::new));
     public static final RegistryObject<RecipeSerializer<VisibleControllerBindingRecipe>> VISIBLE_BINDING = RECIPES.register(
             "controller_binding", VisibleControllerBindingRecipe.Serializer::new);
+    public static final RegistryObject<RecipeSerializer<CastingTierRecipe>> CASTING_TIER = RECIPES.register(
+            "casting_upgrade_tier", CastingTierRecipe.Serializer::new);
     public static final UpgradeContainerType<MeltingUpgradeWrapper, MeltingUpgradeContainer> MELTING_CONTAINER =
             new UpgradeContainerType<>(MeltingUpgradeContainer::new);
     public static final UpgradeContainerType<CastingUpgradeWrapper, CastingUpgradeContainer> CASTING_CONTAINER =
@@ -66,6 +70,7 @@ public class SophisticatedSmeltery {
         event.enqueueWork(() -> {
             UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
             UpgradeContainerRegistry.register(CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+            UpgradeContainerRegistry.register(ADVANCED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
         });
     }
 
@@ -73,6 +78,7 @@ public class SophisticatedSmeltery {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MELTING_UPGRADE.get());
             event.accept(CASTING_UPGRADE.get());
+            event.accept(ADVANCED_CASTING_UPGRADE.get());
         }
     }
 

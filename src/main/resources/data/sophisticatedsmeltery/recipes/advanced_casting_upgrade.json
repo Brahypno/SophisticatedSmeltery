@@ -1,0 +1,12 @@
+{
+  "type": "sophisticatedsmeltery:casting_upgrade_tier",
+  "category": "misc",
+  "pattern": [" D ", "GUG", "RRR"],
+  "key": {
+    "D": {"tag": "forge:gems/diamond"},
+    "G": {"tag": "forge:ingots/gold"},
+    "U": {"item": "sophisticatedsmeltery:casting_upgrade"},
+    "R": {"tag": "forge:dusts/redstone"}
+  },
+  "result": {"item": "sophisticatedsmeltery:advanced_casting_upgrade"}
+}

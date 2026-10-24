@@ -36,8 +36,10 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
 
     public PortableCasting casting() { return casting; }
     @Override public boolean canBeDisabled() { return false; }
-    public boolean isAutomatic() { return upgrade.getTag() != null && upgrade.getTag().getBoolean("automatic"); }
+    public boolean supportsAutomatic() { return upgradeItem.isAdvanced(); }
+    public boolean isAutomatic() { return supportsAutomatic() && upgrade.getTag() != null && upgrade.getTag().getBoolean("automatic"); }
     public void setAutomatic(boolean automatic) {
+        if (!supportsAutomatic()) return;
         upgrade.getOrCreateTag().putBoolean("automatic", automatic);
         pourRequested = true;
         persist();

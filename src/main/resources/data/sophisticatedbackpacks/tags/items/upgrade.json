@@ -1,4 +1,4 @@
 {
   "replace": false,
-  "values": ["sophisticatedsmeltery:melting_upgrade", "sophisticatedsmeltery:casting_upgrade"]
+  "values": ["sophisticatedsmeltery:melting_upgrade", "sophisticatedsmeltery:casting_upgrade", "sophisticatedsmeltery:advanced_casting_upgrade"]
 }

@@ -98,6 +98,10 @@ public final class HeatingSwitchClientTest {
             stage = 8;
         } else if (stage == 8 && tabs.stream().anyMatch(tab -> !(tab instanceof MeltingUpgradeTab) && tab.getWidth() > 21)) {
             for (var tab : tabs) assertIconAnchor(tab);
+            if (Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke")) {
+                var magnet = tabs.stream().filter(tab -> !(tab instanceof MeltingUpgradeTab) && tab.getWidth() > 21).findFirst().orElseThrow();
+                TabFrameClientProbe.record(event, magnet);
+            }
             capture(event, "switch-" + size + "-magnet-open");
             if (size++ == 0) {
                 // Close the native magnet tab before resizing and reinitializing the screen.

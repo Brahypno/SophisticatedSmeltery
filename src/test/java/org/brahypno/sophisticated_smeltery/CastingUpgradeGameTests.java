@@ -26,6 +26,9 @@ import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 @PrefixGameTestTemplate(false)
 public final class CastingUpgradeGameTests {
     private static BackpackWrapper backpack(int amount) {
+        return backpack(amount, false);
+    }
+    private static BackpackWrapper backpack(int amount, boolean advanced) {
         var storage = new BackpackWrapper(new ItemStack(ModItems.NETHERITE_BACKPACK.get()));
         storage.getInventoryHandler();
         storage.getUpgradeHandler().setStackInSlot(0, ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()),
@@ -35,7 +38,8 @@ public final class CastingUpgradeGameTests {
         furnace.setHeating(false);
         furnace.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), amount), FluidAction.EXECUTE);
         furnace.persist();
-        storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
+        storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(advanced
+                ? SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get() : SophisticatedSmeltery.CASTING_UPGRADE.get()));
         casting(storage, 1).casting().inventory().setStackInSlot(0,
                 new ItemStack(BuiltInRegistries.ITEM.get(new ResourceLocation("tconstruct", "ingot_cast"))));
         return storage;
@@ -74,7 +78,7 @@ public final class CastingUpgradeGameTests {
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
     public static void automaticCastingWaitsForOutputAndRestartsAfterPickup(GameTestHelper helper) {
-        var storage = backpack(180);
+        var storage = backpack(180, true);
         var casting = casting(storage, 1);
         casting.setAutomatic(true);
         tick(helper, casting, 60);
@@ -131,7 +135,7 @@ public final class CastingUpgradeGameTests {
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
     public static void automaticPartialCastingResumesWhenFurnaceFluidChanges(GameTestHelper helper) {
-        var storage = backpack(45);
+        var storage = backpack(45, true);
         var casting = casting(storage, 1);
         casting.setAutomatic(true);
         tick(helper, casting, 100);
@@ -160,8 +164,8 @@ public final class CastingUpgradeGameTests {
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
     public static void twoAutomaticUpgradesShareOneFurnaceWithoutDuplication(GameTestHelper helper) {
-        var storage = backpack(180);
-        storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
+        var storage = backpack(180, true);
+        storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get()));
         var first = casting(storage, 1);
         var second = casting(storage, 2);
         second.casting().inventory().setStackInSlot(0, first.casting().inventory().getStackInSlot(0).copy());
@@ -171,6 +175,26 @@ public final class CastingUpgradeGameTests {
         helper.assertTrue(first.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)
                         && second.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)
                         && furnace(storage).getTank().getContained() == 0, "Two independent upgrades consume and produce exactly two native recipes");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void basicTierCannotEnableAutomaticThroughMessagesOrStoredNbt(GameTestHelper helper) {
+        var storage = backpack(180);
+        var basic = casting(storage, 1);
+        basic.getUpgradeStack().getOrCreateTag().putBoolean("automatic", true);
+        var loaded = new CastingUpgradeWrapper(storage, basic.getUpgradeStack().copy(), ignored -> {});
+        helper.assertTrue(!loaded.supportsAutomatic() && !loaded.isAutomatic(), "Old automatic NBT cannot enable the basic tier");
+        var container = new CastingUpgradeContainer(helper.makeMockPlayer(), 1, basic, SophisticatedSmeltery.CASTING_CONTAINER);
+        CompoundTag data = new CompoundTag();
+        data.putString("action", "automatic");
+        container.handleMessage(data);
+        tick(helper, basic, 100);
+        helper.assertTrue(!basic.isAutomatic() && furnace(storage).getTank().getContained() == 180,
+                "Sending the advanced GUI action to a basic upgrade cannot start pouring");
+        helper.assertTrue(basic.pour(helper.getLevel()) == 90, "Basic manual pouring remains available");
+        tick(helper, basic, 60);
+        helper.assertTrue(basic.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT), "Basic manual recipes still finish normally");
         helper.succeed();
     }
 }

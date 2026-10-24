@@ -1,8 +1,11 @@
 {
   "item.sophisticatedsmeltery.casting_upgrade": "Casting Upgrade",
+  "item.sophisticatedsmeltery.advanced_casting_upgrade": "Advanced Casting Upgrade",
+  "item.sophisticatedsmeltery.advanced_casting_upgrade.tooltip": "Casts the furnace's bottom fluid, with manual or automatic pouring.",
   "item.sophisticatedsmeltery.casting_upgrade.tooltip": "Casts the furnace's bottom fluid using Tinkers' casting recipes.",
   "error.sophisticatedsmeltery.empty_casting": "Return remaining casting fluid or finish cooling before removing this upgrade.",
   "gui.sophisticatedsmeltery.casting": "Casting",
+  "gui.sophisticatedsmeltery.advanced_casting": "Advanced Casting",
   "gui.sophisticatedsmeltery.cast_pour": "Pour",
   "gui.sophisticatedsmeltery.cast_return": "Return fluid",
   "gui.sophisticatedsmeltery.cast_automatic_on": "Auto: ON",

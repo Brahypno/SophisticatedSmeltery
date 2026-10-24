@@ -6,6 +6,8 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.RandomSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
@@ -26,7 +28,7 @@ public final class CastingUpgradeClientTest {
     private static int stage;
     private static int ticks;
     private static int frames;
-    static void start() { running = true; }
+    static void start() { running = true; stage = -2; }
 
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if (running && event.phase == TickEvent.Phase.END && ++ticks > 2400)
@@ -44,6 +46,28 @@ public final class CastingUpgradeClientTest {
         var furnace = screen.getMenu().getUpgradeContainers().values().stream().filter(MeltingUpgradeContainer.class::isInstance)
                 .map(MeltingUpgradeContainer.class::cast).findFirst().orElseThrow().getUpgradeWrapper();
         switch (stage) {
+            case -2 -> {
+                for (var child : screen.getUpgradeSettingsControl().children()) {
+                    if (child instanceof UpgradeSettingsTab<?> other && other.getWidth() > 21)
+                        click(screen, other.getX() + 8, other.getY() + 12);
+                }
+                var basicTab = screen.getUpgradeSettingsControl().children().stream().filter(CastingUpgradeTab.class::isInstance)
+                        .map(CastingUpgradeTab.class::cast).reduce((first, second) -> second).orElseThrow();
+                click(screen, basicTab.getX() + 8, basicTab.getY() + 12);
+            }
+            case -1 -> {
+                var basic = (CastingUpgradeContainer)screen.getMenu().getUpgradeContainers().get(3);
+                if (!basic.isOpen()) return;
+                var basicTab = screen.getUpgradeSettingsControl().children().stream().filter(CastingUpgradeTab.class::isInstance)
+                        .map(CastingUpgradeTab.class::cast).reduce((first, second) -> second).orElseThrow();
+                check(!basic.getUpgradeWrapper().supportsAutomatic(), "Basic tier must not expose automatic casting");
+                check(basicTab.children().stream().noneMatch(child -> child instanceof net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase widget
+                        && widget.getX() == basicTab.getX() + 45 && widget.getY() == basicTab.getY() + 92), "Basic GUI must have no automatic toggle");
+                capture(event, "casting-upgrade-basic");
+                TabFrameClientProbe.verify(event, basicTab);
+                captureTierIcons(event);
+                click(screen, basicTab.getX() + 8, basicTab.getY() + 12);
+            }
             case 0 -> {
                 for (var child : screen.getUpgradeSettingsControl().children()) {
                     if (child instanceof UpgradeSettingsTab<?> other && other != tab && other.getWidth() > 21)
@@ -55,6 +79,7 @@ public final class CastingUpgradeClientTest {
                 if (!container.isOpen()) return;
                 check(!wrapper.isAutomatic() && !furnace.isHeating(), "Begin with manual casting and furnace heating OFF");
                 capture(event, "casting-upgrade-manual");
+                TabFrameClientProbe.verify(event, tab);
                 click(screen, tab.getX() + 23, tab.getY() + 101);
             }
             case 2 -> {
@@ -110,9 +135,15 @@ public final class CastingUpgradeClientTest {
             }
             case 19 -> { if (!carried.is(SophisticatedSmeltery.CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 8)); }
             case 20 -> { if (!carried.isEmpty()) return; clickSlot(screen, screen.getMenu().upgradeSlots.get(2)); }
-            case 21 -> { if (!carried.is(SophisticatedSmeltery.CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 9)); }
+            case 21 -> { if (!carried.is(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 9)); }
             case 22 -> {
                 if (!carried.isEmpty()) return;
+                if (!mc.player.getRecipeBook().contains(SophisticatedSmeltery.id("casting_upgrade"))
+                        || !mc.player.getRecipeBook().contains(SophisticatedSmeltery.id("advanced_casting_upgrade"))) return;
+                check(CastingRecipeJeiProbe.visible(SophisticatedSmeltery.id("casting_upgrade"))
+                                && CastingRecipeJeiProbe.visible(SophisticatedSmeltery.id("advanced_casting_upgrade")),
+                        "Both tiers must be in JEI's actual visible crafting list");
+                SophisticatedSmeltery.LOGGER.info("CASTING RECIPES VISIBLE: both tiers unlocked in the actual client recipe book and listed in JEI");
                 check(playerSlot(screen, 5).getItem().is(Items.IRON_INGOT) && playerSlot(screen, 5).getItem().getCount() == 2
                                 && playerSlot(screen, 7).getItem().is(Items.IRON_BLOCK), "Keep exactly two ingots and one iron block");
                 check(furnace.getTank().getContained() == 1010, "Preserve 1000 mB gold and the 10 mB returned iron remainder");
@@ -144,6 +175,27 @@ public final class CastingUpgradeClientTest {
         event.getGuiGraphics().flush();
         try (var image = Screenshot.takeScreenshot(Minecraft.getInstance().getMainRenderTarget())) { image.writeToFile(Path.of("..", name + ".png")); }
         catch (java.io.IOException e) { throw new IllegalStateException(e); }
+    }
+    private static void captureTierIcons(ScreenEvent.Render.Post event) {
+        var mc = Minecraft.getInstance();
+        var graphics = event.getGuiGraphics();
+        graphics.fill(4, 16, 164, 102, 0xff19212d);
+        ItemStack[] icons = {new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()), new ItemStack(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get())};
+        for (int index = 0; index < icons.length; index++) {
+            var model = mc.getItemRenderer().getModel(icons[index], mc.level, mc.player, 0);
+            var quads = model.getQuads(null, null, RandomSource.create(0));
+            check(quads.stream().anyMatch(quad -> quad.getSprite().contents().name().getPath().endsWith("casting/table_top")),
+                    "Both icons must actually use the native casting-table top model");
+            check(quads.stream().anyMatch(quad -> quad.getSprite().contents().name().getPath().endsWith("advanced_magnet_upgrade")) == (index == 1),
+                    "Only the advanced icon may use the native gold frame");
+            graphics.pose().pushPose();
+            graphics.pose().translate(12 + index * 78, 28, 0);
+            graphics.pose().scale(3, 3, 1);
+            graphics.renderItem(icons[index], 0, 0);
+            graphics.pose().popPose();
+            graphics.drawString(mc.font, index == 0 ? "Basic" : "Advanced", 13 + index * 78, 84, 0xffffffff, false);
+        }
+        capture(event, "casting-tier-icons");
     }
     private static void check(boolean condition, String message) { if (!condition) throw new IllegalStateException(message); }
 }

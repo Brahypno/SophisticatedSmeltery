@@ -1,8 +1,11 @@
 {
   "item.sophisticatedsmeltery.casting_upgrade": "浇筑升级",
+  "item.sophisticatedsmeltery.advanced_casting_upgrade": "高级浇筑升级",
+  "item.sophisticatedsmeltery.advanced_casting_upgrade.tooltip": "使用炉内底层流体浇筑，支持手动或自动浇筑。",
   "item.sophisticatedsmeltery.casting_upgrade.tooltip": "使用匠魂浇筑配方，将炉内底层流体浇筑成物品。",
   "error.sophisticatedsmeltery.empty_casting": "退回浇筑残液或等待冷却完成后，才能移除此升级。",
   "gui.sophisticatedsmeltery.casting": "浇筑",
+  "gui.sophisticatedsmeltery.advanced_casting": "高级浇筑",
   "gui.sophisticatedsmeltery.cast_pour": "浇筑",
   "gui.sophisticatedsmeltery.cast_return": "退液",
   "gui.sophisticatedsmeltery.cast_automatic_on": "自动：开",

@@ -26,14 +26,16 @@ import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
 public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeContainer> {
     public CastingUpgradeTab(CastingUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
-        super(container, position, screen, text("casting"), container.getUpgradeStack().getHoverName());
+        super(container, position, screen, text(container.getUpgradeWrapper().supportsAutomatic() ? "advanced_casting" : "casting"), container.getUpgradeStack().getHoverName());
         addHideableChild(new ModeButton(new Position(x + 8, y + 54)));
         addHideableChild(new CastingDisplay(new Position(x + 49, y + 28)));
         addHideableChild(new Preview(new Position(x + 101, y + 57)));
-        addHideableChild(new Action(new Position(x + 5, y + 92), 37, () -> text("cast_pour"), "pour",
+        addHideableChild(new Action(new Position(x + 5, y + 92), container.getUpgradeWrapper().supportsAutomatic() ? 37 : 118, () -> text("cast_pour"), "pour",
                 () -> hasController() && !casting().isCooling() && casting().inventory().getStackInSlot(1).isEmpty()));
-        addHideableChild(new Action(new Position(x + 45, y + 92), 78,
-                () -> text(container.getUpgradeWrapper().isAutomatic() ? "cast_automatic_on" : "cast_automatic_off"), "automatic", () -> true));
+        if (container.getUpgradeWrapper().supportsAutomatic()) {
+            addHideableChild(new Action(new Position(x + 45, y + 92), 78,
+                    () -> text(container.getUpgradeWrapper().isAutomatic() ? "cast_automatic_on" : "cast_automatic_off"), "automatic", () -> true));
+        }
         addHideableChild(new Action(new Position(x + 5, y + 113), 118, () -> text("cast_return"), "return",
                 () -> hasController() && casting().hasFluid() && !casting().isCooling()));
         openTabDimension = new Dimension(128, 138);
@@ -55,7 +57,15 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         slots.get(1).y = y - screen.getGuiTop() + 28;
     }
     @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
-        super.renderBg(graphics, minecraft, mouseX, mouseY);
+        if (getWidth() <= 125) {
+            super.renderBg(graphics, minecraft, mouseX, mouseY);
+        } else {
+            // Exclude both the duplicate left border and its corner from the tiled interior.
+            int half = getHeight() / 2;
+            GuiHelper.renderTiledControlBackground(graphics, x, y, getWidth(), getHeight(),
+                    134, 0, 122, 256, 0, 6, half, getHeight() - half);
+            graphics.blit(GuiHelper.GUI_CONTROLS, x - 3, y, 128, 256 - getHeight(), 3, getHeight());
+        }
         if (!getContainer().isOpen()) return;
         GuiHelper.renderSlotsBackground(graphics, x + 7, y + 27, 1, 1);
         GuiHelper.renderSlotsBackground(graphics, x + 100, y + 27, 1, 1);
