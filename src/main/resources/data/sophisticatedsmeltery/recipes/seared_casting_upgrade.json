@@ -9,5 +9,5 @@
     "C": {"item": "tconstruct:seared_channel"},
     "U": {"item": "sophisticatedbackpacks:upgrade_base"}
   },
-  "result": {"item": "sophisticatedsmeltery:casting_upgrade"}
+  "result": {"item": "sophisticatedsmeltery:seared_casting_upgrade"}
 }

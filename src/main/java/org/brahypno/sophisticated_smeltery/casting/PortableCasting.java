@@ -31,7 +31,10 @@ public final class PortableCasting {
 
     private static int recipeEpoch;
     private final Runnable changed;
+    private final boolean requireCast;
     private final ItemStackHandler inventory;
+    private ItemStack lockedCast = ItemStack.EMPTY;
+    private boolean resultInInput;
     private Mode mode = Mode.TABLE;
     private FluidStack fluid = FluidStack.EMPTY;
     private FluidStack recipeFluid = FluidStack.EMPTY;
@@ -59,15 +62,25 @@ public final class PortableCasting {
     };
 
     public PortableCasting(CompoundTag state, Runnable changed) {
+        this(state, changed, false);
+    }
+
+    public PortableCasting(CompoundTag state, Runnable changed, boolean requireCast) {
         this.changed = changed;
+        this.requireCast = requireCast;
+        lockedCast = ItemStack.of(state.getCompound("lockedCast"));
+        resultInInput = state.getBoolean("resultInInput");
         inventory = new ItemStackHandler(2) {
             @Override public int getSlotLimit(int slot) { return slot == 0 ? 1 : 64; }
-            @Override public boolean isItemValid(int slot, ItemStack stack) { return slot == 0 && fluid.isEmpty(); }
+            @Override public boolean isItemValid(int slot, ItemStack stack) {
+                return slot == 0 && fluid.isEmpty() && (lockedCast.isEmpty() || ItemStack.isSameItemSameTags(lockedCast, stack));
+            }
             @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                return fluid.isEmpty() ? super.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
+                return slot == 1 || fluid.isEmpty() ? super.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
             }
             @Override protected void onContentsChanged(int slot) {
                 if (!loading) {
+                    if (slot == 0) resultInInput = false;
                     if (fluid.isEmpty()) clearRecipe();
                     changed.run();
                 }
@@ -85,6 +98,19 @@ public final class PortableCasting {
     public static void invalidateRecipes() { recipeEpoch++; }
     public ItemStackHandler inventory() { return inventory; }
     public Mode mode() { return mode; }
+    public boolean requiresCast() { return requireCast; }
+    public ItemStack lockedCast() { return lockedCast.copy(); }
+    public boolean resultInInput() { return resultInInput; }
+    public void setOutputRemainder(int slot, ItemStack remainder) {
+        boolean keepInputResult = slot == 0 && resultInInput && !remainder.isEmpty();
+        inventory.setStackInSlot(slot, remainder);
+        if (keepInputResult) { resultInInput = true; changed.run(); }
+    }
+    public void toggleCastLock() {
+        if (!requireCast) return;
+        lockedCast = lockedCast.isEmpty() ? inventory.getStackInSlot(0).copyWithCount(1) : ItemStack.EMPTY;
+        changed.run();
+    }
     public FluidStack fluid() { return fluid.copy(); }
     public boolean hasFluid() { return !fluid.isEmpty(); }
     public int required() { return required; }
@@ -131,7 +157,7 @@ public final class PortableCasting {
     /** Pour only from the source's currently selected/bottom fluid, up to one native recipe. */
     public int pour(Level level, IFluidHandler source) {
         bind(level);
-        if (isCooling() || !inventory.getStackInSlot(1).isEmpty()) return 0;
+        if (isCooling() || (requireCast && inventory.getStackInSlot(0).isEmpty())) return 0;
         FluidStack available = source.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
         if (available.isEmpty() || (!fluid.isEmpty() && !available.isFluidEqual(fluid))) return 0;
         if (fluid.isEmpty()) {
@@ -141,6 +167,10 @@ public final class PortableCasting {
             updateRecipeAmounts();
         }
         if (recipe == null || required <= 0) return 0;
+        if (!canAcceptResult(level)) {
+            if (fluid.isEmpty()) clearRecipe();
+            return 0;
+        }
         int amount = Math.min(available.getAmount(), required - fluid.getAmount());
         if (amount <= 0) return 0;
         FluidStack drained = source.drain(new FluidStack(available, amount), IFluidHandler.FluidAction.EXECUTE);
@@ -169,24 +199,27 @@ public final class PortableCasting {
 
     public void tick(Level level) {
         bind(level);
-        if (!isCooling() || !inventory.getStackInSlot(1).isEmpty()) return;
-        timer++;
+        if (!isCooling()) return;
+        if (timer < coolingTime) timer++;
         if (timer >= coolingTime) {
             recipeFluid = fluid;
             if (!recipe.matches(context, level)) { clearRecipe(); changed.run(); return; }
             ItemStack output = recipe.assemble(context, level.registryAccess());
             boolean consumed = recipe.isConsumed(context);
             boolean switchSlots = recipe.switchSlots();
+            if (!canAcceptResult(level)) return;
             int used = required;
             // Exactly the native no-redstone slot policy, including dynamic cast consumption.
             loading = true;
             try {
                 if (switchSlots) {
-                    if (!consumed) inventory.setStackInSlot(1, inventory.getStackInSlot(0));
+                    if (!consumed) appendOutput(inventory.getStackInSlot(0));
                     inventory.setStackInSlot(0, output);
+                    resultInInput = true;
                 } else {
                     if (consumed) inventory.setStackInSlot(0, ItemStack.EMPTY);
-                    inventory.setStackInSlot(1, output);
+                    appendOutput(output);
+                    resultInInput = false;
                 }
             } finally { loading = false; }
             fluid.shrink(used);
@@ -197,10 +230,28 @@ public final class PortableCasting {
         changed.run();
     }
 
+    private boolean canAcceptResult(Level level) {
+        ItemStack output = recipe.switchSlots()
+                ? (recipe.isConsumed(context) ? ItemStack.EMPTY : inventory.getStackInSlot(0))
+                : recipe.assemble(context, level.registryAccess());
+        ItemStack stored = inventory.getStackInSlot(1);
+        if (output.isEmpty()) return true;
+        return stored.isEmpty() ? output.getCount() <= Math.min(64, output.getMaxStackSize())
+                : ItemStack.isSameItemSameTags(stored, output)
+                && (long)stored.getCount() + output.getCount() <= Math.min(64, stored.getMaxStackSize());
+    }
+
+    private void appendOutput(ItemStack output) {
+        if (output.isEmpty()) return;
+        ItemStack stored = inventory.getStackInSlot(1);
+        inventory.setStackInSlot(1, stored.isEmpty() ? output.copy() : stored.copyWithCount(stored.getCount() + output.getCount()));
+    }
+
     public ItemStack preview(Level level, FluidStack selected) {
         bind(level);
-        if (recipe != null) return recipe.assemble(context, level.registryAccess());
+        if (recipe != null && hasFluid()) return recipe.assemble(context, level.registryAccess());
         if (selected.isEmpty()) return ItemStack.EMPTY;
+        if (requireCast && inventory.getStackInSlot(0).isEmpty()) return ItemStack.EMPTY;
         FluidStack previous = recipeFluid;
         recipeFluid = selected;
         try {
@@ -221,6 +272,8 @@ public final class PortableCasting {
     public CompoundTag save() {
         CompoundTag state = new CompoundTag();
         state.putBoolean("basin", mode == Mode.BASIN);
+        state.put("lockedCast", lockedCast.save(new CompoundTag()));
+        state.putBoolean("resultInInput", resultInInput);
         state.put("inventory", inventory.serializeNBT());
         state.put("fluid", fluid.writeToNBT(new CompoundTag()));
         state.putInt("timer", timer);

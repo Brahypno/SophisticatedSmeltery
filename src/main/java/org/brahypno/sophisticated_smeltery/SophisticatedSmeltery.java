@@ -39,8 +39,10 @@ public class SophisticatedSmeltery {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
-    public static final RegistryObject<CastingUpgradeItem> CASTING_UPGRADE = ITEMS.register("casting_upgrade", CastingUpgradeItem::new);
-    public static final RegistryObject<CastingUpgradeItem> ADVANCED_CASTING_UPGRADE = ITEMS.register("advanced_casting_upgrade", () -> new CastingUpgradeItem(true));
+    public static final RegistryObject<CastingUpgradeItem> SEARED_CASTING_UPGRADE = ITEMS.register("seared_casting_upgrade", CastingUpgradeItem::new);
+    public static final RegistryObject<CastingUpgradeItem> ADVANCED_SEARED_CASTING_UPGRADE = ITEMS.register("advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
+    public static final RegistryObject<CastingUpgradeItem> SCORCHED_CASTING_UPGRADE = ITEMS.register("scorched_casting_upgrade", () -> new CastingUpgradeItem(false, true));
+    public static final RegistryObject<CastingUpgradeItem> ADVANCED_SCORCHED_CASTING_UPGRADE = ITEMS.register("advanced_scorched_casting_upgrade", () -> new CastingUpgradeItem(true, true));
     public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MODID);
     public static final RegistryObject<RecipeSerializer<ControllerBindingRecipe>> BIND_CONTROLLER = RECIPES.register(
             "bind_controller", () -> new SimpleCraftingRecipeSerializer<>(ControllerBindingRecipe::new));
@@ -69,16 +71,20 @@ public class SophisticatedSmeltery {
     private void setup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
-            UpgradeContainerRegistry.register(CASTING_UPGRADE.getId(), CASTING_CONTAINER);
-            UpgradeContainerRegistry.register(ADVANCED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+            UpgradeContainerRegistry.register(SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+            UpgradeContainerRegistry.register(ADVANCED_SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+            UpgradeContainerRegistry.register(SCORCHED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+            UpgradeContainerRegistry.register(ADVANCED_SCORCHED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
         });
     }
 
     private void creativeItems(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MELTING_UPGRADE.get());
-            event.accept(CASTING_UPGRADE.get());
-            event.accept(ADVANCED_CASTING_UPGRADE.get());
+            event.accept(SEARED_CASTING_UPGRADE.get());
+            event.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
+            event.accept(SCORCHED_CASTING_UPGRADE.get());
+            event.accept(ADVANCED_SCORCHED_CASTING_UPGRADE.get());
         }
     }
 

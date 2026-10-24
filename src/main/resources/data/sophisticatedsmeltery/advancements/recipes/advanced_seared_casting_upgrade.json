@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_casting_upgrade": {"trigger": "minecraft:inventory_changed", "conditions": {"items": [{"items": ["sophisticatedsmeltery:seared_casting_upgrade"]}]}},
+    "has_the_recipe": {"trigger": "minecraft:recipe_unlocked", "conditions": {"recipe": "sophisticatedsmeltery:advanced_seared_casting_upgrade"}}
+  },
+  "requirements": [["has_casting_upgrade", "has_the_recipe"]],
+  "rewards": {"recipes": ["sophisticatedsmeltery:advanced_seared_casting_upgrade"]}
+}

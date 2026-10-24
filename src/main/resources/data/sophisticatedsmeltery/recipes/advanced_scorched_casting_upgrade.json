@@ -5,8 +5,8 @@
   "key": {
     "D": {"tag": "forge:gems/diamond"},
     "G": {"tag": "forge:ingots/gold"},
-    "U": {"item": "sophisticatedsmeltery:casting_upgrade"},
+    "U": {"item": "sophisticatedsmeltery:scorched_casting_upgrade"},
     "R": {"tag": "forge:dusts/redstone"}
   },
-  "result": {"item": "sophisticatedsmeltery:advanced_casting_upgrade"}
+  "result": {"item": "sophisticatedsmeltery:advanced_scorched_casting_upgrade"}
 }

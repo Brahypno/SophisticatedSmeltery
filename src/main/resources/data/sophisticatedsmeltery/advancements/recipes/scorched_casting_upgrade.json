@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_upgrade_base": {"trigger": "minecraft:inventory_changed", "conditions": {"items": [{"items": ["sophisticatedbackpacks:upgrade_base"]}]}},
+    "has_the_recipe": {"trigger": "minecraft:recipe_unlocked", "conditions": {"recipe": "sophisticatedsmeltery:scorched_casting_upgrade"}}
+  },
+  "requirements": [["has_upgrade_base", "has_the_recipe"]],
+  "rewards": {"recipes": ["sophisticatedsmeltery:scorched_casting_upgrade"]}
+}

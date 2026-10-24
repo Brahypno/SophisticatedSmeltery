@@ -65,7 +65,7 @@ final class CastingIconModel implements BakedModel {
         for (Direction direction : List.of(Direction.SOUTH, Direction.NORTH)) {
             float depth = direction == Direction.SOUTH ? 8.6f : 7.4f;
             overlay.add(bakery.bakeQuad(new Vector3f(left, 16 - bottom, depth), new Vector3f(right, 16 - top, depth),
-                    face, sprite, direction, BlockModelRotation.X0_Y0, null, false, SophisticatedSmeltery.id("advanced_casting_upgrade")));
+                    face, sprite, direction, BlockModelRotation.X0_Y0, null, false, SophisticatedSmeltery.id("advanced_seared_casting_upgrade")));
         }
     }
 

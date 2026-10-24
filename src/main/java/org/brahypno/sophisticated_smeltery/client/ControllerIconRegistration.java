@@ -16,11 +16,11 @@ public final class ControllerIconRegistration {
         ModelResourceLocation location = new ModelResourceLocation(SophisticatedSmeltery.id("melting_upgrade"), "inventory");
         BakedModel original = event.getModels().get(location);
         if (original != null) event.getModels().put(location, new ControllerIconModel(original));
-        var state = TinkerSmeltery.searedTable.get().defaultBlockState();
-        BakedModel table = event.getModels().get(BlockModelShaper.stateToModelLocation(state));
         BakedModel advanced = event.getModels().get(new ModelResourceLocation(
                 new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"), "inventory"));
-        for (String item : java.util.List.of("casting_upgrade", "advanced_casting_upgrade")) {
+        for (String item : java.util.List.of("seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade")) {
+            var state = (item.contains("scorched") ? TinkerSmeltery.scorchedTable : TinkerSmeltery.searedTable).get().defaultBlockState();
+            BakedModel table = event.getModels().get(BlockModelShaper.stateToModelLocation(state));
             var modelId = new ModelResourceLocation(SophisticatedSmeltery.id(item), "inventory");
             BakedModel plate = event.getModels().get(modelId);
             if (plate != null && table != null) event.getModels().put(modelId, new CastingIconModel(plate, table, state,

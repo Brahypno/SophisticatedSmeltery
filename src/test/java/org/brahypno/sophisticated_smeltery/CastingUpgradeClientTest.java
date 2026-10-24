@@ -62,7 +62,7 @@ public final class CastingUpgradeClientTest {
                         .map(CastingUpgradeTab.class::cast).reduce((first, second) -> second).orElseThrow();
                 check(!basic.getUpgradeWrapper().supportsAutomatic(), "Basic tier must not expose automatic casting");
                 check(basicTab.children().stream().noneMatch(child -> child instanceof net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase widget
-                        && widget.getX() == basicTab.getX() + 45 && widget.getY() == basicTab.getY() + 92), "Basic GUI must have no automatic toggle");
+                        && widget.getX() == basicTab.getX() + 54 && widget.getY() == basicTab.getY() + 92), "Basic GUI must have no automatic toggle");
                 capture(event, "casting-upgrade-basic");
                 TabFrameClientProbe.verify(event, basicTab);
                 captureTierIcons(event);
@@ -80,7 +80,7 @@ public final class CastingUpgradeClientTest {
                 check(!wrapper.isAutomatic() && !furnace.isHeating(), "Begin with manual casting and furnace heating OFF");
                 capture(event, "casting-upgrade-manual");
                 TabFrameClientProbe.verify(event, tab);
-                click(screen, tab.getX() + 23, tab.getY() + 101);
+                click(screen, tab.getX() + 109, tab.getY() + 83);
             }
             case 2 -> {
                 if (!wrapper.casting().isCooling()) return;
@@ -95,10 +95,10 @@ public final class CastingUpgradeClientTest {
                 clickSlot(screen, container.getSlots().get(1));
             }
             case 4 -> { if (!carried.is(Items.IRON_INGOT)) return; clickSlot(screen, playerSlot(screen, 5)); }
-            case 5 -> { if (!carried.isEmpty()) return; click(screen, tab.getX() + 80, tab.getY() + 101); }
+            case 5 -> { if (!carried.isEmpty()) return; click(screen, tab.getX() + 63, tab.getY() + 101); }
             case 6 -> {
                 if (!wrapper.isAutomatic() || !wrapper.casting().isCooling()) return;
-                click(screen, tab.getX() + 80, tab.getY() + 101);
+                click(screen, tab.getX() + 63, tab.getY() + 101);
             }
             case 7 -> {
                 if (wrapper.isAutomatic() || !wrapper.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)) return;
@@ -110,7 +110,7 @@ public final class CastingUpgradeClientTest {
             case 11 -> { if (!carried.isEmpty()) return; click(screen, tab.getX() + 17, tab.getY() + 63); }
             case 12 -> {
                 if (wrapper.casting().mode() != PortableCasting.Mode.BASIN) return;
-                click(screen, tab.getX() + 23, tab.getY() + 101);
+                click(screen, tab.getX() + 109, tab.getY() + 83);
             }
             case 13 -> {
                 if (!wrapper.casting().isCooling()) return;
@@ -121,27 +121,27 @@ public final class CastingUpgradeClientTest {
                 clickSlot(screen, container.getSlots().get(1));
             }
             case 15 -> { if (!carried.is(Items.IRON_BLOCK)) return; clickSlot(screen, playerSlot(screen, 7)); }
-            case 16 -> { if (!carried.isEmpty()) return; click(screen, tab.getX() + 23, tab.getY() + 101); }
+            case 16 -> { if (!carried.isEmpty()) return; click(screen, tab.getX() + 109, tab.getY() + 83); }
             case 17 -> {
                 if (wrapper.casting().fluid().getAmount() != 10 || wrapper.casting().isCooling()) return;
                 capture(event, "casting-upgrade-partial");
                 clickSlot(screen, screen.getMenu().upgradeSlots.get(2));
                 check(screen.getMenu().getCarried().isEmpty(), "Partial fluid must also block normal removal");
-                click(screen, tab.getX() + 60, tab.getY() + 122);
+                click(screen, tab.getX() + 17, tab.getY() + 101);
             }
             case 18 -> {
                 if (wrapper.casting().hasFluid()) return;
                 clickSlot(screen, screen.getMenu().upgradeSlots.get(3));
             }
-            case 19 -> { if (!carried.is(SophisticatedSmeltery.CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 8)); }
+            case 19 -> { if (!carried.is(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 8)); }
             case 20 -> { if (!carried.isEmpty()) return; clickSlot(screen, screen.getMenu().upgradeSlots.get(2)); }
-            case 21 -> { if (!carried.is(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 9)); }
+            case 21 -> { if (!carried.is(SophisticatedSmeltery.ADVANCED_SEARED_CASTING_UPGRADE.get())) return; clickSlot(screen, playerSlot(screen, 9)); }
             case 22 -> {
                 if (!carried.isEmpty()) return;
-                if (!mc.player.getRecipeBook().contains(SophisticatedSmeltery.id("casting_upgrade"))
-                        || !mc.player.getRecipeBook().contains(SophisticatedSmeltery.id("advanced_casting_upgrade"))) return;
-                check(CastingRecipeJeiProbe.visible(SophisticatedSmeltery.id("casting_upgrade"))
-                                && CastingRecipeJeiProbe.visible(SophisticatedSmeltery.id("advanced_casting_upgrade")),
+                if (!mc.player.getRecipeBook().contains(SophisticatedSmeltery.id("seared_casting_upgrade"))
+                        || !mc.player.getRecipeBook().contains(SophisticatedSmeltery.id("advanced_seared_casting_upgrade"))) return;
+                check(CastingRecipeJeiProbe.visible(SophisticatedSmeltery.id("seared_casting_upgrade"))
+                                && CastingRecipeJeiProbe.visible(SophisticatedSmeltery.id("advanced_seared_casting_upgrade")),
                         "Both tiers must be in JEI's actual visible crafting list");
                 SophisticatedSmeltery.LOGGER.info("CASTING RECIPES VISIBLE: both tiers unlocked in the actual client recipe book and listed in JEI");
                 check(playerSlot(screen, 5).getItem().is(Items.IRON_INGOT) && playerSlot(screen, 5).getItem().getCount() == 2
@@ -154,7 +154,8 @@ public final class CastingUpgradeClientTest {
                 SophisticatedSmeltery.LOGGER.info("ACTUAL CASTING UI PASSED: manual/automatic, heat OFF, native table/basin outputs, cooldown, normal/shift removal locks, partial return and exact conservation");
                 running = false;
                 mc.player.closeContainer();
-                mc.stop();
+                if (Boolean.getBoolean("sophisticatedsmeltery.castingExpansionSmoke")) CastingExpansionClientTest.start();
+                else mc.stop();
             }
             default -> throw new IllegalStateException("Unexpected casting GUI stage " + stage);
         }
@@ -180,7 +181,7 @@ public final class CastingUpgradeClientTest {
         var mc = Minecraft.getInstance();
         var graphics = event.getGuiGraphics();
         graphics.fill(4, 16, 164, 102, 0xff19212d);
-        ItemStack[] icons = {new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()), new ItemStack(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get())};
+        ItemStack[] icons = {new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()), new ItemStack(SophisticatedSmeltery.ADVANCED_SEARED_CASTING_UPGRADE.get())};
         for (int index = 0; index < icons.length; index++) {
             var model = mc.getItemRenderer().getModel(icons[index], mc.level, mc.player, 0);
             var quads = model.getQuads(null, null, RandomSource.create(0));

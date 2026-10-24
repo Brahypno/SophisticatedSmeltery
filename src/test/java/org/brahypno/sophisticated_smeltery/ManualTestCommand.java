@@ -33,7 +33,33 @@ public final class ManualTestCommand {
                 .executes(context -> give(context, false))
                 .then(Commands.literal("smeltery").executes(context -> give(context, false)))
                 .then(Commands.literal("casting").executes(context -> give(context, false, true)))
+                .then(Commands.literal("casting_expansion").executes(ManualTestCommand::giveCastingExpansion))
                 .then(Commands.literal("foundry").executes(context -> give(context, true))));
+    }
+
+    private static int giveCastingExpansion(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ItemStack backpack = new ItemStack(ModItems.NETHERITE_BACKPACK.get());
+        var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(ModItems.TANK_UPGRADE.get()));
+        storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(SophisticatedSmeltery.ADVANCED_SCORCHED_CASTING_UPGRADE.get()));
+        storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
+        storage.getUpgradeHandler().setStackInSlot(3, new ItemStack(SophisticatedSmeltery.SCORCHED_CASTING_UPGRADE.get()));
+        var tank = storage.getUpgradeHandler().getTypeWrappers(net.p3pp3rf1y.sophisticatedcore.upgrades.tank.TankUpgradeItem.TYPE).iterator().next();
+        tank.fill(new FluidStack(TinkerFluids.moltenIron.get(), 270), IFluidHandler.FluidAction.EXECUTE, false);
+        ItemStack cast = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                .get(new net.minecraft.resources.ResourceLocation("tconstruct", "ingot_sand_cast")));
+        ((CastingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(1)).casting().inventory().setStackInSlot(0, cast.copy());
+        storage.getInventoryHandler().setStackInSlot(0, cast.copyWithCount(2));
+        player.getInventory().selected = 0;
+        player.getInventory().setItem(0, backpack);
+        player.getInventory().setItem(11, new ItemStack(ModItems.UPGRADE_BASE.get()));
+        // Unlock both tier recipes through the same inventory criterion used in play.
+        player.getInventory().setItem(12, new ItemStack(SophisticatedSmeltery.SCORCHED_CASTING_UPGRADE.get()));
+        player.inventoryMenu.broadcastChanges();
+        backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int give(CommandContext<CommandSourceStack> context, boolean foundry) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
@@ -61,8 +87,8 @@ public final class ManualTestCommand {
                     .get(new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"))));
         }
         if (casting) {
-            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.ADVANCED_CASTING_UPGRADE.get()));
-            storage.getUpgradeHandler().setStackInSlot(3, new ItemStack(SophisticatedSmeltery.CASTING_UPGRADE.get()));
+            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.ADVANCED_SEARED_CASTING_UPGRADE.get()));
+            storage.getUpgradeHandler().setStackInSlot(3, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
             var castingWrapper = (CastingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(2);
             castingWrapper.casting().inventory().setStackInSlot(0, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
                     .get(new net.minecraft.resources.ResourceLocation("tconstruct", "ingot_cast"))));

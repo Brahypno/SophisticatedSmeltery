@@ -25,6 +25,9 @@ public final class CastingUpgradeContainer extends UpgradeContainerBase<CastingU
             case "pour" -> upgradeWrapper.pour(player.level());
             case "return" -> upgradeWrapper.returnFluid(player.level());
             case "automatic" -> upgradeWrapper.setAutomatic(!upgradeWrapper.isAutomatic());
+            case "enabled" -> upgradeWrapper.setCastingEnabled(!upgradeWrapper.isCastingEnabled());
+            case "output" -> upgradeWrapper.setOutputToStorage(!upgradeWrapper.isOutputToStorage());
+            case "lock" -> upgradeWrapper.casting().toggleCastLock();
             case "mode" -> upgradeWrapper.setMode(upgradeWrapper.casting().mode() == PortableCasting.Mode.TABLE
                     ? PortableCasting.Mode.BASIN : PortableCasting.Mode.TABLE);
             default -> { }

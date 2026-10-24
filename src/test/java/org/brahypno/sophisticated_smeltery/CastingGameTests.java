@@ -44,11 +44,19 @@ public final class CastingGameTests {
     }
 
     private static void compareNative(GameTestHelper helper, Mode mode, ItemStack input, FluidStack fluid) {
-        var block = mode == Mode.TABLE ? TinkerSmeltery.searedTable : TinkerSmeltery.searedBasin;
+        compareNative(helper, mode, input, fluid, false);
+    }
+
+    private static void compareNative(GameTestHelper helper, Mode mode, ItemStack input, FluidStack fluid, boolean scorched) {
+        var block = mode == Mode.TABLE ? (scorched ? TinkerSmeltery.scorchedTable : TinkerSmeltery.searedTable)
+                : (scorched ? TinkerSmeltery.scorchedBasin : TinkerSmeltery.searedBasin);
         helper.setBlock(BlockPos.ZERO, block.get());
         var nativeTable = (CastingBlockEntity)helper.getBlockEntity(BlockPos.ZERO);
+        nativeTable.reset();
+        nativeTable.setItem(1, ItemStack.EMPTY);
         nativeTable.setItem(0, input.copy());
-        var portable = table(input.copy());
+        var portable = new PortableCasting(new CompoundTag(), () -> {}, scorched);
+        portable.inventory().setStackInSlot(0, input.copy());
         portable.setMode(mode);
         FluidTank source = new FluidTank(10000);
         source.fill(fluid, FluidAction.EXECUTE);
@@ -69,33 +77,38 @@ public final class CastingGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void reusableCastMatchesNativeTable(GameTestHelper helper) {
+    public static void tableCastingMatchesNativeAcrossCastTypes(GameTestHelper helper) {
         compareNative(helper, Mode.TABLE, cast("ingot_cast"), new FluidStack(TinkerFluids.moltenIron.get(), 180));
+        for (boolean scorched : new boolean[]{false, true})
+            compareNative(helper, Mode.TABLE, cast("ingot_sand_cast"), new FluidStack(TinkerFluids.moltenIron.get(), 180), scorched);
         helper.succeed();
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void consumedCastMatchesNativeTable(GameTestHelper helper) {
-        compareNative(helper, Mode.TABLE, cast("ingot_sand_cast"), new FluidStack(TinkerFluids.moltenIron.get(), 180));
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void basinBlockMatchesNativeCooling(GameTestHelper helper) {
+    public static void basinCastingMatchesNativeForBothMaterials(GameTestHelper helper) {
         compareNative(helper, Mode.BASIN, ItemStack.EMPTY, new FluidStack(TinkerFluids.moltenIron.get(), 1000));
+        var engine = new PortableCasting(new CompoundTag(), () -> {}, true);
+        engine.setMode(Mode.BASIN);
+        helper.setBlock(BlockPos.ZERO, TinkerSmeltery.scorchedBasin.get());
+        var nativeBasin = (CastingBlockEntity)helper.getBlockEntity(BlockPos.ZERO);
+        var fluid = new FluidStack(TinkerFluids.moltenIron.get(), 1000);
+        helper.assertTrue(nativeBasin.getTank().fill(fluid, FluidAction.EXECUTE) == 0
+                && engine.pour(helper.getLevel(), iron(1000)) == 0, "Both empty scorched basins require a cast or platform");
+        compareNative(helper, Mode.BASIN, cast("gold_platform"), fluid, true);
         helper.succeed();
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void dynamicTankFillingMatchesNativeNbtAndSlotSwitch(GameTestHelper helper) {
+    public static void dynamicResultsAndSlotSwitchMatchNative(GameTestHelper helper) {
         var tank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.INGOT_TANK));
         tank.getOrCreateTag().putInt("retained", 1729);
         compareNative(helper, Mode.BASIN, tank, new FluidStack(TinkerFluids.moltenIron.get(), 1000));
+        compareNative(helper, Mode.TABLE, new ItemStack(Items.IRON_INGOT), new FluidStack(TinkerFluids.moltenGold.get(), 90));
         helper.succeed();
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void partialCastingReturnsOnlyAcceptedFluid(GameTestHelper helper) {
+    public static void partialAndCoolingStatesSurviveReloadAndConserveFluid(GameTestHelper helper) {
         var casting = table(cast("ingot_cast"));
         var source = iron(45);
         helper.assertTrue(casting.pour(helper.getLevel(), source) == 45 && source.isEmpty(), "Allow a real half-full recipe");
@@ -104,6 +117,7 @@ public final class CastingGameTests {
                 "Insufficient fluid must not start cooling or produce an item");
         helper.assertTrue(!casting.setMode(Mode.BASIN) && casting.inventory().extractItem(0, 1, false).isEmpty(),
                 "Mode and cast stay fixed while liquid remains");
+        casting = new PortableCasting(casting.save(), () -> {});
         FluidTank small = new FluidTank(20);
         helper.assertTrue(casting.returnFluid(helper.getLevel(), small) == 20 && casting.fluid().getAmount() == 25, "Return only the capacity accepted by the destination");
         helper.assertTrue(casting.returnFluid(helper.getLevel(), small) == 0 && casting.fluid().getAmount() == 25, "Full destination cannot void the remaining liquid");
@@ -111,13 +125,7 @@ public final class CastingGameTests {
         helper.assertTrue(casting.returnFluid(helper.getLevel(), remaining) == 25 && casting.fluid().isEmpty(), "Return the rest without losses");
         helper.assertTrue(small.getFluidAmount() + remaining.getFluidAmount() == 45 && casting.inventory().getStackInSlot(0).is(cast("ingot_cast").getItem()),
                 "Returning partial liquid cannot consume or duplicate the cast");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void coolingAndPartialProgressSurviveNbtReload(GameTestHelper helper) {
-        var casting = table(cast("ingot_cast"));
-        var source = iron(180);
+        source.fill(new FluidStack(TinkerFluids.moltenIron.get(), 180), FluidAction.EXECUTE);
         helper.assertTrue(casting.pour(helper.getLevel(), source) == 90, "Take one recipe, leaving the other ingot in the furnace");
         for (int tick = 0; tick < 20; tick++) casting.tick(helper.getLevel());
         var restored = new PortableCasting(casting.save(), () -> {});
@@ -125,23 +133,15 @@ public final class CastingGameTests {
         helper.assertTrue(restored.returnFluid(helper.getLevel(), source) == 0
                         && restored.timer() == 20 && restored.fluid().getAmount() == 90,
                 "Keep exact cooldown and refuse to cancel an executing recipe");
-        int remaining = restored.coolingTime() - restored.timer();
-        for (int tick = 0; tick < remaining; tick++) restored.tick(helper.getLevel());
+        int remainingTicks = restored.coolingTime() - restored.timer();
+        for (int tick = 0; tick < remainingTicks; tick++) restored.tick(helper.getLevel());
         helper.assertTrue(restored.inventory().getStackInSlot(1).is(Items.IRON_INGOT) && restored.inventory().getStackInSlot(1).getCount() == 1,
                 "Finish exactly once after reload");
-        helper.assertTrue(restored.pour(helper.getLevel(), source) == 0 && source.getFluidAmount() == 90,
-                "Occupied independent output blocks another pour and cannot be remelted");
-        restored.inventory().extractItem(1, 1, false);
-        source.drain(45, FluidAction.EXECUTE);
-        restored.pour(helper.getLevel(), source);
-        var partial = new PortableCasting(restored.save(), () -> {});
-        helper.assertTrue(partial.fluid().getAmount() == 45 && partial.returnFluid(helper.getLevel(), source) == 45,
-                "A half-filled saved cast remains recoverable after reload");
         helper.succeed();
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "casting_reload")
-    public static void recipePreviewTracksModeCastAndDatapackChanges(GameTestHelper helper) {
+    public static void recipeReloadInvalidatesPreviewAndRunningCast(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var original = new ArrayList<>(manager.getRecipes());
         var casting = table(cast("ingot_cast"));
@@ -150,30 +150,19 @@ public final class CastingGameTests {
         casting.setMode(Mode.BASIN);
         casting.inventory().setStackInSlot(0, ItemStack.EMPTY);
         helper.assertTrue(casting.preview(helper.getLevel(), iron).is(Items.IRON_BLOCK), "Changing mode and cast must invalidate the preview");
+        var running = table(cast("ingot_cast"));
+        var source = iron(90);
+        running.pour(helper.getLevel(), source);
+        for (int tick = 0; tick < 20; tick++) running.tick(helper.getLevel());
         try {
             manager.replaceRecipes(List.of());
             PortableCasting.invalidateRecipes();
             helper.assertTrue(casting.preview(helper.getLevel(), iron).isEmpty(), "Data reload must remove a cached preview even when its input is unchanged");
             helper.assertTrue(casting.fluid().isEmpty() && casting.inventory().getStackInSlot(1).isEmpty(), "Previews cannot hold fluid or create actual output");
-        } finally { manager.replaceRecipes(original); PortableCasting.invalidateRecipes(); }
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "casting_reload")
-    public static void removedCastingRecipeCannotProduceOrLoseFluid(GameTestHelper helper) {
-        var manager = helper.getLevel().getRecipeManager();
-        var original = new ArrayList<>(manager.getRecipes());
-        var casting = table(cast("ingot_cast"));
-        var source = iron(90);
-        casting.pour(helper.getLevel(), source);
-        for (int tick = 0; tick < 20; tick++) casting.tick(helper.getLevel());
-        try {
-            manager.replaceRecipes(List.of());
-            PortableCasting.invalidateRecipes();
-            for (int tick = 0; tick < 100; tick++) casting.tick(helper.getLevel());
-            helper.assertTrue(casting.inventory().getStackInSlot(1).isEmpty() && casting.fluid().getAmount() == 90,
+            for (int tick = 0; tick < 100; tick++) running.tick(helper.getLevel());
+            helper.assertTrue(running.inventory().getStackInSlot(1).isEmpty() && running.fluid().getAmount() == 90,
                     "Removed recipe cannot finish from cache or void the paid casting liquid");
-            helper.assertTrue(casting.returnFluid(helper.getLevel(), source) == 90 && source.getFluidAmount() == 90,
+            helper.assertTrue(running.returnFluid(helper.getLevel(), source) == 90 && source.getFluidAmount() == 90,
                     "A recipe invalidated by reload can return all its liquid");
         } finally { manager.replaceRecipes(original); PortableCasting.invalidateRecipes(); }
         helper.succeed();

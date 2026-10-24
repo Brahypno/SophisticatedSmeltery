@@ -1,11 +1,13 @@
 package org.brahypno.sophisticated_smeltery.client;
 
+import com.mojang.math.Axis;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.LockIconButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -21,24 +23,35 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import slimeknights.mantle.fluid.tooltip.FluidTooltipHandler;
+import slimeknights.mantle.client.screen.ElementScreen;
 import slimeknights.tconstruct.library.client.GuiUtil;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
+import slimeknights.tconstruct.smeltery.client.screen.HeatingStructureScreen;
 
 public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeContainer> {
+    private static final ElementScreen FLOW_ARROW = new ElementScreen(HeatingStructureScreen.BACKGROUND, 124, 87, 18, 14, 256, 256);
     public CastingUpgradeTab(CastingUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
-        super(container, position, screen, text(container.getUpgradeWrapper().supportsAutomatic() ? "advanced_casting" : "casting"), container.getUpgradeStack().getHoverName());
+        super(container, position, screen, text((container.getUpgradeWrapper().supportsAutomatic() ? "advanced_" : "")
+                + (container.getUpgradeWrapper().casting().requiresCast() ? "scorched_casting" : "casting")), container.getUpgradeStack().getHoverName());
         addHideableChild(new ModeButton(new Position(x + 8, y + 54)));
         addHideableChild(new CastingDisplay(new Position(x + 49, y + 28)));
         addHideableChild(new Preview(new Position(x + 101, y + 57)));
-        addHideableChild(new Action(new Position(x + 5, y + 92), container.getUpgradeWrapper().supportsAutomatic() ? 37 : 118, () -> text("cast_pour"), "pour",
-                () -> hasController() && !casting().isCooling() && casting().inventory().getStackInSlot(1).isEmpty()));
+        addHideableChild(new SlotHint(new Position(x + 7, y + 27), 0));
+        addHideableChild(new SlotHint(new Position(x + 100, y + 27), 1));
+        addHideableChild(new Action(new Position(x + 100, y + 74), () -> text("cast_pour"), "pour",
+                () -> container.getUpgradeWrapper().isCastingEnabled() && hasFluidStorage() && !casting().isCooling()));
         if (container.getUpgradeWrapper().supportsAutomatic()) {
-            addHideableChild(new Action(new Position(x + 45, y + 92), 78,
+            addHideableChild(new Action(new Position(x + 54, y + 92),
                     () -> text(container.getUpgradeWrapper().isAutomatic() ? "cast_automatic_on" : "cast_automatic_off"), "automatic", () -> true));
         }
-        addHideableChild(new Action(new Position(x + 5, y + 113), 118, () -> text("cast_return"), "return",
-                () -> hasController() && casting().hasFluid() && !casting().isCooling()));
-        openTabDimension = new Dimension(128, 138);
+        addHideableChild(new Action(new Position(x + 8, y + 92), () -> text("cast_return"), "return",
+                () -> hasFluidStorage() && casting().hasFluid() && !casting().isCooling()));
+        addHideableChild(new Action(new Position(x + 100, y + 92),
+                () -> text(container.getUpgradeWrapper().isOutputToStorage() ? "cast_output_storage" : "cast_output_slot"), "output", () -> true));
+        if (container.getUpgradeWrapper().casting().requiresCast()) {
+            addHideableChild(new CastLockButton(new Position(x + 27, y + 53)));
+        }
+        openTabDimension = new Dimension(128, 115);
     }
 
     private static Component text(String key, Object... args) { return MeltingUpgradeTab.text(key, args); }
@@ -47,7 +60,7 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         if (Minecraft.getInstance().level != null) casting.bind(Minecraft.getInstance().level);
         return casting;
     }
-    private boolean hasController() { return getContainer().getUpgradeWrapper().controller().isPresent(); }
+    private boolean hasFluidStorage() { return getContainer().getUpgradeWrapper().hasFluidStorage(); }
 
     @Override protected void moveSlotsToTab() {
         var slots = getContainer().getSlots();
@@ -69,6 +82,27 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         if (!getContainer().isOpen()) return;
         GuiHelper.renderSlotsBackground(graphics, x + 7, y + 27, 1, 1);
         GuiHelper.renderSlotsBackground(graphics, x + 100, y + 27, 1, 1);
+        flowArrow(graphics, x + 28, y + 27);
+        flowArrow(graphics, x + 81, y + 27);
+    }
+
+    private static void flowArrow(GuiGraphics graphics, int left, int top) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(left, top + 18, 0);
+        graphics.pose().mulPose(Axis.ZP.rotationDegrees(-90));
+        FLOW_ARROW.draw(graphics, 0, 0);
+        graphics.pose().popPose();
+    }
+
+    private final class SlotHint extends WidgetBase {
+        private final int slot;
+        private SlotHint(Position position, int slot) { super(position, Dimension.SQUARE_18); this.slot = slot; }
+        @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) { }
+        @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) { }
+        @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
+            if (isMouseOver(mouseX, mouseY) && casting().inventory().getStackInSlot(slot).isEmpty())
+                graphics.renderComponentTooltip(font, List.of(text(slot == 0 ? "cast_input" : "cast_output")), mouseX, mouseY);
+        }
     }
 
     private abstract class Clickable extends WidgetBase {
@@ -88,8 +122,8 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         private final Supplier<Component> label;
         private final String action;
         private final BooleanSupplier available;
-        private Action(Position position, int width, Supplier<Component> label, String action, BooleanSupplier available) {
-            super(position, new Dimension(width, 18));
+        private Action(Position position, Supplier<Component> label, String action, BooleanSupplier available) {
+            super(position, Dimension.SQUARE_18);
             this.label = label;
             this.action = action;
             this.available = available;
@@ -97,16 +131,52 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         @Override protected boolean enabled() { return available.getAsBoolean(); }
         @Override protected void click() { getContainer().action(action); }
         @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
-            graphics.fill(x, y, x + getWidth(), y + 18, enabled() && isHovered ? 0xff858585 : 0xff5c5c5c);
+            GuiHelper.blit(graphics, x, y, enabled() && isHovered
+                    ? GuiHelper.DEFAULT_BUTTON_HOVERED_BACKGROUND : GuiHelper.DEFAULT_BUTTON_BACKGROUND);
         }
         @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-            String label = font.plainSubstrByWidth(this.label.get().getString(), getWidth() - 4);
-            graphics.drawString(font, label, x + (getWidth() - font.width(label)) / 2, y + 5,
-                    enabled() ? 0xffffffff : 0xffa0a0a0, false);
+            switch (action) {
+                case "pour" -> graphics.renderItem(new ItemStack(casting().requiresCast()
+                        ? TinkerSmeltery.scorchedFaucet : TinkerSmeltery.searedFaucet), x + 1, y + 1);
+                case "return" -> icon(graphics, 144, 0);
+                case "automatic" -> icon(graphics, getContainer().getUpgradeWrapper().isAutomatic() ? 144 : 160, 80);
+                case "output" -> icon(graphics, getContainer().getUpgradeWrapper().isOutputToStorage() ? 64 : 160, 48);
+                default -> { }
+            }
+            if (!enabled()) graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x80000000);
         }
+        private void icon(GuiGraphics graphics, int u, int v) { graphics.blit(GuiHelper.ICONS, x + 1, y + 1, u, v, 16, 16); }
         @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
-            if (isMouseOver(mouseX, mouseY) && !hasController() && !action.equals("automatic"))
-                graphics.renderTooltip(font, text("cast_no_controller"), mouseX, mouseY);
+            if (!isMouseOver(mouseX, mouseY)) return;
+            List<Component> lines = new ArrayList<>();
+            lines.add(label.get());
+            if (!hasFluidStorage() && (action.equals("pour") || action.equals("return"))) lines.add(text("cast_no_controller"));
+            if (action.equals("output")) lines.add(text("cast_output_hint"));
+            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        }
+    }
+    private final class CastLockButton extends Clickable {
+        private final LockIconButton icon = new LockIconButton(0, 0, button -> {});
+        private CastLockButton(Position position) { super(position, new Dimension(20, 20)); }
+        @Override protected boolean enabled() {
+            return !casting().lockedCast().isEmpty() || !casting().inventory().getStackInSlot(0).isEmpty();
+        }
+        @Override protected void click() { getContainer().action("lock"); }
+        @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
+            icon.setX(x);
+            icon.setY(y);
+            icon.setLocked(!casting().lockedCast().isEmpty());
+            icon.active = enabled();
+            icon.render(graphics, mouseX, mouseY, 0);
+        }
+        @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) { }
+        @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
+            if (!isMouseOver(mouseX, mouseY)) return;
+            List<Component> lines = new ArrayList<>();
+            lines.add(text(casting().lockedCast().isEmpty() ? "cast_lock_off" : "cast_lock_on"));
+            lines.add(text("cast_lock_hint"));
+            if (!casting().lockedCast().isEmpty()) lines.add(casting().lockedCast().getHoverName());
+            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
         }
     }
     private final class ModeButton extends Clickable {
@@ -114,11 +184,13 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         @Override protected boolean enabled() { return !casting().hasFluid(); }
         @Override protected void click() { getContainer().action("mode"); }
         @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
-            GuiHelper.renderSlotsBackground(graphics, x, y, 1, 1);
-            if (isHovered && enabled()) graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x40ffffff);
+            GuiHelper.blit(graphics, x, y, enabled() && isHovered
+                    ? GuiHelper.DEFAULT_BUTTON_HOVERED_BACKGROUND : GuiHelper.DEFAULT_BUTTON_BACKGROUND);
         }
         @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-            graphics.renderItem(new ItemStack(casting().mode() == PortableCasting.Mode.TABLE ? TinkerSmeltery.searedTable : TinkerSmeltery.searedBasin), x + 1, y + 1);
+            graphics.renderItem(new ItemStack(casting().mode() == PortableCasting.Mode.TABLE
+                    ? (casting().requiresCast() ? TinkerSmeltery.scorchedTable : TinkerSmeltery.searedTable)
+                    : (casting().requiresCast() ? TinkerSmeltery.scorchedBasin : TinkerSmeltery.searedBasin)), x + 1, y + 1);
         }
         @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
             if (!isMouseOver(mouseX, mouseY)) return;
@@ -161,8 +233,7 @@ public final class CastingUpgradeTab extends UpgradeSettingsTab<CastingUpgradeCo
         private Preview(Position position) { super(position, new Dimension(16, 16)); }
         @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) { }
         @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-            FluidStack selected = getContainer().getUpgradeWrapper().controller()
-                    .map(controller -> controller.getTank().getFluidInTank(0)).orElse(FluidStack.EMPTY);
+            FluidStack selected = minecraft.level == null ? FluidStack.EMPTY : getContainer().getUpgradeWrapper().previewFluid(minecraft.level);
             preview = minecraft.level == null ? ItemStack.EMPTY : casting().preview(minecraft.level, selected);
             if (!preview.isEmpty()) graphics.renderFakeItem(preview, x, y);
         }

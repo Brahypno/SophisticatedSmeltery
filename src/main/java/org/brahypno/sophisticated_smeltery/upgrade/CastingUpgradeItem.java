@@ -15,14 +15,19 @@ import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeType;
 
 public final class CastingUpgradeItem extends UpgradeItemBase<CastingUpgradeWrapper> {
     private final boolean advanced;
+    private final boolean scorched;
     public static final UpgradeType<CastingUpgradeWrapper> TYPE = new UpgradeType<>(CastingUpgradeWrapper::new);
     private static final IUpgradeCountLimitConfig UNLIMITED = new IUpgradeCountLimitConfig() {
         public int getMaxUpgradesPerStorage(String storage, ResourceLocation item) { return Integer.MAX_VALUE; }
         public int getMaxUpgradesInGroupPerStorage(String storage, UpgradeGroup group) { return Integer.MAX_VALUE; }
     };
     public CastingUpgradeItem() { this(false); }
-    public CastingUpgradeItem(boolean advanced) { super(UNLIMITED); this.advanced = advanced; }
+    public CastingUpgradeItem(boolean advanced) { this(advanced, false); }
+    public CastingUpgradeItem(boolean advanced, boolean scorched) {
+        super(UNLIMITED); this.advanced = advanced; this.scorched = scorched;
+    }
     public boolean isAdvanced() { return advanced; }
+    public boolean isScorched() { return scorched; }
     @Override public UpgradeType<CastingUpgradeWrapper> getType() { return TYPE; }
     @Override public List<IUpgradeItem.UpgradeConflictDefinition> getUpgradeConflicts() { return List.of(); }
     @Override public int getMaxStackSize(ItemStack stack) { return stack.hasTag() ? 1 : 64; }
