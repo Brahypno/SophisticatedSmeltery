@@ -14,6 +14,7 @@ import slimeknights.tconstruct.smeltery.block.entity.tank.ISmelteryTankHandler;
 public abstract class HeatingControllerMixin implements PortableController {
     @Unique private Runnable sophisticatedsmeltery$save;
     @Unique private boolean sophisticatedsmeltery$sizing;
+    @Unique private int sophisticatedsmeltery$fluidRevision;
     public void sophisticatedsmeltery$attach(Runnable changed) { sophisticatedsmeltery$save = changed; }
     public boolean sophisticatedsmeltery$isPortable() { return sophisticatedsmeltery$save != null; }
     public void sophisticatedsmeltery$changed() {
@@ -21,10 +22,12 @@ public abstract class HeatingControllerMixin implements PortableController {
     }
     public void sophisticatedsmeltery$setSizing(boolean sizing) { sophisticatedsmeltery$sizing = sizing; }
     public boolean sophisticatedsmeltery$isSizing() { return sophisticatedsmeltery$sizing; }
+    public int sophisticatedsmeltery$getFluidRevision() { return sophisticatedsmeltery$fluidRevision; }
 
     @Inject(method = "notifyFluidsChanged", at = @At("HEAD"), cancellable = true)
     private void sophisticatedsmeltery$portableFluids(ISmelteryTankHandler.FluidChange type, FluidStack fluid, CallbackInfo ci) {
         if (sophisticatedsmeltery$isPortable()) {
+            sophisticatedsmeltery$fluidRevision++;
             sophisticatedsmeltery$changed();
             ci.cancel();
         }

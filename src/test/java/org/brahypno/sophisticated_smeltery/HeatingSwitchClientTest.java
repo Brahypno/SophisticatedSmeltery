@@ -36,6 +36,7 @@ public final class HeatingSwitchClientTest {
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if (!Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke") || event.phase != TickEvent.Phase.END) return;
         var mc = Minecraft.getInstance();
+        if (stage >= 9) return;
         if (++ticks > 7200) throw new IllegalStateException("Actual backpack UI test timed out at stage " + stage
                 + ", screen=" + (mc.screen == null ? "null" : mc.screen.getClass().getName()));
         if (stage == 0 && mc.screen != null && mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen")) {
@@ -57,7 +58,7 @@ public final class HeatingSwitchClientTest {
     }
 
     @SubscribeEvent public static void render(ScreenEvent.Render.Post event) {
-        if (!Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke") || stage < 3
+        if (!Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke") || stage < 3 || stage >= 9
                 || !(event.getScreen() instanceof StorageScreenBase<?> screen) || ++frames < 20) return;
         var mc = Minecraft.getInstance();
         var control = screen.children().stream().filter(MeltingHeatingSwitch.class::isInstance)
@@ -106,8 +107,8 @@ public final class HeatingSwitchClientTest {
                 stage = 3;
             } else {
                 SophisticatedSmeltery.LOGGER.info("ACTUAL BACKPACK UI PASSED: scroll/no-scroll, off/on/off server synchronization, native icon anchors and open-tab captures");
-                mc.player.closeContainer();
-                mc.stop();
+                if (Boolean.getBoolean("sophisticatedsmeltery.meltingInteractionSmoke")) MeltingInteractionClientTest.start();
+                else { mc.player.closeContainer(); mc.stop(); }
                 stage = 9;
             }
         } else return;

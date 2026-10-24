@@ -77,6 +77,7 @@ public final class NativeFurnace {
     public int baseCapacity() { return baseCapacity; }
     public FurnaceDimensions dimensions() { return dimensions; }
     public boolean canAlloy() { return alloying != null; }
+    public int fluidRevision() { return ((PortableController)controller).sophisticatedsmeltery$getFluidRevision(); }
     private int requiredFuelTemperature(int maximum) {
         int required = 0;
         for (int slot = 0; slot < melting().getSlots(); slot++) {

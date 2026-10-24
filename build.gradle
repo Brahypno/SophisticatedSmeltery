@@ -122,9 +122,13 @@ minecraft {
                     "${mod_id}" { source sourceSets.test }
                 }
             }
-            if (project.hasProperty('heatingSwitchSmoke')) {
+            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke')) {
                 property 'sophisticatedsmeltery.heatingSwitchSmoke', 'true'
                 workingDirectory project.file('build/heating-switch-run')
+                if (project.hasProperty('meltingInteractionSmoke')) {
+                    property 'sophisticatedsmeltery.meltingInteractionSmoke', 'true'
+                    workingDirectory project.file('build/melting-interactions-run')
+                }
                 mods {
                     "${mod_id}" { source sourceSets.test }
                 }

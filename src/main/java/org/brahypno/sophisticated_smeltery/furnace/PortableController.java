@@ -7,4 +7,5 @@ public interface PortableController {
     void sophisticatedsmeltery$changed();
     void sophisticatedsmeltery$setSizing(boolean sizing);
     boolean sophisticatedsmeltery$isSizing();
+    int sophisticatedsmeltery$getFluidRevision();
 }

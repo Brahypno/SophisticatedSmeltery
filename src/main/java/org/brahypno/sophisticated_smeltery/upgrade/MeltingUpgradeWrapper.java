@@ -38,6 +38,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     private int lastMaterials = -1;
     private double lastCapacityMultiplier = -1;
     private int[] inputSlots = new int[0];
+    private int lastContainerFluidRevision = -1;
 
     public MeltingUpgradeWrapper(IStorageWrapper storage, ItemStack upgrade, Consumer<ItemStack> save) {
         super(storage, upgrade, save);
@@ -153,6 +154,12 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         furnace.bindInputs(level, storageWrapper.getInventoryHandler(), inputSlots);
         if ((level.getGameTime() & 3) == 0 || (level.getGameTime() & 3) == 1) furnace.refreshInputs();
         furnace.tick(isHeating() && furnace.dimensions().volume() > 0, level.getGameTime());
+        // Retry a waiting container only when fluid contents/order actually change.
+        // Recipe progress and fuel burning must not cause repeated container lookups.
+        if (lastContainerFluidRevision != furnace.fluidRevision()) {
+            transferContainer();
+            lastContainerFluidRevision = furnace.fluidRevision();
+        }
         if (dirty) persist();
     }
 

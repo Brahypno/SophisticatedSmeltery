@@ -269,6 +269,36 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void waitingBucketRetriesWhenFluidArrivesAndOutputIsTaken(GameTestHelper helper) {
+        var storage = backpack();
+        var wrapper = melting(storage);
+        wrapper.getComponents().setStackInSlot(0, new ItemStack(TinkerSmeltery.searedBricks, 32));
+        wrapper.setHeating(false);
+        wrapper.getContainers().setStackInSlot(0, new ItemStack(Items.BUCKET, 8));
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(wrapper.getContainers().getStackInSlot(1).isEmpty(), "Empty furnace cannot fill a waiting bucket");
+        wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 2000), IFluidHandler.FluidAction.EXECUTE);
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(wrapper.getContainers().getStackInSlot(1).is(TinkerFluids.moltenIron.get().getBucket()),
+                "Fluid arriving after bucket insertion must trigger normal GUI container transfer");
+        helper.assertTrue(wrapper.getTank().getContained() == 1000 && wrapper.getContainers().getStackInSlot(0).getCount() == 7,
+                "Consume exactly one bucket and 1000 mB, keeping the occupied output protected");
+        for (int tick = 0; tick < 20; tick++) wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(wrapper.getTank().getContained() == 1000, "Occupied output must block further transfer");
+        ItemStack first = wrapper.getContainers().extractItem(1, 1, false);
+        helper.assertTrue(first.is(TinkerFluids.moltenIron.get().getBucket())
+                        && wrapper.getContainers().getStackInSlot(1).is(TinkerFluids.moltenIron.get().getBucket()),
+                "Taking the first bucket allows the second waiting bucket to fill");
+        helper.assertTrue(wrapper.getTank().getContained() == 0 && wrapper.getContainers().getStackInSlot(0).getCount() == 6,
+                "Exactly two buckets fill; remaining empty buckets stay in the input");
+        var restored = new MeltingUpgradeWrapper(storage, wrapper.getUpgradeStack().copy(), ignored -> {});
+        helper.assertTrue(restored.getTank().getContained() == 0 && restored.getContainers().getStackInSlot(0).getCount() == 6
+                        && restored.getContainers().getStackInSlot(1).is(TinkerFluids.moltenIron.get().getBucket()),
+                "Completed automatic transfers must persist all items and fluid");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
     public static void bucketGuiSlotsPersistAndFuelDisplayRefreshes(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
