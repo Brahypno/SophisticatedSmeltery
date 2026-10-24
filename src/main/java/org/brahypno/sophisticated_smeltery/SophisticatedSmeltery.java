@@ -23,6 +23,7 @@ import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerType;
 import org.brahypno.sophisticated_smeltery.recipe.ControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.VisibleControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
+import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
@@ -49,7 +50,10 @@ public class SophisticatedSmeltery {
         bus.addListener(this::setup);
         bus.addListener(this::creativeItems);
         MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) ->
-                event.addListener((ResourceManagerReloadListener)resources -> NativeFurnace.invalidateRecipes()));
+                event.addListener((ResourceManagerReloadListener)resources -> {
+                    NativeFurnace.invalidateRecipes();
+                    PortableCasting.invalidateRecipes();
+                }));
     }
 
     private void setup(FMLCommonSetupEvent event) {
