@@ -51,10 +51,19 @@ public final class ManualTestCommand {
         wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
         wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenGold.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
         wrapper.persist();
+        if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
+            storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .get(new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"))));
+        }
         storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 3));
         storage.getInventoryHandler().setStackInSlot(1, new ItemStack(Items.RAW_IRON, 3));
         storage.getInventoryHandler().setStackInSlot(2, new ItemStack(Items.GOLD_INGOT, 3));
-        player.addItem(backpack);
+        if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
+            player.getInventory().selected = 0;
+            player.getInventory().setItem(0, backpack);
+            player.inventoryMenu.broadcastChanges();
+            backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        } else player.addItem(backpack);
         player.addItem(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()));
         player.addItem(new ItemStack(TinkerSmeltery.smelteryController));
         player.addItem(new ItemStack(TinkerSmeltery.foundryController));

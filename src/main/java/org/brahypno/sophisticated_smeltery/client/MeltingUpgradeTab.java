@@ -12,7 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
-import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ItemButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Dimension;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.GuiHelper;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
@@ -29,10 +28,6 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     public MeltingUpgradeTab(MeltingUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
         super(container, position, screen, container.getUpgradeWrapper().getFurnace().controller().getDisplayName(),
                 container.getUpgradeStack().getHoverName());
-        // Center the 16-pixel icon in this tab's 21-pixel closed header.
-        for (WidgetBase child : children) {
-            if (child instanceof ItemButton) child.setPosition(new Position(child.getX() + 2, child.getY()));
-        }
         addHideableChild(new NativeTank(new Position(x + 5, y + 24)));
         addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
         addHideableChild(new BucketTransferModeButton(new Position(x + 82, y + 163),
@@ -73,7 +68,16 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     }
 
     @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
-        super.renderBg(graphics, minecraft, mouseX, mouseY);
+        if (getWidth() <= 128) {
+            super.renderBg(graphics, minecraft, mouseX, mouseY);
+        } else {
+            // Core's wide-panel path puts the left border at x instead of x - 3.
+            // Keep the same attachment edge and icon/title anchors as native narrow tabs.
+            int half = getHeight() / 2;
+            GuiHelper.renderTiledControlBackground(graphics, x, y, getWidth(), getHeight(),
+                    131, 0, 125, 256, 0, 6, half, getHeight() - half);
+            graphics.blit(GuiHelper.GUI_CONTROLS, x - 3, y, 128, 256 - getHeight(), 3, getHeight());
+        }
         if (!getContainer().isOpen()) return;
         GuiHelper.renderSlotsBackground(graphics, x + 4, y + 138, 3, 3);
         BucketTransferModeButton.renderContainerRow(graphics, x + 65, y + 139,

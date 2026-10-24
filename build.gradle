@@ -122,6 +122,13 @@ minecraft {
                     "${mod_id}" { source sourceSets.test }
                 }
             }
+            if (project.hasProperty('heatingSwitchSmoke')) {
+                property 'sophisticatedsmeltery.heatingSwitchSmoke', 'true'
+                workingDirectory project.file('build/heating-switch-run')
+                mods {
+                    "${mod_id}" { source sourceSets.test }
+                }
+            }
         }
 
         server {

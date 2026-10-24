@@ -5,9 +5,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.network.chat.Component;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeInventoryControlBase;
-import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ButtonDefinitions;
-import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ToggleButton;
-import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 
 final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
@@ -15,18 +12,12 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
     private static final int BAR_OFFSET = -BAR_WIDTH;
     private final StorageScreenBase<?> screen;
     private final MeltingUpgradeContainer container;
-    private final ToggleButton<Boolean> heatingSwitch;
     MeltingSlotOverlay(StorageScreenBase<?> screen, MeltingUpgradeContainer container) {
         this.screen = screen;
         this.container = container;
-        int upgradeSlot = screen.getMenu().getUpgradeContainers().entrySet().stream()
-                .filter(entry -> entry.getValue() == container).mapToInt(java.util.Map.Entry::getKey).findFirst().orElse(0);
-        heatingSwitch = new ToggleButton<>(new Position(-22, 8 + upgradeSlot * 16), ButtonDefinitions.UPGRADE_SWITCH,
-                button -> container.action("heating"), () -> container.getUpgradeWrapper().isHeating());
     }
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         var wrapper = container.getUpgradeWrapper();
-        heatingSwitch.render(graphics, mouseX - screen.getGuiLeft(), mouseY - screen.getGuiTop(), 0);
         int count = Math.min(wrapper.getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
         for (int index = 0; index < count; index++) {
             Slot slot = screen.getMenu().getSlot(index);
@@ -52,10 +43,6 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
         return fuel.hasFuel() ? fuel.getTemperature() : 0;
     }
 
-    @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return heatingSwitch.mouseClicked(mouseX - screen.getGuiLeft(), mouseY - screen.getGuiTop(), button);
-    }
-
     private static Slot hoveredHeatBar(StorageScreenBase<?> screen, MeltingUpgradeContainer container, double mouseX, double mouseY) {
         int count = Math.min(container.getUpgradeWrapper().getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
         double x = mouseX - screen.getGuiLeft();
@@ -73,10 +60,6 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
     }
 
     @Override public void renderTooltip(StorageScreenBase<?> screen, GuiGraphics graphics, int mouseX, int mouseY) {
-        if (heatingSwitch.isMouseOver(mouseX - screen.getGuiLeft(), mouseY - screen.getGuiTop())) {
-            graphics.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, MeltingUpgradeTab.text(container.getUpgradeWrapper().isHeating() ? "heating_on" : "heating_off"), mouseX, mouseY);
-            return;
-        }
         Slot slot = hoveredHeatBar(screen, container, mouseX, mouseY);
         if (slot != null) {
             var progress = container.getUpgradeWrapper().getFurnace().progressAt(slot.getSlotIndex());
