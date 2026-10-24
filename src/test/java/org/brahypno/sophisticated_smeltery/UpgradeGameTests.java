@@ -161,6 +161,37 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
+    public static void nativeBackpackSortResetsMovedInputAndKeepsNormalInsertion(GameTestHelper helper) {
+        var storage = backpack();
+        var wrapper = melting(storage);
+        materials(wrapper);
+        wrapper.setHeating(false);
+        storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.GOLD_INGOT));
+        storage.getInventoryHandler().setStackInSlot(5, new ItemStack(Items.IRON_INGOT, 64));
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        wrapper.getFurnace().melting().heatItems(3000, 5);
+        helper.assertTrue(wrapper.getFurnace().melting().getCurrentTime(0) > 0, "Start real gold recipe progress before sorting");
+        storage.setSortBy(net.p3pp3rf1y.sophisticatedcore.common.gui.SortBy.COUNT);
+        storage.sort();
+        helper.assertTrue(storage.getInventoryHandler().getStackInSlot(0).is(Items.IRON_INGOT)
+                        && storage.getInventoryHandler().getStackInSlot(1).is(Items.GOLD_INGOT),
+                "Native sort must include the melting slot and move the actual stacks");
+        wrapper.getFurnace().refreshInputs();
+        helper.assertTrue(wrapper.getFurnace().melting().getCurrentTime(0) == 0, "Moved gold progress must not apply to the sorted iron input");
+        wrapper.getFurnace().melting().heatItems(3000, 100000);
+        wrapper.getFurnace().melting().heatItems(3000, 100000);
+        helper.assertTrue(wrapper.getTank().getContained() == 90 && wrapper.getTank().getFluidInTank(0).getFluid() == TinkerFluids.moltenIron.get(),
+                "The newly sorted real slot must use its own iron recipe");
+        helper.assertTrue(storage.getInventoryHandler().getStackInSlot(0).getCount() == 63
+                        && storage.getInventoryHandler().getStackInSlot(1).getCount() == 1,
+                "Exactly one sorted iron input is consumed and the moved gold is retained");
+        helper.assertTrue(storage.getInventoryForInputOutput().insertItem(0, new ItemStack(Items.IRON_INGOT), false).isEmpty()
+                        && storage.getInventoryHandler().getStackInSlot(0).getCount() == 64,
+                "The same melting slot must remain accessible to normal backpack automation input");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
     public static void backpackTickMeltsAndPersistsUsingInternalFuel(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);

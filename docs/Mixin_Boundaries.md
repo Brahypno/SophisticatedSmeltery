@@ -7,7 +7,7 @@
 | `HeatingControllerAccess` | 读取结构及燃料消耗率，调用实际 `setStructure` / `heat`，接入便携燃料模块和阶段计数 | 访问接口，供便携实例使用；保留子类动态分派 |
 | `HeatingMaterialsAccess` | 调用实际结构的材料、底板、墙及储罐判断 | 访问接口，本身不改变行为 |
 | `MultiblockShapeAccess` | 读取原生几何限制 | 访问接口，本身不改变行为 |
-| `HeatingControllerMixin` | 液体变化写回升级，避免向世界坐标发送同步 | 仅已通过 `attach` 标记的便携实例 |
+| `HeatingControllerMixin` | 液体变化写回升级并递增流体版本号，使等待中的桶在实际变化后重试，避免向世界坐标发送同步 | 仅已通过 `attach` 标记的便携实例 |
 | `MantleBlockEntityMixin` | `setChangedFast` 转为升级保存通知 | 仅实现便携接口且已绑定保存回调的实例，其余 Mantle 方块实体照常执行 |
 | `MeltingInventoryMixin` | 计算尺寸时阻止按虚拟体积分配熔炼模块 | 仅便携实例计算结构尺寸期间；实际输入槽的 resize 正常执行 |
 | `MeltingModuleMixin` | 抑制模块物品的世界同步；原生产物成功后从背包扣料；清理配方缓存 | 仅绑定背包输入的模块；未绑定模块的两处 Redirect 执行原表达式 |
