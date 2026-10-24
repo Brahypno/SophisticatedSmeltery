@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
+import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ItemButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Dimension;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.GuiHelper;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
@@ -26,12 +27,16 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     private Object displayedTank;
 
     public MeltingUpgradeTab(MeltingUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
-        super(container, position, screen, text("title"), container.getUpgradeStack().getHoverName());
+        super(container, position, screen, container.getUpgradeWrapper().getFurnace().controller().getDisplayName(),
+                container.getUpgradeStack().getHoverName());
+        // Center the 16-pixel icon in this tab's 21-pixel closed header.
+        for (WidgetBase child : children) {
+            if (child instanceof ItemButton) child.setPosition(new Position(child.getX() + 2, child.getY()));
+        }
         addHideableChild(new NativeTank(new Position(x + 5, y + 24)));
         addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
-        addHideableChild(new TextButton(new Position(x + 65, y + 163),
-                () -> text("bucket_" + container.getUpgradeWrapper().getTransferDirection().name().toLowerCase(java.util.Locale.ROOT)),
-                button -> container.action("bucketMode"), List::of));
+        addHideableChild(new BucketTransferModeButton(new Position(x + 82, y + 163),
+                () -> container.getUpgradeWrapper().getTransferDirection(), () -> container.action("bucketMode")));
         for (int index = 0; index < Math.min(2, container.getUpgradeWrapper().getBackpackTanks().size()); index++) {
             int tank = index;
             addHideableChild(new TextButton(new Position(x + 5 + index * 56, y + 201),
@@ -71,9 +76,8 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         super.renderBg(graphics, minecraft, mouseX, mouseY);
         if (!getContainer().isOpen()) return;
         GuiHelper.renderSlotsBackground(graphics, x + 4, y + 138, 3, 3);
-        GuiHelper.renderSlotsBackground(graphics, x + 64, y + 138, 1, 1);
-        GuiHelper.renderSlotsBackground(graphics, x + 100, y + 138, 1, 1);
-        graphics.drawString(minecraft.font, ">", x + 87, y + 144, 0xff404040, false);
+        BucketTransferModeButton.renderContainerRow(graphics, x + 65, y + 139,
+                getContainer().getUpgradeWrapper().getContainers().getStackInSlot(0).isEmpty());
     }
 
     private final class NativeTank extends WidgetBase {

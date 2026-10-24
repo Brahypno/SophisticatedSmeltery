@@ -8,16 +8,14 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeInventoryControlBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ButtonDefinitions;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ToggleButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
-import slimeknights.tconstruct.library.client.GuiUtil;
-import slimeknights.tconstruct.smeltery.client.screen.HeatingStructureScreen;
-import slimeknights.tconstruct.smeltery.client.screen.module.GuiMeltingModule;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 
 final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
+    private static final int BAR_WIDTH = MeltingHeatBar.WIDTH;
+    private static final int BAR_OFFSET = -BAR_WIDTH;
     private final StorageScreenBase<?> screen;
     private final MeltingUpgradeContainer container;
     private final ToggleButton<Boolean> heatingSwitch;
-    private final GuiMeltingModule.ProgressBars bars = GuiMeltingModule.makeProgressBars(HeatingStructureScreen.BACKGROUND);
     MeltingSlotOverlay(StorageScreenBase<?> screen, MeltingUpgradeContainer container) {
         this.screen = screen;
         this.container = container;
@@ -33,20 +31,19 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
         for (int index = 0; index < count; index++) {
             Slot slot = screen.getMenu().getSlot(index);
             if (!slot.isActive()) continue;
-            int color = wrapper.isHeating() ? 0xffff9a35 : 0xff909090;
-            graphics.fill(slot.x, slot.y, slot.x + 16, slot.y + 1, color);
             var progress = wrapper.getFurnace().progressAt(index);
             int required = progress.getInt("required");
             int time = progress.getInt("time");
+            MeltingHeatBar.State state = null;
+            float fraction = 1;
             if (slot.hasItem()) {
-                var bar = bars.progress();
-                float fraction = 1;
-                if (required == 0) bar = bars.unmeltable();
-                else if (progress.getInt("temperature") > currentTemperature()) bar = bars.noHeat();
-                else if (time < 0) bar = bars.noSpace();
+                state = MeltingHeatBar.State.HEATING;
+                if (required == 0) state = MeltingHeatBar.State.UNMELTABLE;
+                else if (progress.getInt("temperature") > currentTemperature()) state = MeltingHeatBar.State.NO_HEAT;
+                else if (time < 0) state = MeltingHeatBar.State.NO_SPACE;
                 else fraction = Math.min(1, (float)time / required);
-                GuiUtil.drawProgressUp(graphics, bar, slot.x + 13, slot.y, fraction);
             }
+            MeltingHeatBar.render(graphics, slot.x + BAR_OFFSET, slot.y, state, fraction);
         }
     }
 
@@ -59,21 +56,34 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
         return heatingSwitch.mouseClicked(mouseX - screen.getGuiLeft(), mouseY - screen.getGuiTop(), button);
     }
 
+    private static Slot hoveredHeatBar(StorageScreenBase<?> screen, MeltingUpgradeContainer container, double mouseX, double mouseY) {
+        int count = Math.min(container.getUpgradeWrapper().getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
+        double x = mouseX - screen.getGuiLeft();
+        double y = mouseY - screen.getGuiTop();
+        for (int index = 0; index < count; index++) {
+            Slot slot = screen.getMenu().getSlot(index);
+            if (slot.isActive() && slot.hasItem() && x >= slot.x + BAR_OFFSET && x < slot.x + BAR_OFFSET + BAR_WIDTH
+                    && y >= slot.y && y < slot.y + 16) return slot;
+        }
+        return null;
+    }
+
+    static boolean isHeatBarHovered(StorageScreenBase<?> screen, MeltingUpgradeContainer container, double mouseX, double mouseY) {
+        return hoveredHeatBar(screen, container, mouseX, mouseY) != null;
+    }
+
     @Override public void renderTooltip(StorageScreenBase<?> screen, GuiGraphics graphics, int mouseX, int mouseY) {
         if (heatingSwitch.isMouseOver(mouseX - screen.getGuiLeft(), mouseY - screen.getGuiTop())) {
             graphics.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, MeltingUpgradeTab.text(container.getUpgradeWrapper().isHeating() ? "heating_on" : "heating_off"), mouseX, mouseY);
             return;
         }
-        int count = Math.min(container.getUpgradeWrapper().getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
-        for (int index = 0; index < count; index++) {
-            Slot slot = screen.getMenu().getSlot(index);
-            if (!slot.isActive() || !slot.hasItem() || !GuiUtil.isHovered(mouseX - screen.getGuiLeft(), mouseY - screen.getGuiTop(), slot.x + 13, slot.y, 3, 16)) continue;
-            var progress = container.getUpgradeWrapper().getFurnace().progressAt(index);
+        Slot slot = hoveredHeatBar(screen, container, mouseX, mouseY);
+        if (slot != null) {
+            var progress = container.getUpgradeWrapper().getFurnace().progressAt(slot.getSlotIndex());
             String state = progress.getInt("required") == 0 ? "no_recipe"
                     : progress.getInt("temperature") > currentTemperature() ? "no_heat"
                     : progress.getInt("time") < 0 ? "no_space" : null;
             if (state != null) graphics.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, Component.translatable("gui.tconstruct.melting." + state), mouseX, mouseY);
-            return;
         }
     }
 }
