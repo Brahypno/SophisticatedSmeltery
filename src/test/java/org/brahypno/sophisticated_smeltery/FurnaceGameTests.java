@@ -83,9 +83,9 @@ public final class FurnaceGameTests {
         helper.assertTrue(furnace.melting().getCurrentTime(0) == MeltingModule.NO_SPACE, "Full tank must block completion");
         helper.assertTrue(inventory.getStackInSlot(0).getCount() == 64, "Blocked input must remain in backpack");
         tank.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
-        furnace.tick(false, false, 1);
+        furnace.tick(false, 1);
         helper.assertTrue(tank.getContained() == 0 && inventory.getStackInSlot(0).getCount() == 64, "Disabled cooling must not produce fluid");
-        furnace.tick(true, false, 1);
+        furnace.tick(true, 1);
         helper.assertTrue(inventory.getStackInSlot(0).getCount() == 63, "Re-enabled native cooling can complete finished work");
         helper.succeed();
     }
@@ -128,9 +128,9 @@ public final class FurnaceGameTests {
         furnace.fuel().findFuel(true);
         int remaining = furnace.fuel().getFuel();
         helper.assertTrue(remaining > 0, "Recognize lava through native fuel recipes");
-        furnace.tick(false, false, 3);
+        furnace.tick(false, 3);
         helper.assertTrue(furnace.fuel().getFuel() == remaining, "Disabled controller must pause remaining burn");
-        furnace.tick(true, false, 3);
+        furnace.tick(true, 3);
         helper.assertTrue(furnace.fuel().getFuel() < remaining, "Enabled controller must consume fuel");
         helper.succeed();
     }
@@ -154,8 +154,9 @@ public final class FurnaceGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void nativeAlloyingHonorsBothSwitches(GameTestHelper helper) {
-        NativeFurnace furnace = smeltery();
+    public static void nativeAlloyingFollowsControllerPolicy(GameTestHelper helper) {
+        NativeFurnace furnace = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), new CompoundTag(),
+                () -> List.of(new FluidTank(1000)), () -> {});
         furnace.resize(5, 1);
         furnace.bindInputs(helper.getLevel(), new ItemStackHandler(1), new int[0]);
         helper.assertTrue(furnace.canAlloy(), "Discover the actual native smeltery alloy module");
@@ -164,15 +165,94 @@ public final class FurnaceGameTests {
         tank.fill(new FluidStack(TinkerFluids.moltenGold.get(), 90), IFluidHandler.FluidAction.EXECUTE);
         furnace.fuel().set(0, 100);
         furnace.fuel().set(2, 1000);
-        furnace.tick(true, false, 2);
-        helper.assertTrue(tank.getFluids().size() == 2, "Alloy switch must prevent alloying");
-        furnace.tick(false, true, 2);
+        furnace.tick(false, 2);
         helper.assertTrue(tank.getFluids().size() == 2, "Controller switch must prevent alloying");
-        furnace.tick(true, true, 2);
+        furnace.tick(true, 2);
         helper.assertTrue(tank.getFluids().size() == 1 && tank.getFluidInTank(0).getFluid() == TinkerFluids.moltenRoseGold.get(), "Use native rose gold recipe");
         helper.assertTrue(tank.getContained() == 180, "Preserve native alloy amounts");
         var foundry = new NativeFurnace(new ItemStack(TinkerSmeltery.foundryController), new CompoundTag(), List::of, () -> {});
         helper.assertTrue(!foundry.canAlloy(), "Foundry must not gain alloying");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void controllerHeatOverrideIsDispatchedWithoutWorldWrites(GameTestHelper helper) {
+        NativeFurnace furnace = new NativeFurnace(new CustomHeatController(), new CompoundTag(), List::of, () -> {});
+        ItemStackHandler inventory = inputs(furnace, helper);
+        var originalWorldState = helper.getLevel().getBlockState(BlockPos.ZERO);
+        furnace.tick(false, 1);
+        helper.assertTrue(furnace.controller().getTank().getContained() == 0, "Disabled controller must skip its heat override");
+        furnace.tick(true, 1);
+        furnace.tick(true, 1);
+        furnace.tick(true, 3);
+        helper.assertTrue(furnace.controller().getTank().getContained() == 90, "Run the actual controller's heat override, not a generic fuel-only loop");
+        helper.assertTrue(inventory.getStackInSlot(0).getCount() == 63, "Native override still consumes real backpack input once");
+        helper.assertTrue(helper.getLevel().getBlockState(BlockPos.ZERO).equals(originalWorldState), "Detached controller cannot change a world block");
+        helper.succeed();
+    }
+
+    public static final class CustomHeatController extends SmelteryBlockEntity {
+        public CustomHeatController() { super(BlockPos.ZERO, TinkerSmeltery.smelteryController.get().defaultBlockState()); }
+        @Override protected void heat() {
+            if (tick % 4 == 1) meltingInventory.heatItems(3000, 100000);
+            if (tick % 4 == 3) throw new IllegalStateException("Portable engine must not dispatch native world-update phase");
+        }
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void idleNativeHeatingDoesNotRewriteUpgradeState(GameTestHelper helper) {
+        int[] saves = {0};
+        var furnace = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), new CompoundTag(),
+                () -> List.of(new FluidTank(1000)), () -> saves[0]++);
+        furnace.resize(5, 1);
+        furnace.bindInputs(helper.getLevel(), new ItemStackHandler(1), new int[]{0});
+        saves[0] = 0;
+        for (int tick = 0; tick < 32; tick++) furnace.tick(true, tick);
+        helper.assertTrue(saves[0] == 0, "An idle native controller must not request periodic upgrade NBT saves");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "fuel_selection")
+    public static void chooseLowestFuelMeetingReachableRecipeTemperatures(GameTestHelper helper) {
+        var manager = helper.getLevel().getRecipeManager();
+        var original = new ArrayList<>(manager.getRecipes());
+        var recipes = new ArrayList<>(original);
+        recipes.removeIf(recipe -> recipe.getType() == slimeknights.tconstruct.library.recipe.TinkerRecipeTypes.MELTING.get());
+        String[] items = {"stick", "diamond", "nether_star"};
+        int[] temperatures = {800, 1300, 2000};
+        for (int index = 0; index < items.length; index++) {
+            var json = com.google.gson.JsonParser.parseString("{\"ingredient\":{\"item\":\"minecraft:" + items[index]
+                    + "\"},\"result\":{\"fluid\":\"tconstruct:molten_iron\",\"amount\":90},\"temperature\":" + temperatures[index] + ",\"time\":1}").getAsJsonObject();
+            recipes.add(TinkerSmeltery.meltingSerializer.get().fromJson(SophisticatedSmeltery.id("temperature_" + index), json));
+        }
+        try {
+            manager.replaceRecipes(recipes);
+            NativeFurnace.invalidateRecipes();
+            for (int scenario = 0; scenario < 3; scenario++) {
+                FluidTank lava = new FluidTank(1000);
+                FluidTank blood = new FluidTank(1000);
+                lava.fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE);
+                blood.fill(new FluidStack(TinkerFluids.blazingBlood.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
+                var furnace = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), new CompoundTag(), () -> List.of(lava, blood), () -> {});
+                furnace.resize(9, 1);
+                var inventory = new ItemStackHandler(2);
+                inventory.setStackInSlot(0, new ItemStack(Items.STICK));
+                inventory.setStackInSlot(1, new ItemStack(scenario == 0 ? Items.DIAMOND : Items.NETHER_STAR));
+                if (scenario == 2) inventory.setStackInSlot(1, ItemStack.EMPTY);
+                furnace.bindInputs(helper.getLevel(), inventory, new int[]{0, 1});
+                helper.assertTrue(furnace.melting().getRequiredTemp(0) == 800, "Use actual loaded low-temperature recipe");
+                for (int tick = 0; tick < 40; tick++) { furnace.refreshInputs(); furnace.tick(true, tick); }
+                helper.assertTrue(inventory.getStackInSlot(0).isEmpty(), "Always process the reachable low-temperature input");
+                if (scenario == 0) {
+                    helper.assertTrue(inventory.getStackInSlot(1).isEmpty(), "1300-degree input must melt despite lava appearing first");
+                    helper.assertTrue(lava.getFluidAmount() == 1000 && blood.getFluidAmount() < 1000, "Mixed 800/1300-degree work selects blazing blood");
+                    helper.assertTrue(furnace.controller().getTank().getContained() == 180, "Both real inputs produce once");
+                } else {
+                    helper.assertTrue(lava.getFluidAmount() < 1000 && blood.getFluidAmount() == 1000, "Low work must not waste hotter fuel, even beside unreachable 2000-degree work");
+                    helper.assertTrue(furnace.controller().getTank().getContained() == 90, "Unreachable recipe must not produce or block reachable work");
+                }
+            }
+        } finally { manager.replaceRecipes(original); NativeFurnace.invalidateRecipes(); }
         helper.succeed();
     }
 

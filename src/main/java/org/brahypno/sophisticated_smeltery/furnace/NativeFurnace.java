@@ -36,8 +36,10 @@ public final class NativeFurnace {
     private final Map<Integer, CompoundTag> savedProgress = new HashMap<>();
     private final PortableFuelModule fuel;
     @Nullable private final NativeAlloying alloying;
+    private final NativeHeatPolicy heatPolicy;
     private FurnaceDimensions dimensions = FurnaceDimensions.EMPTY;
     private int[] boundSlots = new int[0];
+    private int[] previousTimes = new int[0];
     private IItemHandler boundInventory;
     private int baseCapacity;
 
@@ -55,7 +57,9 @@ public final class NativeFurnace {
         shape = (MultiblockShapeAccess)nativeDimensions;
         materials = (HeatingMaterialsAccess)nativeDimensions;
         alloying = NativeAlloying.find(controller);
-        fuel = new PortableFuelModule(controller, fuelSources);
+        heatPolicy = NativeHeatPolicy.find(controller);
+        fuel = new PortableFuelModule(controller, fuelSources, this::requiredFuelTemperature);
+        ((HeatingControllerAccess)controller).sophisticatedsmeltery$setFuel(fuel);
         fuel.readFromTag(state.getCompound("fuel"));
         controller.getTank().read(state.getCompound("tank"));
         baseCapacity = state.getInt("baseCapacity");
@@ -73,6 +77,27 @@ public final class NativeFurnace {
     public int baseCapacity() { return baseCapacity; }
     public FurnaceDimensions dimensions() { return dimensions; }
     public boolean canAlloy() { return alloying != null; }
+    private int requiredFuelTemperature(int maximum) {
+        int required = 0;
+        for (int slot = 0; slot < melting().getSlots(); slot++) {
+            int temperature = melting().getRequiredTemp(slot);
+            if (melting().getRequiredTime(slot) > 0 && melting().getCurrentTime(slot) >= 0 && temperature <= maximum) required = Math.max(required, temperature);
+        }
+        if (alloying != null && controller.getLevel() != null) {
+            if (heatPolicy.automaticAlloying()) {
+                alloying.tank().setTemperature(maximum);
+                for (var recipe : controller.getLevel().getRecipeManager().getRecipesFor(
+                        slimeknights.tconstruct.library.recipe.TinkerRecipeTypes.ALLOYING.get(), alloying.tank(), controller.getLevel())) {
+                    if (recipe.canPerform(alloying.tank())) required = Math.max(required, recipe.getTemperature());
+                }
+            } else if (required == 0) {
+                // Unknown controller policies decide whether alloys may run themselves.
+                // Supply the highest available probe temperature without overriding their gate.
+                required = maximum;
+            }
+        }
+        return required;
+    }
     public static void invalidateRecipes() { recipeEpoch++; }
 
     public boolean refreshRecipes() {
@@ -133,8 +158,9 @@ public final class NativeFurnace {
             return;
         }
         int caps = (shape.sophisticatedsmeltery$hasFloor() ? 1 : 0) + (shape.sophisticatedsmeltery$hasCeiling() ? 1 : 0);
-        ((HeatingControllerAccess)controller).sophisticatedsmeltery$applyDimensions(nativeDimensions.createClient(
-                BlockPos.ZERO, new BlockPos(x + 1, y + caps - 1, z + 1), List.of()));
+        ((HeatingControllerAccess)controller).sophisticatedsmeltery$applyDimensions(new PortableStructureData(
+                new BlockPos(x + 1, y + caps - 1, z + 1), shape.sophisticatedsmeltery$hasFloor(),
+                shape.sophisticatedsmeltery$hasFrame(), shape.sophisticatedsmeltery$hasCeiling(), fuel::hasSources));
     }
 
     public void resize(int materialCount, double capacityMultiplier) {
@@ -146,6 +172,7 @@ public final class NativeFurnace {
         try {
             dimensions = next;
             applyDimensions(next.x(), next.y(), next.z());
+            heatPolicy.initializeWithoutWorld(controller);
             baseCapacity = controller.getTank().getCapacity();
             controller.getTank().setCapacity((int)Math.min(Integer.MAX_VALUE, baseCapacity * capacityMultiplier));
         } finally {
@@ -162,6 +189,7 @@ public final class NativeFurnace {
         inputs.clear();
         // Overflow stacks here are non-owning recipe views, not actual items.
         melting().resize(slots.length, ignored -> {});
+        previousTimes = new int[melting().getSlots()];
         boundSlots = slots.clone();
         boundInventory = inventory;
         for (int index = 0; index < slots.length; index++) {
@@ -181,46 +209,35 @@ public final class NativeFurnace {
         return savedProgress.getOrDefault(slot, new CompoundTag());
     }
 
-    public void tick(boolean heating, boolean alloyEnabled, long gameTime) {
-        switch ((int)(gameTime & 3)) {
-            case 0 -> {
-                if (heating && !fuel.hasFuel()) {
-                    int temperature = fuel.findFuel(false);
-                    boolean alloyNeedsFuel = false;
-                    if (alloyEnabled && alloying != null) {
-                        alloying.tank().setTemperature(temperature);
-                        alloyNeedsFuel = alloying.module().canAlloy();
-                    }
-                    if (melting().canHeat(temperature) || alloyNeedsFuel) fuel.findFuel(true);
+    public void tick(boolean heating, long gameTime) {
+        int phase = (int)(gameTime & 3);
+        if (phase == 3) {
+            // Do not call the native phase that writes ACTIVE to a world block.
+            if (heating && fuel.hasFuel()) fuel.decreaseFuel(((HeatingControllerAccess)controller).sophisticatedsmeltery$getFuelRate());
+        } else if (heating) {
+            // Actual virtual dispatch preserves Smeltery/Foundry/third-party heat policies.
+            // Only 0..2 are supplied: native entity scanning at tick 12 cannot run.
+            var access = (HeatingControllerAccess)controller;
+            if (phase == 1) {
+                for (int index = 0; index < previousTimes.length; index++) previousTimes[index] = melting().getCurrentTime(index);
+            }
+            access.sophisticatedsmeltery$setTick(phase);
+            access.sophisticatedsmeltery$heat();
+            if (phase == 1) {
+                for (int index = 0; index < previousTimes.length; index++) {
+                    if (previousTimes[index] != melting().getCurrentTime(index)) { changed(); break; }
                 }
             }
-            case 1 -> {
-                boolean hadProgress = false;
-                for (int index = 0; index < melting().getSlots(); index++) {
-                    if (melting().getCurrentTime(index) > 0) { hadProgress = true; break; }
-                }
-                if (heating && fuel.hasFuel()) melting().heatItems(fuel.getTemperature(), fuel.getRate());
-                else if (heating) melting().coolItems();
-                else {
-                    // A disabled controller must not turn completed NO_SPACE batches
-                    // into fluid. Native coolItem() retries those, so only cool work
-                    // that has not finished heating.
-                    for (int index = 0; index < melting().getSlots(); index++) {
-                        if (melting().getCurrentTime(index) >= 0) melting().getModule(index).coolItem();
-                    }
-                }
-                if (hadProgress || (heating && fuel.hasFuel() && melting().canHeat(fuel.getTemperature()))) changed();
+        } else if (phase == 1) {
+            boolean hadProgress = false;
+            for (int index = 0; index < melting().getSlots(); index++) {
+                if (melting().getCurrentTime(index) > 0) { hadProgress = true; break; }
             }
-            case 2 -> {
-                if (heating && alloyEnabled && alloying != null && fuel.hasFuel()) {
-                    alloying.tank().setTemperature(fuel.getTemperature());
-                    alloying.module().doAlloy();
-                }
+            // Native coolItem() retries NO_SPACE batches; skip those while disabled.
+            for (int index = 0; index < melting().getSlots(); index++) {
+                if (melting().getCurrentTime(index) >= 0) melting().getModule(index).coolItem();
             }
-            case 3 -> {
-                // The user's heating switch pauses already-burning fuel as well.
-                if (heating && fuel.hasFuel()) fuel.decreaseFuel(((HeatingControllerAccess)controller).sophisticatedsmeltery$getFuelRate());
-            }
+            if (hadProgress) changed();
         }
     }
 

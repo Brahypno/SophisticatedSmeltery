@@ -1,7 +1,8 @@
 package org.brahypno.sophisticated_smeltery.furnace;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.network.chat.Component;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -16,7 +17,8 @@ import slimeknights.tconstruct.smeltery.block.entity.controller.HeatingStructure
 public final class ControllerBinding {
     public static final String CONTROLLER = "controller";
     public static final String STATE = "furnace";
-    private static final Map<Block, Boolean> SUPPORTED = new HashMap<>();
+    private static final Map<Block, Boolean> SUPPORTED = new ConcurrentHashMap<>();
+    private static final Map<Block, Component> NAMES = new ConcurrentHashMap<>();
     private ControllerBinding() {}
 
     public static ItemStack getController(ItemStack upgrade) {
@@ -27,6 +29,15 @@ public final class ControllerBinding {
     public static boolean supports(ItemStack stack) {
         if (!(stack.getItem() instanceof BlockItem item)) return false;
         return SUPPORTED.computeIfAbsent(item.getBlock(), block -> create(stack) != null);
+    }
+
+    public static Component getControllerName(ItemStack stack) {
+        if (stack.hasCustomHoverName() || !(stack.getItem() instanceof BlockItem item)) return stack.getHoverName();
+        // Cache the translation component, never a resolved string: language/resource-pack changes still apply.
+        return NAMES.computeIfAbsent(item.getBlock(), block -> {
+            HeatingStructureBlockEntity controller = create(stack);
+            return controller == null ? stack.getHoverName() : controller.getDisplayName();
+        });
     }
 
     @Nullable
@@ -48,6 +59,7 @@ public final class ControllerBinding {
         CompoundTag state = tag.getCompound(STATE);
         if (!state.getCompound("tank").getList("fluids", Tag.TAG_COMPOUND).isEmpty()
                 || !state.getCompound("components").getList("Items", Tag.TAG_COMPOUND).isEmpty()
+                || !state.getCompound("containers").getList("Items", Tag.TAG_COMPOUND).isEmpty()
                 || state.getCompound("fuel").getInt("fuel") > 0) return false;
         for (Tag entry : state.getList("progress", Tag.TAG_COMPOUND)) {
             int time = ((CompoundTag)entry).getInt("time");

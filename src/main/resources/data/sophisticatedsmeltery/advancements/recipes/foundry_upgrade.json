@@ -1,0 +1,40 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_upgrade": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "sophisticatedsmeltery:melting_upgrade"
+            ]
+          }
+        ]
+      }
+    },
+    "has_controller": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "tconstruct:foundry_controller"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_upgrade",
+      "has_controller"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "sophisticatedsmeltery:foundry_upgrade"
+    ]
+  }
+}

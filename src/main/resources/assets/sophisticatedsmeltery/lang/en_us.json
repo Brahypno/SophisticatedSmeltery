@@ -1,0 +1,21 @@
+{
+  "item.sophisticatedsmeltery.melting_upgrade": "Blank Melting Upgrade",
+  "item.sophisticatedsmeltery.melting_upgrade.bound": "%s Upgrade",
+  "error.sophisticatedsmeltery.one_controller": "Only one melting controller can be installed.",
+  "error.sophisticatedsmeltery.bind_controller": "Bind a supported controller before installing this upgrade.",
+  "error.sophisticatedsmeltery.empty_fluids": "Empty the furnace and Tinkers fuel tanks before removing the controller.",
+  "gui.sophisticatedsmeltery.bucket_auto": "Auto",
+  "gui.sophisticatedsmeltery.bucket_empty_item": "Empty item",
+  "gui.sophisticatedsmeltery.bucket_fill_item": "Fill item",
+  "gui.sophisticatedsmeltery.title": "Melting",
+  "gui.sophisticatedsmeltery.materials": "Materials",
+  "gui.sophisticatedsmeltery.fuel_tank": "Tinkers Fuel Tank",
+  "gui.sophisticatedsmeltery.heating_on": "Heat: ON",
+  "gui.sophisticatedsmeltery.heating_off": "Heat: OFF",
+  "gui.sophisticatedsmeltery.temperature": "Temperature: %s C",
+  "gui.sophisticatedsmeltery.empty": "Empty",
+  "gui.sophisticatedsmeltery.fluid": "%s / %s mB",
+  "gui.sophisticatedsmeltery.backpack_tank": "Backpack tank %s",
+  "gui.sophisticatedsmeltery.tank_button": "Tank %s",
+  "gui.sophisticatedsmeltery.transfer_hint": "Left: tank to furnace. Right: furnace to tank."
+}

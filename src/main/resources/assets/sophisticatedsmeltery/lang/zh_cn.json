@@ -1,0 +1,21 @@
+{
+  "item.sophisticatedsmeltery.melting_upgrade": "空白熔炼升级",
+  "item.sophisticatedsmeltery.melting_upgrade.bound": "%s升级",
+  "error.sophisticatedsmeltery.one_controller": "只能安装一个熔炼控制器。",
+  "error.sophisticatedsmeltery.bind_controller": "安装前请先绑定受支持的控制器。",
+  "error.sophisticatedsmeltery.empty_fluids": "移除控制器前，必须排空炉液和匠魂燃料储罐。",
+  "gui.sophisticatedsmeltery.bucket_auto": "自动",
+  "gui.sophisticatedsmeltery.bucket_empty_item": "注入炉内",
+  "gui.sophisticatedsmeltery.bucket_fill_item": "填充容器",
+  "gui.sophisticatedsmeltery.title": "熔炼",
+  "gui.sophisticatedsmeltery.materials": "结构材料",
+  "gui.sophisticatedsmeltery.fuel_tank": "匠魂燃料储罐",
+  "gui.sophisticatedsmeltery.heating_on": "加热：开",
+  "gui.sophisticatedsmeltery.heating_off": "加热：关",
+  "gui.sophisticatedsmeltery.temperature": "温度：%s ℃",
+  "gui.sophisticatedsmeltery.empty": "空",
+  "gui.sophisticatedsmeltery.fluid": "%s / %s mB",
+  "gui.sophisticatedsmeltery.backpack_tank": "背包储罐 %s",
+  "gui.sophisticatedsmeltery.tank_button": "储罐 %s",
+  "gui.sophisticatedsmeltery.transfer_hint": "左键：储罐注入炉内；右键：炉液转入储罐。"
+}

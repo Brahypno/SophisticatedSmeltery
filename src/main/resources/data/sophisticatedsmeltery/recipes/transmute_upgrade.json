@@ -1,0 +1,5 @@
+{
+  "conditions": [{"type": "forge:mod_loaded", "modid": "esotericism_tinker"}],
+  "type": "sophisticatedsmeltery:controller_binding",
+  "controller": "esotericism_tinker:transmute_controller"
+}

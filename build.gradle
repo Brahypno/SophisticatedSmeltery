@@ -53,6 +53,7 @@ minecraft {
     // It is REQUIRED to be set to true for this template to function.
     // See https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
     copyIdeResources = true
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     // When true, this property will add the folder name of all declared run configurations to generated IDE run configurations.
     // The folder name can be set on a run configuration using the "folderName" property.
@@ -97,6 +98,17 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
+            if (project.hasProperty('clientSmokeTest')) {
+                property 'sophisticatedsmeltery.clientSmoke', 'true'
+                mods {
+                    "${mod_id}" { source sourceSets.test }
+                }
+            }
+            if (project.hasProperty('manualTest')) {
+                mods {
+                    "${mod_id}" { source sourceSets.test }
+                }
+            }
         }
 
         server {
