@@ -182,4 +182,3 @@ TiC 源码包：`C:\Users\Jingfan\.gradle\caches\forge_gradle\maven_downloader\s
 - 用户要求先参考储罐占列源码。查明储罐占整列、原生布局先检查及重排后缩容；用户确认熔炼升级本身不额外扣列，而是在储罐等升级占列后的剩余背包库存中，使用**前 X 格**作为熔炼槽。不再增加前后范围切换。
 - 熔炼槽仍参与普通背包排序，物品移动或替换后重新匹配加工进度；拾取、磁铁等升级可以正常向这些槽位输入物品。
 - Git 仓库：`https://github.com/Brahypno/SophisticatedSmeltery.git`。用户要求按合理的功能模块组分批提交，不要把所有功能积累成一个大提交。
-
