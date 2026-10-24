@@ -222,7 +222,8 @@ public final class NativeFurnace {
                 for (int index = 0; index < previousTimes.length; index++) previousTimes[index] = melting().getCurrentTime(index);
             }
             access.sophisticatedsmeltery$setTick(phase);
-            access.sophisticatedsmeltery$heat();
+            if (phase == 0) fuel.heatWithFuelSelection(access::sophisticatedsmeltery$heat);
+            else access.sophisticatedsmeltery$heat();
             if (phase == 1) {
                 for (int index = 0; index < previousTimes.length; index++) {
                     if (previousTimes[index] != melting().getCurrentTime(index)) { changed(); break; }

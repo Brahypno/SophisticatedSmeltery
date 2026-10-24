@@ -257,6 +257,89 @@ public final class FurnaceGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "recipe_reload")
+    public static void switchingTemperaturePreservesPaidBurnAcrossReload(GameTestHelper helper) {
+        var manager = helper.getLevel().getRecipeManager();
+        var original = new ArrayList<>(manager.getRecipes());
+        var recipes = new ArrayList<>(original);
+        for (int index = 0; index < 2; index++) {
+            String item = index == 0 ? "stick" : "diamond";
+            int temperature = index == 0 ? 800 : 1300;
+            var json = com.google.gson.JsonParser.parseString("{\"ingredient\":{\"item\":\"minecraft:" + item
+                    + "\"},\"result\":{\"fluid\":\"tconstruct:molten_iron\",\"amount\":90},\"temperature\":" + temperature + ",\"time\":1000}").getAsJsonObject();
+            recipes.add(TinkerSmeltery.meltingSerializer.get().fromJson(SophisticatedSmeltery.id("switch_" + index), json));
+        }
+        try {
+            manager.replaceRecipes(recipes);
+            NativeFurnace.invalidateRecipes();
+            FluidTank lava = new FluidTank(1000);
+            FluidTank blood = new FluidTank(1000);
+            lava.fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE);
+            blood.fill(new FluidStack(TinkerFluids.blazingBlood.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
+            var furnace = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), new CompoundTag(), () -> List.of(lava, blood), () -> {});
+            furnace.resize(9, 1);
+            var inventory = new ItemStackHandler(1);
+            inventory.setStackInSlot(0, new ItemStack(Items.STICK));
+            furnace.bindInputs(helper.getLevel(), inventory, new int[]{0});
+            furnace.tick(true, 0);
+            furnace.tick(true, 1);
+            furnace.tick(true, 3);
+            int lowRemaining = furnace.fuel().getFuel();
+            int lowQuality = furnace.fuel().getFuelQuality();
+            int lowRate = furnace.fuel().getRate();
+            int lowFluid = lava.getFluidAmount();
+            helper.assertTrue(lowRemaining > 0 && lowFluid < 1000, "Light and partially consume a real native lava batch");
+
+            inventory.setStackInSlot(0, new ItemStack(Items.DIAMOND));
+            furnace.refreshInputs();
+            furnace.tick(true, 4);
+            helper.assertTrue(furnace.fuel().getTemperature() >= 1300, "Switch to hot fuel at the very next native ignition phase");
+            furnace.tick(true, 5);
+            helper.assertTrue(furnace.melting().getCurrentTime(0) > 0, "The real high-temperature recipe starts before the old batch burns out");
+            furnace.tick(true, 7);
+            int hotRemaining = furnace.fuel().getFuel();
+            int hotTemperature = furnace.fuel().getTemperature();
+            int hotRate = furnace.fuel().getRate();
+            int hotFluid = blood.getFluidAmount();
+            helper.assertTrue(hotFluid < 1000, "Actually pay for the newly lit hot batch");
+            CompoundTag state = furnace.save();
+            helper.assertTrue(state.getCompound("fuel").getList("pausedBurns", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                    .getCompound(0).getInt("fuel") == lowRemaining, "Preserve every remaining low-temperature burn tick");
+            var upgrade = ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), new ItemStack(TinkerSmeltery.smelteryController));
+            CompoundTag cachedOnly = new CompoundTag();
+            cachedOnly.put("fuel", state.getCompound("fuel").copy());
+            cachedOnly.getCompound("fuel").putInt("fuel", 0);
+            upgrade.getOrCreateTag().put(ControllerBinding.STATE, cachedOnly);
+            helper.assertTrue(!ControllerBinding.cleanForBinding(upgrade), "Paused paid fuel must prevent clean rebinding even without active burn");
+
+            var loaded = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), state, () -> List.of(lava, blood), () -> {});
+            loaded.resize(state.getInt("materials"), 1);
+            loaded.bindInputs(helper.getLevel(), inventory, new int[]{0});
+            helper.assertTrue(loaded.fuel().getFuel() == hotRemaining && loaded.fuel().getTemperature() == hotTemperature,
+                    "Restore active hot fuel exactly after NBT reload");
+            lava.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+            blood.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+            inventory.setStackInSlot(0, new ItemStack(Items.STICK));
+            loaded.refreshInputs();
+            loaded.tick(false, 8);
+            loaded.tick(false, 11);
+            helper.assertTrue(loaded.fuel().getFuel() == hotRemaining, "Disabled heating neither switches nor consumes active or cached fuel");
+            loaded.tick(true, 12);
+            helper.assertTrue(loaded.fuel().getFuel() == lowRemaining && loaded.fuel().getTemperature() == 1000
+                    && loaded.fuel().getRate() == lowRate && loaded.fuel().getFuelQuality() == lowQuality,
+                    "Resume exact paid low-temperature budget and native speed without any liquid tanks");
+            inventory.setStackInSlot(0, new ItemStack(Items.DIAMOND));
+            loaded.refreshInputs();
+            loaded.tick(true, 16);
+            helper.assertTrue(loaded.fuel().getFuel() == hotRemaining && loaded.fuel().getTemperature() == hotTemperature
+                    && loaded.fuel().getRate() == hotRate, "Switch back to the exact hot budget without buying another batch");
+            helper.assertTrue(lava.isEmpty() && blood.isEmpty(), "Resuming paid burn must not create or refill fluid");
+            helper.assertTrue(loaded.controller().getTank().getContained() == 0 && inventory.getStackInSlot(0).getCount() == 1,
+                    "Partial work must not consume the actual input or produce premature output");
+        } finally { manager.replaceRecipes(original); NativeFurnace.invalidateRecipes(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "recipe_reload")
     public static void removedRecipeCannotFinishFromCache(GameTestHelper helper) {
         NativeFurnace furnace = smeltery();
         ItemStackHandler inventory = inputs(furnace, helper);

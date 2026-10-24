@@ -61,6 +61,9 @@ public final class ControllerBinding {
                 || !state.getCompound("components").getList("Items", Tag.TAG_COMPOUND).isEmpty()
                 || !state.getCompound("containers").getList("Items", Tag.TAG_COMPOUND).isEmpty()
                 || state.getCompound("fuel").getInt("fuel") > 0) return false;
+        for (Tag entry : state.getCompound("fuel").getList("pausedBurns", Tag.TAG_COMPOUND)) {
+            if (((CompoundTag)entry).getInt("fuel") > 0) return false;
+        }
         for (Tag entry : state.getList("progress", Tag.TAG_COMPOUND)) {
             int time = ((CompoundTag)entry).getInt("time");
             if (time != 0) return false;

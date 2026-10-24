@@ -8,6 +8,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import slimeknights.tconstruct.library.recipe.fuel.MeltingFuel;
 import slimeknights.tconstruct.library.recipe.fuel.MeltingFuelLookup;
 import slimeknights.mantle.block.entity.MantleBlockEntity;
@@ -18,6 +20,61 @@ public final class PortableFuelModule extends MultitankFuelModule {
     private final Supplier<List<IFluidHandler>> sources;
     private final IntUnaryOperator temperatureDemand;
     private FluidStack lastFuel = FluidStack.EMPTY;
+    private final List<Burn> pausedBurns = new ArrayList<>();
+
+    /** Already-paid burn time keeps its original temperature, speed and quality. */
+    private record Burn(int remaining, int temperature, int rate, int quality, FluidStack fluid) {
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("fuel", remaining);
+            tag.putInt("temperature", temperature);
+            tag.putInt("rate", rate);
+            tag.putInt("quality", quality);
+            tag.put("lastFuel", fluid.writeToNBT(new CompoundTag()));
+            return tag;
+        }
+        private static Burn load(CompoundTag tag) {
+            return new Burn(tag.getInt("fuel"), tag.getInt("temperature"), tag.getInt("rate"),
+                    tag.getInt("quality"), FluidStack.loadFluidStackFromNBT(tag.getCompound("lastFuel")));
+        }
+    }
+    private record Candidate(IFluidHandler source, Burn saved, int temperature) { }
+    private record Selection(Candidate best, int required) { }
+
+    private Burn currentBurn() { return new Burn(fuel, temperature, rate, fuelQuality, lastFuel.copy()); }
+    private void restore(Burn burn) {
+        fuel = burn.remaining;
+        temperature = burn.temperature;
+        rate = burn.rate;
+        fuelQuality = burn.quality;
+        lastFuel = burn.fluid.copy();
+    }
+    private void clearBurn() {
+        fuel = 0;
+        temperature = 0;
+        rate = 0;
+        fuelQuality = 0;
+        lastFuel = FluidStack.EMPTY;
+    }
+
+    /** Let the actual controller decide whether to ignite after changing temperature demand. */
+    void heatWithFuelSelection(Runnable nativeHeat) {
+        if (!hasFuel()) { nativeHeat.run(); return; }
+        Selection selection = selectFuel(true);
+        if (selection.required <= 0 || selection.best == null || selection.best.temperature == temperature) {
+            nativeHeat.run();
+            return;
+        }
+        Burn previous = currentBurn();
+        pausedBurns.add(previous);
+        clearBurn();
+        nativeHeat.run();
+        // A custom controller may decline ignition (for example its alloy lever is off).
+        if (!hasFuel()) {
+            pausedBurns.remove(previous);
+            restore(previous);
+        }
+    }
 
     public PortableFuelModule(MantleBlockEntity parent, Supplier<List<IFluidHandler>> sources) {
         this(parent, sources, available -> 0);
@@ -113,15 +170,22 @@ public final class PortableFuelModule extends MultitankFuelModule {
         return MeltingFuelLookup.findFuel(fluid);
     }
 
-    @Override public int findFuel(boolean consume) {
-        record Candidate(IFluidHandler source, int temperature) { }
+    private Selection selectFuel(boolean includeCurrent) {
         List<Candidate> available = new ArrayList<>();
         int maximum = 0;
+        if (includeCurrent && hasFuel()) {
+            available.add(new Candidate(null, currentBurn(), temperature));
+            maximum = temperature;
+        }
+        for (Burn burn : pausedBurns) {
+            available.add(new Candidate(null, burn, burn.temperature));
+            maximum = Math.max(maximum, burn.temperature);
+        }
         for (IFluidHandler source : sources.get()) {
             FluidStack fluid = source.getFluidInTank(0);
             MeltingFuel recipe = findRecipe(fluid.getFluid());
             if (recipe != null && fluid.getAmount() >= recipe.getAmount(fluid.getFluid())) {
-                available.add(new Candidate(source, recipe.getTemperature()));
+                available.add(new Candidate(source, null, recipe.getTemperature()));
                 maximum = Math.max(maximum, recipe.getTemperature());
             }
         }
@@ -130,8 +194,24 @@ public final class PortableFuelModule extends MultitankFuelModule {
         for (Candidate candidate : available) {
             if (candidate.temperature >= required && (best == null || candidate.temperature < best.temperature)) best = candidate;
         }
-        // Stable ties retain source order: internal Tinkers tanks precede backpack tanks.
+        return new Selection(best, required);
+    }
+
+    @Override public int findFuel(boolean consume) {
+        Candidate best = selectFuel(false).best;
+        // Reuse paid burn time first; fresh-fluid ties retain internal-before-backpack order.
         if (best != null) {
+            if (!consume) return best.temperature;
+            if (hasFuel()) {
+                pausedBurns.add(currentBurn());
+                clearBurn();
+            }
+            if (best.saved != null) {
+                pausedBurns.remove(best.saved);
+                restore(best.saved);
+                parent.setChangedFast();
+                return temperature;
+            }
             FluidStack selected = best.source.getFluidInTank(0).copy();
             int temperature = tryLiquidFuel(best.source, consume);
             if (consume && temperature > 0) lastFuel = selected;
@@ -145,11 +225,19 @@ public final class PortableFuelModule extends MultitankFuelModule {
         super.writeToTag(tag);
         tag.putInt("quality", fuelQuality);
         tag.put("lastFuel", lastFuel.writeToNBT(new CompoundTag()));
+        ListTag paused = new ListTag();
+        pausedBurns.forEach(burn -> paused.add(burn.save()));
+        tag.put("pausedBurns", paused);
         return tag;
     }
     @Override public void readFromTag(CompoundTag tag) {
         super.readFromTag(tag);
         fuelQuality = tag.getInt("quality");
         lastFuel = FluidStack.loadFluidStackFromNBT(tag.getCompound("lastFuel"));
+        pausedBurns.clear();
+        for (Tag entry : tag.getList("pausedBurns", Tag.TAG_COMPOUND)) {
+            Burn burn = Burn.load((CompoundTag)entry);
+            if (burn.remaining > 0) pausedBurns.add(burn);
+        }
     }
 }
