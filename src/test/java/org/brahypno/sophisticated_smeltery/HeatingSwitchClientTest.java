@@ -151,6 +151,7 @@ public final class HeatingSwitchClientTest {
                 if (Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke")) CastingUpgradeClientTest.start();
                 else if (Boolean.getBoolean("sophisticatedsmeltery.meltingInteractionSmoke")) MeltingInteractionClientTest.start();
                 else if (Boolean.getBoolean("sophisticatedsmeltery.mobMeltingReloadSmoke")) MobMeltingReloadClientTest.start(stoppedMobHealth);
+                else if (Boolean.getBoolean("sophisticatedsmeltery.transmuteControlsSmoke")) TransmuteControlsClientTest.start();
                 else { mc.player.closeContainer(); mc.stop(); }
                 stage = 9;
             }

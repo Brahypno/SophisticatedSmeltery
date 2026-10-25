@@ -37,6 +37,10 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
         addHideableChild(new BucketTransferModeButton(new Position(x + 65 + BucketTransferModeButton.MODE_BUTTON_OFFSET, y + 138),
                 () -> container.getUpgradeWrapper().getTransferDirection(), () -> container.action("bucketMode")));
+        if (container.getUpgradeWrapper().hasTransmuteControls()) {
+            addHideableChild(new TransmuteControlButton(new Position(x + 74, y + 174), container, false));
+            addHideableChild(new TransmuteControlButton(new Position(x + 99, y + 174), container, true));
+        }
         for (int index = 0; index < Math.min(2, container.getUpgradeWrapper().getBackpackTanks().size()); index++) {
             int tank = index;
             addHideableChild(new TextButton(new Position(x + 5 + index * 56, y + 201),

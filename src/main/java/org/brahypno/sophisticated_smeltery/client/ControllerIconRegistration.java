@@ -17,9 +17,13 @@ public final class ControllerIconRegistration {
         ModelResourceLocation location = new ModelResourceLocation(SophisticatedSmeltery.id("melting_upgrade"), "inventory");
         BakedModel original = event.getModels().get(location);
         BakedModel brick = event.getModels().get(new ModelResourceLocation(TinkerSmeltery.searedBrick.getId(), "inventory"));
-        if (original != null && brick != null) event.getModels().put(location, new ControllerIconModel(original, brick));
+        if (original != null && brick != null) event.getModels().put(location, new ControllerIconModel(original, brick, null));
         BakedModel advanced = event.getModels().get(new ModelResourceLocation(
                 new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"), "inventory"));
+        var transmuteId = new ModelResourceLocation(SophisticatedSmeltery.id("advanced_transmute_upgrade"), "inventory");
+        BakedModel transmutePlate = event.getModels().get(transmuteId);
+        if (transmutePlate != null && brick != null && advanced != null)
+            event.getModels().put(transmuteId, new ControllerIconModel(transmutePlate, brick, advanced.getParticleIcon()));
         for (String item : java.util.List.of("seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade")) {
             var state = (item.contains("scorched") ? TinkerSmeltery.scorchedTable : TinkerSmeltery.searedTable).get().defaultBlockState();
             BakedModel table = event.getModels().get(BlockModelShaper.stateToModelLocation(state));

@@ -42,6 +42,8 @@ public final class NativeFurnace {
     private int[] previousTimes = new int[0];
     private IItemHandler boundInventory;
     private int baseCapacity;
+    private int transmuteMode;
+    private boolean transmuteAlloying;
 
     public NativeFurnace(ItemStack controllerStack, CompoundTag state, Supplier<List<IFluidHandler>> fuelSources, Runnable changed) {
         this(ControllerBinding.create(controllerStack), state, fuelSources, changed);
@@ -77,6 +79,13 @@ public final class NativeFurnace {
     public int baseCapacity() { return baseCapacity; }
     public FurnaceDimensions dimensions() { return dimensions; }
     public boolean canAlloy() { return alloying != null; }
+    public boolean isTransmute() { return heatPolicy.components() != null; }
+    public void setTransmuteControls(int mode, boolean enabled) {
+        transmuteMode = mode;
+        if (alloying != null && transmuteAlloying != enabled) alloying.module().clearCachedRecipes();
+        transmuteAlloying = enabled;
+        heatPolicy.updateControls(controller, mode, enabled);
+    }
     public int fluidRevision() { return ((PortableController)controller).sophisticatedsmeltery$getFluidRevision(); }
     public int heatingTemperature() { return (fuel.hasFuel() ? fuel.getTemperature() : 0) + heatPolicy.temperatureBonus(controller); }
     public void updateHeatComponents(IItemHandler components) {
@@ -179,6 +188,7 @@ public final class NativeFurnace {
             dimensions = next;
             applyDimensions(next.x(), next.y(), next.z());
             heatPolicy.initializeWithoutWorld(controller);
+            heatPolicy.updateControls(controller, transmuteMode, transmuteAlloying);
             baseCapacity = controller.getTank().getCapacity();
             controller.getTank().setCapacity((int)Math.min(Integer.MAX_VALUE, baseCapacity * capacityMultiplier));
         } finally {

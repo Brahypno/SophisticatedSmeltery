@@ -25,12 +25,7 @@ final class CastingIconModel implements BakedModel {
 
     CastingIconModel(BakedModel base, BakedModel table, BlockState state, @Nullable TextureAtlasSprite advancedFrame) {
         this.base = base;
-        if (advancedFrame != null) {
-            frame(advancedFrame, 0, 0, 16, 3);
-            frame(advancedFrame, 0, 13, 16, 16);
-            frame(advancedFrame, 0, 3, 3, 13);
-            frame(advancedFrame, 13, 3, 16, 13);
-        }
+        if (advancedFrame != null) addAdvancedFrame(overlay, advancedFrame);
         List<BakedQuad> top = new ArrayList<>(table.getQuads(state, Direction.UP, RandomSource.create(0)));
         table.getQuads(state, null, RandomSource.create(0)).stream().filter(quad -> quad.getDirection() == Direction.UP).forEach(top::add);
         for (BakedQuad quad : top) {
@@ -59,7 +54,14 @@ final class CastingIconModel implements BakedModel {
     }
 
     /** Keep the real Sophisticated advanced frame; exclude the magnet artwork in its center. */
-    private void frame(TextureAtlasSprite sprite, int left, int top, int right, int bottom) {
+    static void addAdvancedFrame(List<BakedQuad> overlay, TextureAtlasSprite sprite) {
+        frame(overlay, sprite, 0, 0, 16, 3);
+        frame(overlay, sprite, 0, 13, 16, 16);
+        frame(overlay, sprite, 0, 3, 3, 13);
+        frame(overlay, sprite, 13, 3, 16, 13);
+    }
+
+    private static void frame(List<BakedQuad> overlay, TextureAtlasSprite sprite, int left, int top, int right, int bottom) {
         FaceBakery bakery = new FaceBakery();
         BlockElementFace face = new BlockElementFace(null, -1, "", new BlockFaceUV(new float[]{left, top, right, bottom}, 0));
         for (Direction direction : List.of(Direction.SOUTH, Direction.NORTH)) {

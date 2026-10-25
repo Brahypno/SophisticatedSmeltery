@@ -126,10 +126,14 @@ minecraft {
                     "${mod_id}" { source sourceSets.test }
                 }
             }
-            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke') || project.hasProperty('castingUpgradeSmoke') || project.hasProperty('castingExpansionSmoke') || project.hasProperty('mobMeltingSmoke') || project.hasProperty('mobMeltingReloadSmoke')) {
+            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke') || project.hasProperty('castingUpgradeSmoke') || project.hasProperty('castingExpansionSmoke') || project.hasProperty('mobMeltingSmoke') || project.hasProperty('mobMeltingReloadSmoke') || project.hasProperty('transmuteControlsSmoke')) {
                 property 'sophisticatedsmeltery.heatingSwitchSmoke', 'true'
                 if (project.hasProperty('foundryLayoutSmoke')) property 'sophisticatedsmeltery.foundryLayoutSmoke', 'true'
                 workingDirectory project.file('build/heating-switch-run')
+                if (project.hasProperty('transmuteControlsSmoke')) {
+                    property 'sophisticatedsmeltery.transmuteControlsSmoke', 'true'
+                    workingDirectory project.file('build/transmute-controls-run')
+                }
                 if (project.hasProperty('mobMeltingSmoke') || project.hasProperty('mobMeltingReloadSmoke')) {
                     property 'sophisticatedsmeltery.mobMeltingSmoke', 'true'
                     workingDirectory project.file('build/mob-melting-run')

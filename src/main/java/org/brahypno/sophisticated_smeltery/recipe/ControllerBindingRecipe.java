@@ -26,7 +26,9 @@ public final class ControllerBindingRecipe extends CustomRecipe {
             else if (controller == -1 && ControllerBinding.supports(stack)) controller = slot;
             else return null;
         }
-        return upgrade >= 0 && controller >= 0 ? new int[]{upgrade, controller} : null;
+        return upgrade >= 0 && controller >= 0
+                && ((MeltingUpgradeItem)grid.getItem(upgrade).getItem()).acceptsController(grid.getItem(controller))
+                ? new int[]{upgrade, controller} : null;
     }
 
     @Override public boolean matches(CraftingContainer grid, Level level) { return ingredients(grid) != null; }

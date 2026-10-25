@@ -71,10 +71,12 @@ public final class ManualTestCommand {
         var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
         storage.getInventoryHandler();
         var controller = foundry ? TinkerSmeltery.foundryController : TinkerSmeltery.smelteryController;
-        boolean transmute = Boolean.getBoolean("sophisticatedsmeltery.transmuteMobSmoke");
+        boolean advancedTransmute = Boolean.getBoolean("sophisticatedsmeltery.transmuteControlsSmoke");
+        boolean transmute = Boolean.getBoolean("sophisticatedsmeltery.transmuteMobSmoke") || advancedTransmute;
         boolean missing = Boolean.getBoolean("sophisticatedsmeltery.missingControllerSmoke");
         ItemStack controllerStack = transmute ? transmuteItem("transmute_controller", 1) : new ItemStack(controller);
-        ItemStack upgradeStack = ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controllerStack);
+        ItemStack upgradeStack = ControllerBinding.bind(new ItemStack(advancedTransmute
+                ? SophisticatedSmeltery.ADVANCED_TRANSMUTE_UPGRADE.get() : SophisticatedSmeltery.MELTING_UPGRADE.get()), controllerStack);
         if (missing) upgradeStack.getTag().getCompound(ControllerBinding.CONTROLLER).putString("id", "esotericism_tinker:transmute_controller");
         storage.getUpgradeHandler().setStackInSlot(0, upgradeStack);
         var wrapper = (MeltingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
@@ -91,6 +93,10 @@ public final class ManualTestCommand {
             wrapper.persist();
         }
         if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
+            if (advancedTransmute) {
+                player.getInventory().setItem(11, ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controllerStack));
+                player.getInventory().setItem(12, upgradeStack.copy());
+            }
             storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
                     .get(new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"))));
         }

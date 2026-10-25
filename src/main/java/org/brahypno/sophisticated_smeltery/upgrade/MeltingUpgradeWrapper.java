@@ -85,11 +85,30 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         }
         loading = false;
         if (furnace != null) furnace.updateHeatComponents(components);
+        applyTransmuteControls();
     }
 
     public ItemStackHandler getComponents() { return components; }
     public ItemStackHandler getContainers() { return containers; }
     public boolean isOperational() { return furnace != null; }
+    public boolean hasTransmuteControls() { return furnace != null && furnace.isTransmute() && ((MeltingUpgradeItem)upgrade.getItem()).isAdvanced(); }
+    public int getTransmuteMode() { return hasTransmuteControls() && upgrade.hasTag() ? Math.floorMod(upgrade.getTag().getInt("transmuteMode"), 3) : 0; }
+    public boolean isTransmuteAlloying() { return hasTransmuteControls() && upgrade.hasTag() && upgrade.getTag().getBoolean("transmuteAlloying"); }
+    private void applyTransmuteControls() {
+        if (furnace != null) furnace.setTransmuteControls(getTransmuteMode(), isTransmuteAlloying());
+    }
+    public void cycleTransmuteMode() {
+        if (!hasTransmuteControls()) return;
+        upgrade.getOrCreateTag().putInt("transmuteMode", (getTransmuteMode() + 1) % 3);
+        applyTransmuteControls();
+        persist();
+    }
+    public void toggleTransmuteAlloying() {
+        if (!hasTransmuteControls()) return;
+        upgrade.getOrCreateTag().putBoolean("transmuteAlloying", !isTransmuteAlloying());
+        applyTransmuteControls();
+        persist();
+    }
     @Nullable public NativeFurnace getFurnace() { return furnace; }
     public IStorageWrapper getStorage() { return storageWrapper; }
     public SmelteryTank<?> getTank() { return furnace == null ? emptyTank : furnace.controller().getTank(); }

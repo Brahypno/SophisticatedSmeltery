@@ -10,6 +10,18 @@
 
 三种炉型的实际客户端均已通过，日志分别为 `build/container-align-transmute.log`、`build/container-align-smeltery.log`、`build/container-align-foundry.log`。均检查滚动/非滚动界面的箭头空间、槽位对齐及输出槽与燃料槽右边框对齐；嬗变炉继续验证高级开关同步，冶炼炉/熔铸炉实际点击桶的三种模式、堆叠输入、连续取出输出，并核对全部容器守恒。三份日志均为 `BUILD SUCCESSFUL`，最后一轮完成正式构建；截图 `build/transmute-controls-alloy-off.png`、`build/bucket-ui-first-output.png` 已核对，确认输入/输出槽框同为 18×18，箭头头部完整可见。
 
+### 高级嬗变炉：模式与合金开关
+
+新增金边高级嬗变炉升级，配方为 `合金开关-钻石-熔炼开关 / 金锭-标准嬗变炉升级-金锭 / 红石-红石-红石`，完整保留原升级的控制器、库存、炉液、燃料与设置。容器行下方左侧用三种控制器图标切换嬗变/冶炼炉/熔铸炉模式，右侧以原生烬灰合金拉杆正面显示开/关状态；直接复用原生模块，标准版没有这两个控制按钮。
+
+两个高级按钮的底边与左侧九格底边对齐，横向分别居中于上方输入/桶、桶/输出图标之间，形成上三下二的错位排布。实际客户端与构建通过，日志 `build/transmute-five-ring-layout.log`；检查底边及横向居中，并真实点击三种模式和合金开/关验证服务端同步。截图 `build/transmute-controls-alloy-off.png` 已核对。
+
+有 estinker 的 **38 项 GameTest 与构建通过**，日志 `build/transmute-controls-tests.log`。新增测试覆盖升阶布局、中央绑定条件、NBT 与配方网络同步、内部物品不重复返还、三模式原生产物对照、合金开/关及总加热门控、结构重算、保存恢复和标准版权限。
+
+无 estinker 的 **38 项 GameTest 与构建也通过**，日志 `build/transmute-controls-absent.log`；新增高级配方按条件禁用，基础加载和缺失控制器回退保持通过。
+
+实际客户端 `runClient -PwithEstinker=true -PtransmuteControlsSmoke --offline` **通过**，日志 `build/transmute-controls-client.log`：实际安装高级升级，三模式循环与合金开/关均通过服务端同步；配方书解锁与 JEI 可见性通过。截图 `build/transmute-controls-mode-{0,1,2}.png`、`build/transmute-controls-alloy-{on,off}.png` 已检查，确认金边与拉杆正面图案。模式设置恢复由上述 GameTest 验证。
+
 ### 缺失控制器时回退为空白停用状态
 
 卸载 estinker 或控制器无法解析时，不再创建 `NativeFurnace`，已安装的升级显示为空白并停用：无熔炼槽、无流体容量、不处理物品/生物、不接受新的材料或桶，可以取下。仍有保存内容的升级保持不可堆叠。原 `controller` / `furnace` NBT 原样保留，包含未注册的物品/流体 ID；停用时不反序列化内部库存，也不写回空状态。控制器重新可用后可从保存内容恢复。
@@ -43,7 +55,7 @@
 
 无 estinker 的 **34 项 GameTest 与构建也通过**，日志 `build/estinker-components-absent.log`。`1.6.2fix` 客户端的现有界面冒烟检查通过，日志 `build/estinker-components-client.log`，包含滚动/非滚动界面、总加热开关服务端同步、图标/展开页和 JEI 升阶配方检查及最终 `ACTUAL BACKPACK UI PASSED`、`BUILD SUCCESSFUL`；组件效果本身由上述服务端测试验证，尚未录制嬗变炉组件的客户端专项操作流程。
 
-旧 SNAPSHOT 曾在专用服务端网络包注册时加载 `ClientLevel` 导致启动失败，见 `build/estinker-present-baseline.log`；`1.6.2fix` 已解除该阻塞。用户确认正常产出和容量边界均与原生一致，说明正确调用了嬗变炉提供的熔炼模块，本轮保留原生行为。详细规则见 [Transmute_Verification.md](Transmute_Verification.md)。模式/合金开关仍待后续实现，计划见 [Plan.md](Plan.md)。下文保留历史功能验收记录。
+旧 SNAPSHOT 曾在专用服务端网络包注册时加载 `ClientLevel` 导致启动失败，见 `build/estinker-present-baseline.log`；`1.6.2fix` 已解除该阻塞。用户确认正常产出和容量边界均与原生一致，说明正确调用了嬗变炉提供的熔炼模块，本轮保留原生行为。详细规则见 [Transmute_Verification.md](Transmute_Verification.md)。高级版模式/合金开关的最新验收见本文开头。下文保留历史功能验收记录。
 
 mod ID 已统一为 `sophisticated_smeltery`，同步 Java 入口、事件订阅、Mixin 配置与 refmap、资源目录、配方/进度/标签、语言键及测试模板。重新编译与正式构建通过，29 项 GameTest 全部通过，日志 `build/mod-id-verification.log`；`gradlew.bat runClient -PheatingSwitchSmoke --offline` 通过滚动/非滚动背包界面的开关同步及 JEI 升阶配方检查，日志 `build/mod-id-client-verification.log`。产物 `build/libs/sophisticated_smeltery-0.5-SNAPSHOT.jar` 已核对元数据、Mixin 清单、新命名空间资源及测试文件隔离。旧命名空间存档迁移未包含在本次修改中。
 
@@ -88,7 +100,7 @@ mod ID 已统一为 `sophisticated_smeltery`，同步 Java 入口、事件订阅
 | 固定宽度左侧热量条与状态提示 | 已实现 | 六种状态截图、整数像素边界检查 | 用户认可区分效果；滚动和提示交界待验收                   |
 | 移除橙色/灰色顶部横条 | 已实现 | 绘制路径已移除 | 本轮游戏效果待验收                             |
 | 22×18 加宽槽框、保留 16×16 物品 | 暂缓，未接入正式库存布局 | 临时试排曾生成局部对照，不代表正式实现；现已清理临时改动 | 用户确认需要额外客户端 Mixin 后先不做；后续范围见 [Plan.md](Plan.md) |
-| Transmute 通用路径与热组件 | 可选联动基线及九格加热器/加速器通过 | `1.6.2fix` 真实控制器与原生对照；组件计数/加热/恢复与燃料选择 | 生物熔炼已接入；模式/合金开关待映射 |
+| Transmute 通用路径与热组件 | 可选联动基线、九格加热器/加速器及高级版模式/合金开关通过 | `1.6.2fix` 真实控制器与原生对照；组件计数/加热/恢复、燃料选择及三模式/合金 GUI | 生物熔炼已接入；完整世界多方块运行对照待验收 |
 | 浇筑核心 | 已实现，原生对照测试通过 | 原生台/盆、动态 NBT、保存/退液、预览失效及完整 45 项 GameTest 通过 | 已接入升级，待整体用户验收                         |
 | 浇筑升级物品、GUI 与宿主 | 已实现，真实客户端验证通过 | 45 项服务端回归通过；实际屏幕完成手动/自动、台/盆、冷却拆卸拦截、半满退液、干净移除和精确守恒 | 规则已确认，整体界面待用户验收                       |
 | 普通/高级浇筑分级与配方 | 已实现，服务端及实际客户端通过 | 49 项回归通过；普通页无自动按钮，高级自动正常，俯视图标与金边可见；两配方实际进入 JEI 可见列表和客户端配方书 | 新分级、图标和布局待用户验收                        |
@@ -196,6 +208,6 @@ mod ID 已统一为 `sophisticated_smeltery`，同步 Java 入口、事件订阅
 ## 待完成及验证
 
 - 本轮开关及页签背景已通过真实客户端测试，仍待用户复验；其他新布局、原生热量条、流体单位及桶交互的剩余人工项按上表验收。手工运行首次打开熔炼设置页会保存 GUI 截图；检查步骤见 [Manual_Verification.md](Manual_Verification.md)。
-- 嬗变炉模式/合金开关、物品输入替换与配方重载专项验证，以及完整世界多方块运行对照；当前已完成的真实加载和生物验收见本文开头。
+- 嬗变炉物品输入替换与配方重载专项验证，以及完整世界多方块运行对照；当前已完成的高级版模式/合金开关、真实加载和生物验收见本文开头。
 - 浇筑核心、普通/高级物品、GUI、配方与宿主策略已接入，49 项 GameTest 和实际客户端交互通过。最新日志 `build/casting-tier-tests.log`、`build/casting-tier-ui-test.log`，详细步骤见 [Casting_Implementation.md](Casting_Implementation.md)。用户确认关闭加热仍可浇筑/冷却，有残液或仍冷却不能拆下；自动仅高级版，规则不再待定，整体外观/操作仍待用户验收。
 - 背面定向管道访问、物品黑白名单和第三方专用生物模块仍按后续版本边界保留；原生两种炉子的捕获生物熔炼状态见本文开头。

@@ -55,17 +55,30 @@ record NativeHeatPolicy(boolean automaticAlloying, @Nullable Method clearWorldCo
         catch (ReflectiveOperationException e) { throw new IllegalStateException("Cannot read Transmute heating temperature", e); }
     }
 
+    void updateControls(HeatingStructureBlockEntity controller, int mode, boolean alloying) {
+        if (components == null) return;
+        try {
+            components.meltType.invoke(controller.getMeltingInventory(), components.modes[mode]);
+            components.allowAlloying.setBoolean(controller, alloying);
+        } catch (ReflectiveOperationException e) { throw new IllegalStateException("Cannot update Transmute switches", e); }
+    }
+
     /** Resolve the optional API once; its own methods retain tags and configured effect values. */
-    private record TransmuteComponents(Field heater, Field accelerator, Method isHeater, Method isAccelerator, Method temperature) {
+    private record TransmuteComponents(Field heater, Field accelerator, Method isHeater, Method isAccelerator, Method temperature,
+                                      Field allowAlloying, Method meltType, Object[] modes) {
         TransmuteComponents(Class<?> type) throws ReflectiveOperationException {
             this(type.getDeclaredField("heater"), type.getDeclaredField("accelerator"),
                     type.getDeclaredMethod("isHeaterBlock", Block.class), type.getDeclaredMethod("isAccelBlock", Block.class),
-                    type.getDeclaredMethod("getHeatTemperatureBuff"));
+                    type.getDeclaredMethod("getHeatTemperatureBuff"), type.getDeclaredField("allowAlloying"),
+                    Class.forName("org.brahypno.esotericismtinker.smeltery.block.entity.module.SuperByproductMeltingModuleInventory").getMethod("updateMeltType",
+                            Class.forName("org.brahypno.esotericismtinker.smeltery.block.entity.module.SuperByproductMeltingModuleInventory$MeltType")),
+                    Class.forName("org.brahypno.esotericismtinker.smeltery.block.entity.module.SuperByproductMeltingModuleInventory$MeltType").getEnumConstants());
             heater.setAccessible(true);
             accelerator.setAccessible(true);
             isHeater.setAccessible(true);
             isAccelerator.setAccessible(true);
             temperature.setAccessible(true);
+            allowAlloying.setAccessible(true);
         }
     }
 

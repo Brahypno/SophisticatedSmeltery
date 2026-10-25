@@ -18,6 +18,8 @@ public final class ControllerCraftingRefunds {
         for (int slot = 0; slot < event.getInventory().getContainerSize(); slot++) {
             ItemStack input = event.getInventory().getItem(slot);
             if (!(input.getItem() instanceof MeltingUpgradeItem)) continue;
+            // Tier crafting carries the inventories forward instead of returning them.
+            if (java.util.Objects.equals(input.getTag(), event.getCrafting().getTag())) continue;
             for (ItemStack returned : ControllerBinding.getStoredItems(input)) {
                 event.getEntity().getInventory().placeItemBackInInventory(returned);
             }

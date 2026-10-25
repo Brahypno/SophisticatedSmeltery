@@ -46,6 +46,7 @@ public class SophisticatedSmeltery {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
+    public static final RegistryObject<MeltingUpgradeItem> ADVANCED_TRANSMUTE_UPGRADE = ITEMS.register("advanced_transmute_upgrade", () -> new MeltingUpgradeItem(true));
     public static final RegistryObject<CastingUpgradeItem> SEARED_CASTING_UPGRADE = ITEMS.register("seared_casting_upgrade", CastingUpgradeItem::new);
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SEARED_CASTING_UPGRADE = ITEMS.register("advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
     public static final RegistryObject<CastingUpgradeItem> SCORCHED_CASTING_UPGRADE = ITEMS.register("scorched_casting_upgrade", () -> new CastingUpgradeItem(false, true));
@@ -69,6 +70,8 @@ public class SophisticatedSmeltery {
             "controller_binding", VisibleControllerBindingRecipe.Serializer::new);
     public static final RegistryObject<RecipeSerializer<CastingTierRecipe>> CASTING_TIER = RECIPES.register(
             "casting_upgrade_tier", CastingTierRecipe.Serializer::new);
+    public static final RegistryObject<RecipeSerializer<org.brahypno.sophisticated_smeltery.recipe.TransmuteTierRecipe>> TRANSMUTE_TIER = RECIPES.register(
+            "transmute_upgrade_tier", org.brahypno.sophisticated_smeltery.recipe.TransmuteTierRecipe.Serializer::new);
     public static final RegistryObject<RecipeSerializer<UpgradeClearingRecipe>> UPGRADE_CLEAR = RECIPES.register(
             "upgrade_clear", () -> new SimpleCraftingRecipeSerializer<>(UpgradeClearingRecipe::new));
     public static final UpgradeContainerType<MeltingUpgradeWrapper, MeltingUpgradeContainer> MELTING_CONTAINER =
@@ -93,6 +96,7 @@ public class SophisticatedSmeltery {
     private void setup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
+            UpgradeContainerRegistry.register(ADVANCED_TRANSMUTE_UPGRADE.getId(), MELTING_CONTAINER);
             UpgradeContainerRegistry.register(SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
             UpgradeContainerRegistry.register(ADVANCED_SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
             UpgradeContainerRegistry.register(SCORCHED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
@@ -118,6 +122,7 @@ public class SophisticatedSmeltery {
         ResourceLocation transmuteController = new ResourceLocation("esotericism_tinker", "transmute_controller");
         if (ForgeRegistries.ITEMS.containsKey(transmuteController)) {
             output.accept(ControllerBinding.bind(upgrade, new ItemStack(ForgeRegistries.ITEMS.getValue(transmuteController))));
+            output.accept(ControllerBinding.bind(new ItemStack(ADVANCED_TRANSMUTE_UPGRADE.get()), new ItemStack(ForgeRegistries.ITEMS.getValue(transmuteController))));
         }
     }
 

@@ -1,0 +1,14 @@
+{
+  "conditions": [{"type": "forge:mod_loaded", "modid": "esotericism_tinker"}],
+  "type": "sophisticated_smeltery:transmute_upgrade_tier",
+  "pattern": ["ADM", "GUG", "RRR"],
+  "key": {
+    "A": {"item": "esotericism_tinker:ashen_alloy_switch"},
+    "D": {"tag": "forge:gems/diamond"},
+    "M": {"item": "esotericism_tinker:ashen_melt_switch"},
+    "G": {"tag": "forge:ingots/gold"},
+    "U": {"type": "forge:partial_nbt", "item": "sophisticated_smeltery:melting_upgrade", "nbt": "{controller:{id:\"esotericism_tinker:transmute_controller\",Count:1b}}"},
+    "R": {"tag": "forge:dusts/redstone"}
+  },
+  "result": {"item": "sophisticated_smeltery:advanced_transmute_upgrade"}
+}

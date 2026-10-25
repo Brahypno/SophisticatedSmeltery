@@ -21,14 +21,21 @@ public final class MeltingUpgradeItem extends UpgradeItemBase<MeltingUpgradeWrap
         public int getMaxUpgradesInGroupPerStorage(String storage, UpgradeGroup group) { return Integer.MAX_VALUE; }
     };
 
-    public MeltingUpgradeItem() { super(SINGLE_CONTROLLER); }
+    private final boolean advanced;
+    public MeltingUpgradeItem() { this(false); }
+    public MeltingUpgradeItem(boolean advanced) { super(SINGLE_CONTROLLER); this.advanced = advanced; }
+    public boolean isAdvanced() { return advanced; }
+    public boolean acceptsController(ItemStack controller) {
+        return ControllerBinding.supports(controller) && (!advanced || new ResourceLocation("esotericism_tinker", "transmute_controller")
+                .equals(net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(controller.getItem())));
+    }
     @Override public UpgradeType<MeltingUpgradeWrapper> getType() { return TYPE; }
     @Override public int getMaxStackSize(ItemStack stack) { return stack.hasTag() && stack.getTag().contains(ControllerBinding.CONTROLLER) ? 1 : 64; }
 
     @Override public Component getName(ItemStack stack) {
         ItemStack controller = ControllerBinding.getController(stack);
         if (!ControllerBinding.supports(controller)) return super.getName(stack);
-        return Component.translatable("item.sophisticated_smeltery.melting_upgrade.bound", ControllerBinding.getControllerName(controller));
+        return Component.translatable("item.sophisticated_smeltery." + (advanced ? "advanced_transmute_upgrade.bound" : "melting_upgrade.bound"), ControllerBinding.getControllerName(controller));
     }
 
     @Override public List<IUpgradeItem.UpgradeConflictDefinition> getUpgradeConflicts() {
@@ -38,7 +45,7 @@ public final class MeltingUpgradeItem extends UpgradeItemBase<MeltingUpgradeWrap
 
     @Override public UpgradeSlotChangeResult checkExtraInsertConditions(ItemStack stack, IStorageWrapper storage,
                                                                        boolean client, IUpgradeItem<?> replacing) {
-        return ControllerBinding.supports(ControllerBinding.getController(stack)) ? new UpgradeSlotChangeResult.Success()
+        return acceptsController(ControllerBinding.getController(stack)) ? new UpgradeSlotChangeResult.Success()
                 : fail("bind_controller");
     }
 

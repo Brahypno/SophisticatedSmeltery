@@ -35,6 +35,7 @@ final class ControllerIconModel implements BakedModel {
     private final BakedModel base;
     private final List<BakedQuad> overlay;
     private final boolean bound;
+    @Nullable private final TextureAtlasSprite advancedFrame;
     private final Map<Block, BakedModel> boundModels = new HashMap<>();
     private final ItemOverrides overrides = new ItemOverrides() {
         @Override public BakedModel resolve(BakedModel original, ItemStack stack, @Nullable ClientLevel level,
@@ -45,10 +46,11 @@ final class ControllerIconModel implements BakedModel {
         }
     };
 
-    ControllerIconModel(BakedModel base, BakedModel brick) {
+    ControllerIconModel(BakedModel base, BakedModel brick, @Nullable TextureAtlasSprite advancedFrame) {
         this.base = base;
         this.bound = false;
-        this.overlay = brick.getQuads(null, null, RandomSource.create(0)).stream().map(quad -> {
+        this.advancedFrame = advancedFrame;
+        this.overlay = new ArrayList<>(brick.getQuads(null, null, RandomSource.create(0)).stream().map(quad -> {
             int[] vertices = quad.getVertices().clone();
             int stride = vertices.length / 4;
             for (int vertex = 0; vertex < 4; vertex++) {
@@ -61,12 +63,14 @@ final class ControllerIconModel implements BakedModel {
                 vertices[offset + 2] = Float.floatToRawIntBits(0.5f + (depth - 0.5f) * 2);
             }
             return new BakedQuad(vertices, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade(), quad.hasAmbientOcclusion());
-        }).toList();
+        }).toList());
+        if (advancedFrame != null) CastingIconModel.addAdvancedFrame(overlay, advancedFrame);
     }
     private ControllerIconModel(BakedModel base, List<BakedQuad> overlay) {
         this.base = base;
         this.overlay = overlay;
         this.bound = true;
+        this.advancedFrame = null;
     }
 
     private BakedModel withController(Block block) {
@@ -80,6 +84,7 @@ final class ControllerIconModel implements BakedModel {
         FaceBakery bakery = new FaceBakery();
         BlockElementFace face = new BlockElementFace(null, -1, "", new BlockFaceUV(new float[]{0, 0, 16, 16}, 0));
         List<BakedQuad> quads = new ArrayList<>();
+        if (advancedFrame != null) CastingIconModel.addAdvancedFrame(quads, advancedFrame);
         quads.add(bakery.bakeQuad(new Vector3f(4, 4, 8.6f), new Vector3f(12, 12, 8.6f), face, sprite,
                 Direction.SOUTH, BlockModelRotation.X0_Y0, null, false, SophisticatedSmeltery.id("melting_upgrade")));
         quads.add(bakery.bakeQuad(new Vector3f(4, 4, 7.4f), new Vector3f(12, 12, 7.4f), face, sprite,
