@@ -20,12 +20,15 @@ import slimeknights.tconstruct.smeltery.client.screen.HeatingStructureScreen;
 
 /** Native bucket mode artwork and tooltip, independent of the surrounding layout. */
 public final class BucketTransferModeButton extends WidgetBase {
+    public static final int OUTPUT_SLOT_OFFSET = 50;
+    public static final int MODE_BUTTON_OFFSET = 19;
     private static final ElementScreen AUTO = new ElementScreen(HeatingStructureScreen.BACKGROUND, 176, 186, 16, 16, 256, 256);
     private static final ElementScreen EMPTY = AUTO.shift(16, 0);
     private static final ElementScreen FILL = EMPTY.shift(16, 0);
     private static final ElementScreen BUCKET = FILL.shift(16, 0);
     private static final ElementScreen HOVER = AUTO.move(176, 202, 18, 18);
     private static final ElementScreen ARROW = AUTO.move(124, 87, 18, 14);
+    private static final ElementScreen ARROW_SHAFT = ARROW.move(124, 87, 18, 4);
     private final Supplier<TransferDirection> direction;
     private final Runnable cycle;
 
@@ -37,13 +40,18 @@ public final class BucketTransferModeButton extends WidgetBase {
 
     public static void renderContainerRow(GuiGraphics graphics, int inputX, int inputY, boolean inputEmpty) {
         graphics.blit(HeatingStructureScreen.BACKGROUND, inputX - 1, inputY - 1, 124, 45, 18, 18);
-        graphics.blit(HeatingStructureScreen.BACKGROUND, inputX + 33, inputY - 3, 122, 101, 22, 22);
+        graphics.blit(HeatingStructureScreen.BACKGROUND, inputX + OUTPUT_SLOT_OFFSET - 1, inputY - 1, 124, 45, 18, 18);
         if (inputEmpty) BUCKET.draw(graphics, inputX, inputY);
         // Rotate the native downward arrow to fit the retained horizontal slots.
         graphics.pose().pushPose();
         graphics.pose().translate(inputX + 18, inputY + 17, 0);
         graphics.pose().mulPose(Axis.ZP.rotationDegrees(-90));
-        ARROW.draw(graphics, 0, 0);
+        // Extend only the shaft behind the button; retain the full native arrowhead.
+        graphics.pose().pushPose();
+        graphics.pose().scale(1, 4, 1);
+        ARROW_SHAFT.draw(graphics, 0, 0);
+        graphics.pose().popPose();
+        ARROW.draw(graphics, 0, 16);
         graphics.pose().popPose();
     }
 

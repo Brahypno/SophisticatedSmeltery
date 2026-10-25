@@ -15,7 +15,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
+import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
 import org.brahypno.sophisticated_smeltery.client.MeltingUpgradeTab;
+import org.brahypno.sophisticated_smeltery.client.BucketTransferModeButton;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import slimeknights.mantle.fluid.transfer.IFluidContainerTransfer.TransferDirection;
 import slimeknights.tconstruct.fluids.TinkerFluids;
@@ -142,7 +144,27 @@ public final class MeltingInteractionClientTest {
         }
         throw new IllegalStateException("Expected fluid layer is not visible/clickable");
     }
-    private static void clickMode(StorageScreenBase<?> screen, MeltingUpgradeTab tab) { click(screen, tab.getX() + 91, tab.getY() + 172, 0); }
+    static void verifyContainerRow(StorageScreenBase<?> screen, MeltingUpgradeTab tab, MeltingUpgradeContainer container) {
+        var bucket = tab.children().stream().filter(BucketTransferModeButton.class::isInstance)
+                .map(BucketTransferModeButton.class::cast).findFirst().orElseThrow();
+        var input = container.getSlots().get(9);
+        var output = container.getSlots().get(10);
+        int inputRight = screen.getGuiLeft() + input.x + 17;
+        int outputLeft = screen.getGuiLeft() + output.x - 1;
+        int leftGap = bucket.getX() - inputRight;
+        int rightGap = outputLeft - bucket.getX() - bucket.getWidth();
+        check(leftGap >= 2 && rightGap >= 12, "Leave room for the complete native arrowhead after the mode button");
+        var fuel = tab.children().stream().filter(child -> child.getClass().getSimpleName().equals("NativeFuel"))
+                .map(WidgetBase.class::cast).findFirst().orElseThrow();
+        check(outputLeft + 18 == fuel.getX() + fuel.getWidth() + 1, "Align the standard-sized output frame with the fuel frame's right edge");
+        check(bucket.getY() + 1 == screen.getGuiTop() + input.y && output.y == input.y,
+                "Keep the input, mode button and output aligned in one row");
+    }
+    private static void clickMode(StorageScreenBase<?> screen, MeltingUpgradeTab tab) {
+        var bucket = tab.children().stream().filter(BucketTransferModeButton.class::isInstance)
+                .map(BucketTransferModeButton.class::cast).findFirst().orElseThrow();
+        click(screen, bucket.getX() + bucket.getWidth() / 2, bucket.getY() + bucket.getHeight() / 2, 0);
+    }
     private static Slot playerSlot(StorageScreenBase<?> screen, int index) {
         return screen.getMenu().slots.stream().filter(slot -> slot.container == Minecraft.getInstance().player.getInventory()
                 && slot.getSlotIndex() == index).findFirst().orElseThrow();

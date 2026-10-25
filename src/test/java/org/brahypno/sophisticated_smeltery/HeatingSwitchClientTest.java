@@ -53,7 +53,7 @@ public final class HeatingSwitchClientTest {
                             true, new GameRules(), WorldDataConfiguration.DEFAULT), new WorldOptions(42L, false, false),
                     access -> access.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions());
         } else if (stage == 1 && mc.player != null && mc.getConnection() != null && mc.screen == null) {
-            mc.getConnection().sendCommand("ssmeltery_test");
+            mc.getConnection().sendCommand(Boolean.getBoolean("sophisticatedsmeltery.foundryLayoutSmoke") ? "ssmeltery_test foundry" : "ssmeltery_test");
             stage = 3;
             ticks = 0;
         }
@@ -124,6 +124,7 @@ public final class HeatingSwitchClientTest {
             var melting = tabs.stream().filter(MeltingUpgradeTab.class::isInstance).findFirst().orElseThrow();
             assertIconAnchor(melting);
             TabFrameClientProbe.verifyContinuousHeader(event, melting);
+            MeltingInteractionClientTest.verifyContainerRow(screen, (MeltingUpgradeTab)melting, container);
             capture(event, "switch-" + size + "-melting-open");
             // The open panel covers the following tab. Close it before clicking the magnet.
             click(screen, melting.getX() + 8, melting.getY() + 12);

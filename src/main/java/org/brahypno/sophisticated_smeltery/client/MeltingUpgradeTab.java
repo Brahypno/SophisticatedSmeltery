@@ -35,7 +35,7 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         }
         addHideableChild(new NativeTank(new Position(x + 5, y + 24)));
         addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
-        addHideableChild(new BucketTransferModeButton(new Position(x + 82, y + 163),
+        addHideableChild(new BucketTransferModeButton(new Position(x + 65 + BucketTransferModeButton.MODE_BUTTON_OFFSET, y + 138),
                 () -> container.getUpgradeWrapper().getTransferDirection(), () -> container.action("bucketMode")));
         for (int index = 0; index < Math.min(2, container.getUpgradeWrapper().getBackpackTanks().size()); index++) {
             int tank = index;
@@ -68,7 +68,7 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         }
         slots.get(9).x = x - screen.getGuiLeft() + 65;
         slots.get(9).y = y - screen.getGuiTop() + 139;
-        slots.get(10).x = x - screen.getGuiLeft() + 101;
+        slots.get(10).x = x - screen.getGuiLeft() + 65 + BucketTransferModeButton.OUTPUT_SLOT_OFFSET;
         slots.get(10).y = y - screen.getGuiTop() + 139;
     }
 

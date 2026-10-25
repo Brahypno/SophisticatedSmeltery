@@ -206,7 +206,8 @@ public final class ClientSmokePreview {
                 bucketModes = new BucketTransferModeButton[3];
                 for (int index = 0; index < 3; index++) {
                     TransferDirection mode = modes[index];
-                    bucketModes[index] = new BucketTransferModeButton(new Position(width / 2 + (index - 1) * 110 - 10, height / 2 - 1), () -> mode, () -> {});
+                    bucketModes[index] = new BucketTransferModeButton(new Position(width / 2 + (index - 1) * 110 - 27
+                            + BucketTransferModeButton.MODE_BUTTON_OFFSET, height / 2 - 26), () -> mode, () -> {});
                 }
             }
             int hoverX = bucketModes[2].getX() + 9;
