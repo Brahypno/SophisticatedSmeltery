@@ -29,11 +29,26 @@ import slimeknights.tconstruct.library.client.GuiUtil;
 public final class ClientSmokePreview {
     private static boolean opened;
     private static boolean saved;
+    private static boolean creatingControllerWorld;
 
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if (!Boolean.getBoolean("sophisticatedsmeltery.clientSmoke") || opened || event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen != null && minecraft.getOverlay() == null) {
+        boolean controllerPreview = Boolean.getBoolean("sophisticatedsmeltery.backpackControllerSmoke");
+        if (controllerPreview && minecraft.level == null) {
+            if (!creatingControllerWorld && minecraft.getOverlay() == null && (minecraft.screen instanceof net.minecraft.client.gui.screens.TitleScreen
+                    || minecraft.screen != null && minecraft.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen"))) {
+                creatingControllerWorld = true;
+                minecraft.createWorldOpenFlows().createFreshLevel("controller-test-" + System.currentTimeMillis(),
+                        new net.minecraft.world.level.LevelSettings("Controller model test", net.minecraft.world.level.GameType.CREATIVE,
+                                false, net.minecraft.world.Difficulty.PEACEFUL, true, new net.minecraft.world.level.GameRules(),
+                                net.minecraft.world.level.WorldDataConfiguration.DEFAULT), new net.minecraft.world.level.levelgen.WorldOptions(42L, false, false),
+                        access -> access.registryOrThrow(net.minecraft.core.registries.Registries.WORLD_PRESET)
+                                .getHolderOrThrow(net.minecraft.world.level.levelgen.presets.WorldPresets.FLAT).value().createWorldDimensions());
+            }
+            return;
+        }
+        if ((minecraft.screen != null || controllerPreview && minecraft.player != null) && minecraft.getOverlay() == null) {
             long window = minecraft.getWindow().getWindow();
             org.lwjgl.glfw.GLFW.glfwRestoreWindow(window);
             org.lwjgl.glfw.GLFW.glfwShowWindow(window);
@@ -54,6 +69,7 @@ public final class ClientSmokePreview {
         saved = true;
         event.getGuiGraphics().flush();
         Path destination = Boolean.getBoolean("sophisticatedsmeltery.wideSlotsSmoke") ? Path.of("../wide-slots-smoke.png")
+                : Boolean.getBoolean("sophisticatedsmeltery.backpackControllerSmoke") ? Path.of("../backpack-controller-smoke.png")
                 : Boolean.getBoolean("sophisticatedsmeltery.heatBarSmoke") ? Path.of("../heat-bars-smoke.png")
                 : Boolean.getBoolean("sophisticatedsmeltery.bucketSmoke") ? Path.of("../bucket-controls-smoke.png")
                 : Path.of("../build/client-smoke.png");
@@ -70,10 +86,15 @@ public final class ClientSmokePreview {
     private static final class Preview extends Screen {
         private int frames;
         private BucketTransferModeButton[] bucketModes;
+        private ItemStack[] controllerBackpacks;
         private Preview() { super(Component.literal("Melting Upgrade Preview")); }
         @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
             frames++;
             graphics.fill(0, 0, width, height, 0xff19212d);
+            if (Boolean.getBoolean("sophisticatedsmeltery.backpackControllerSmoke")) {
+                renderControllerBackpacks(graphics);
+                return;
+            }
             if (Boolean.getBoolean("sophisticatedsmeltery.wideSlotsSmoke")) {
                 renderWideSlots(graphics);
                 return;
@@ -99,6 +120,83 @@ public final class ClientSmokePreview {
                 graphics.pose().popPose();
                 graphics.drawCenteredString(font, stacks[index].getHoverName(), center, height / 2 + 44, 0xfff1f5fa);
             }
+        }
+
+        private void renderControllerBackpacks(GuiGraphics graphics) {
+            if (controllerBackpacks == null) {
+                controllerBackpacks = new ItemStack[3];
+                ItemStack[] upgrades = {ItemStack.EMPTY,
+                        ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), new ItemStack(TinkerSmeltery.smelteryController)),
+                        ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), new ItemStack(TinkerSmeltery.foundryController))};
+                for (int index = 0; index < 3; index++) {
+                    controllerBackpacks[index] = new ItemStack(net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems.NETHERITE_BACKPACK.get());
+                    new net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackWrapper(controllerBackpacks[index]).getRenderInfo()
+                            .setUpgradeItems(index == 0 ? java.util.List.of() : java.util.List.of(upgrades[index]));
+                }
+                verifyControllerModels();
+            }
+            graphics.drawCenteredString(font, "Backpack controller - original / smeltery / foundry", width / 2, 15, 0xfff1f5fa);
+            for (int index = 0; index < 3; index++) {
+                int center = width / 2 + (index - 1) * 125;
+                graphics.pose().pushPose();
+                graphics.pose().translate(center - 40, 45, 0);
+                graphics.pose().scale(5, 5, 1);
+                graphics.renderItem(controllerBackpacks[index], 0, 0);
+                graphics.pose().popPose();
+                graphics.drawCenteredString(font, new String[]{"Original", "Smeltery", "Foundry"}[index], center, 140, 0xfff1f5fa);
+                // The actual worn item context uses the same native backpack model.
+                graphics.pose().pushPose();
+                graphics.pose().translate(center, 180, 100);
+                graphics.pose().scale(72, -72, 72);
+                graphics.pose().mulPose(com.mojang.math.Axis.XP.rotationDegrees(15));
+                graphics.pose().mulPose(com.mojang.math.Axis.YP.rotationDegrees(150));
+                Minecraft.getInstance().getItemRenderer().renderStatic(controllerBackpacks[index],
+                        net.p3pp3rf1y.sophisticatedbackpacks.client.ClientEventHandler.WORN, 15728880,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, graphics.pose(), graphics.bufferSource(), null, 0);
+                graphics.pose().popPose();
+            }
+            graphics.flush();
+        }
+
+        private void verifyControllerModels() {
+            var renderer = Minecraft.getInstance().getItemRenderer();
+            int[] counts = new int[3];
+            for (int index = 0; index < 3; index++) {
+                var model = renderer.getModel(controllerBackpacks[index], null, null, 0);
+                if (!(model instanceof net.p3pp3rf1y.sophisticatedbackpacks.client.render.BackpackDynamicModel.BackpackBakedModel))
+                    throw new IllegalStateException("Keep native backpack model type for display items");
+                model.getRenderPasses(controllerBackpacks[index], true);
+                counts[index] = model.getQuads(null, null, net.minecraft.util.RandomSource.create(0),
+                        net.minecraftforge.client.model.data.ModelData.EMPTY, null).size();
+            }
+            if (counts[1] != counts[0] + 6 || counts[2] != counts[0] + 6)
+                throw new IllegalStateException("Bound backpacks must add exactly six controller faces: " + java.util.Arrays.toString(counts));
+            var model = renderer.getModel(controllerBackpacks[0], null, null, 0);
+            model.getRenderPasses(controllerBackpacks[0], true);
+            if (model.getQuads(null, null, net.minecraft.util.RandomSource.create(0), net.minecraftforge.client.model.data.ModelData.EMPTY, null).size() != counts[0])
+                throw new IllegalStateException("Controller geometry leaked to the next plain backpack");
+            var info = new net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackWrapper(controllerBackpacks[1]).getRenderInfo();
+            var controller = org.brahypno.sophisticated_smeltery.client.BackpackControllerModel.controller(info);
+            var level = Minecraft.getInstance().level;
+            var pos = Minecraft.getInstance().player.blockPosition().offset(2, 0, 0);
+            for (var facing : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                var state = net.p3pp3rf1y.sophisticatedbackpacks.init.ModBlocks.NETHERITE_BACKPACK.get().defaultBlockState()
+                        .setValue(net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackBlock.FACING, facing);
+                level.setBlock(pos, state, 3);
+                var block = (net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackBlockEntity)level.getBlockEntity(pos);
+                block.setBackpack(controllerBackpacks[1]);
+                var blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
+                var data = blockModel.getModelData(level, pos, state, net.minecraftforge.client.model.data.ModelData.EMPTY);
+                if (data.get(org.brahypno.sophisticated_smeltery.client.BackpackControllerModel.CONTROLLER) != controller)
+                    throw new IllegalStateException("Actual block model data did not receive controller");
+                int plain = blockModel.getQuads(state, null, net.minecraft.util.RandomSource.create(0), net.minecraftforge.client.model.data.ModelData.EMPTY, null).size();
+                int bound = blockModel.getQuads(state, null, net.minecraft.util.RandomSource.create(0), data, null).size();
+                if (bound != plain + 6) throw new IllegalStateException("Placed controller missing for " + facing);
+                if (org.brahypno.sophisticated_smeltery.client.BackpackControllerModel.quads(controller, facing).stream()
+                        .noneMatch(quad -> quad.getDirection() == facing && quad.getSprite().equals(Minecraft.getInstance().getBlockRenderer()
+                                .getBlockModel(controller).getParticleIcon()))) throw new IllegalStateException("Controller face rotated incorrectly for " + facing);
+            }
+            SophisticatedSmeltery.LOGGER.info("BACKPACK CONTROLLER MODELS PASSED: item, worn context, four block orientations, plain reset and native model identity");
         }
 
         private void renderBucketModes(GuiGraphics graphics, float partialTicks) {

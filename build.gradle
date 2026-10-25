@@ -98,8 +98,12 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
-            if (project.hasProperty('clientSmokeTest') || project.hasProperty('bucketControlSmoke') || project.hasProperty('heatBarSmoke') || project.hasProperty('wideSlotsSmoke')) {
+            if (project.hasProperty('clientSmokeTest') || project.hasProperty('bucketControlSmoke') || project.hasProperty('heatBarSmoke') || project.hasProperty('wideSlotsSmoke') || project.hasProperty('backpackControllerSmoke')) {
                 property 'sophisticatedsmeltery.clientSmoke', 'true'
+                if (project.hasProperty('backpackControllerSmoke')) {
+                    property 'sophisticatedsmeltery.backpackControllerSmoke', 'true'
+                    workingDirectory project.file('build/backpack-controller-preview-run')
+                }
                 if (project.hasProperty('bucketControlSmoke')) {
                     property 'sophisticatedsmeltery.bucketSmoke', 'true'
                     workingDirectory project.file('build/bucket-preview-run')

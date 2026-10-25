@@ -11,6 +11,10 @@
 
 以下是待人工验证的检查表，自动化通过不等于这些检查已经完成：
 
+炉液接口与背包下部控制器凸起：安装有液体空间的控制器后，不需要普通储罐升级即可对外存取炉液。手持背包直接右键支持 Forge 流体接口的储罐：目标有液体时灌入背包，目标为空时从背包导出，每次尽量转移源端当前可抽取的一种液体；炉液优先，普通储罐作为回退。满罐或无法转移时仍消费右键，避免意外放置背包。管道可使用背包原有六面 `FLUID_HANDLER`，原背包的禁止连接配置继续有效；炉子背部凸起位于下部口袋前方，跟随绑定控制器的贴图和朝向。具体管道模组、资源包组合仍需实机复验。
+
+`gradle runClient -PbackpackControllerSmoke --offline` 在独立 `build/backpack-controller-preview-run` 世界验证物品与穿戴上下文的控制器几何、普通背包复位、四个真实放置模型数据及控制器正面朝向，保存 `build/backpack-controller-smoke.png`。服务端存取、模拟、立即保存与接口失效验证使用 `gradle runGameTestServer --offline`，日志 `build/fluid-access-tests.log`。
+
 已补充整页自动交互：`gradle runClient -PmeltingInteractionSmoke --offline` 在独立测试世界执行开关/页签回归，并实际点击液层、手持堆叠桶取液、右键注液、三模式按钮和桶输入/输出槽。检查连续处理两种流体并核对 8 个容器的最终守恒；日志 `build/melting-interactions-test.log`，截图 `build/bucket-ui-first-output.png`、`build/bucket-ui-injection-complete.png`。下列对应项目自动路径已通过，仍可按个人操作习惯复验；流体单位、Shift 和资源包组合尚未因此覆盖。
 
 1. 空白升级显示紫黑占位图；绑定后使用精妙背包空白升级作底板，中心显示控制器正面。用工作台验证无序绑定和换绑返还原控制器；检查 JEI 和配方书能查看绑定配方。

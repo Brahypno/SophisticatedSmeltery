@@ -14,7 +14,9 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
+import net.p3pp3rf1y.sophisticatedbackpacks.api.IFluidHandlerWrapperUpgrade;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
+import net.p3pp3rf1y.sophisticatedcore.api.IStorageFluidHandler;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.IStackableContentsUpgrade;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.ITickableUpgrade;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeWrapperBase;
@@ -22,13 +24,14 @@ import net.p3pp3rf1y.sophisticatedcore.upgrades.tank.TankUpgradeItem;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.furnace.UpgradeTankHandler;
+import org.brahypno.sophisticated_smeltery.furnace.FurnaceFluidHandler;
 import slimeknights.tconstruct.smeltery.block.entity.tank.SmelteryTank;
 import slimeknights.mantle.fluid.FluidTransferHelper;
 import slimeknights.mantle.fluid.transfer.FluidContainerTransferManager;
 import slimeknights.mantle.fluid.transfer.IFluidContainerTransfer.TransferDirection;
 
 public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgradeWrapper, MeltingUpgradeItem>
-        implements ITickableUpgrade, IStackableContentsUpgrade {
+        implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade {
     private final NativeFurnace furnace;
     private final ItemStackHandler components;
     private final ItemStackHandler containers;
@@ -78,6 +81,9 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     public NativeFurnace getFurnace() { return furnace; }
     public IStorageWrapper getStorage() { return storageWrapper; }
     public SmelteryTank<?> getTank() { return furnace.controller().getTank(); }
+    @Override public IStorageFluidHandler wrapHandler(@Nullable IStorageFluidHandler handler, ItemStack backpack) {
+        return new FurnaceFluidHandler(this, handler, backpack);
+    }
     // Keep the wrapper ticking so the explicit heating switch can still cool items.
     @Override public boolean canBeDisabled() { return false; }
     public boolean isHeating() { return upgrade.getTag() == null || !upgrade.getTag().contains("heating") || upgrade.getTag().getBoolean("heating"); }

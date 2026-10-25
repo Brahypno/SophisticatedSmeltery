@@ -15,6 +15,7 @@
     "CastingUpgradeExtractionMixin"
   ],
   "client": [
+    "BackpackControllerModelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
