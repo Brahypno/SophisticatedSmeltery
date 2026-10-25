@@ -9,7 +9,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
@@ -23,7 +22,6 @@ import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackBlockEntity;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem;
 import net.p3pp3rf1y.sophisticatedbackpacks.api.CapabilityBackpackWrapper;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
-import org.brahypno.sophisticated_smeltery.recipe.ControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
@@ -52,7 +50,7 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void blankAndUniqueControllerRules(GameTestHelper helper) {
+    public static void controllerInstallationAndNativeNames(GameTestHelper helper) {
         MeltingUpgradeItem item = SophisticatedSmeltery.MELTING_UPGRADE.get();
         ItemStack blank = new ItemStack(item);
         helper.assertTrue(blank.getTag() == null, "Blank upgrade must not need NBT");
@@ -62,11 +60,6 @@ public final class UpgradeGameTests {
         helper.assertTrue(item.canAddUpgradeTo(storage, bound(), true, false).isSuccessful(), "Bound upgrade can be installed");
         storage.getUpgradeHandler().setStackInSlot(0, bound());
         helper.assertTrue(!item.canAddUpgradeTo(storage, bound(), true, false).isSuccessful(), "Controller must be unique");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void boundNameUsesNativeControllerTranslationComponent(GameTestHelper helper) {
         ItemStack controller = new ItemStack(TinkerSmeltery.foundryController);
         Component expected = ControllerBinding.create(controller).getDisplayName();
         ItemStack bound = ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controller);
@@ -81,29 +74,7 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void rebindingReturnsExactOriginalController(GameTestHelper helper) {
-        ItemStack controller = new ItemStack(TinkerSmeltery.smelteryController);
-        controller.setHoverName(Component.literal("Keep this controller"));
-        controller.getOrCreateTag().putInt("testMarker", 1729);
-        var menu = new AbstractContainerMenu(null, -1) {
-            public ItemStack quickMoveStack(Player player, int slot) { return ItemStack.EMPTY; }
-            public boolean stillValid(Player player) { return true; }
-        };
-        var grid = new TransientCraftingContainer(menu, 2, 2);
-        grid.setItem(3, ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controller));
-        grid.setItem(0, new ItemStack(TinkerSmeltery.foundryController));
-        var recipe = new ControllerBindingRecipe(SophisticatedSmeltery.id("test_binding"), CraftingBookCategory.MISC);
-        helper.assertTrue(recipe.matches(grid, helper.getLevel()), "Binding recipe must be unordered");
-        ItemStack output = recipe.assemble(grid, helper.getLevel().registryAccess());
-        helper.assertTrue(ControllerBinding.getController(output).is(TinkerSmeltery.foundryController.asItem()), "Bind new controller");
-        helper.assertTrue(ItemStack.matches(controller, recipe.getRemainingItems(grid).get(3)), "Return original controller including its NBT");
-        output.getOrCreateTag().getCompound("controller").putInt("testMarker", 42);
-        helper.assertTrue(controller.getTag().getInt("testMarker") == 1729, "Returned NBT must not share mutable ownership");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void controllerAndMaterialsCannotLoseStoredFluid(GameTestHelper helper) {
+    public static void capacityAndFuelGuardMaterialAndUpgradeRemoval(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
         materials(wrapper);
@@ -116,59 +87,40 @@ public final class UpgradeGameTests {
         wrapper.getTank().drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
         helper.assertTrue(wrapper.getComponents().extractItem(0, 4, false).getCount() == 4, "Empty furnace allows material removal");
         helper.assertTrue(wrapper.getTank().getCapacity() == 0, "No materials means no capacity");
-        helper.succeed();
-    }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void internalTinkersFuelTankBlocksControllerRemoval(GameTestHelper helper) {
-        var storage = backpack();
-        var wrapper = melting(storage);
         materials(wrapper);
         ItemStack fuelTank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK));
         TankItem.setTank(fuelTank, new FluidStack(Fluids.LAVA, 1000));
         wrapper.getComponents().setStackInSlot(1, fuelTank);
-        helper.assertTrue(!wrapper.canRemove(), "Internal lava must be emptied before controller removal");
-        helper.assertTrue(ControllerBinding.cleanForBinding(wrapper.getUpgradeStack()), "Internal materials and fuel tanks are refunded when rebinding");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void stackUpgradeRemovalAndDowngradePreserveCapacity(GameTestHelper helper) {
-        var storage = backpack();
+        helper.assertTrue(!wrapper.canRemove(), "Internal lava locks controller removal");
+        helper.assertTrue(ControllerBinding.cleanForBinding(wrapper.getUpgradeStack()), "Rebinding refunds the fuel tank");
+        helper.assertTrue(wrapper.getFurnace().fuel().getFuelInfo().getTemperature() > 0, "Display available fuel temperature");
+        wrapper.getComponents().extractItem(1, 1, false);
+        helper.assertTrue(wrapper.getFurnace().fuel().getFuelInfo().isEmpty(), "Removing tank clears stale fuel display");
         storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(ModItems.STACK_UPGRADE_TIER_2.get()));
-        var wrapper = melting(storage);
-        materials(wrapper);
-        int capacity = wrapper.getTank().getCapacity();
+        wrapper = melting(storage);
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        capacity = wrapper.getTank().getCapacity();
         helper.assertTrue(capacity > wrapper.getFurnace().baseCapacity(), "Use native tank stack scaling");
         wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), capacity), IFluidHandler.FluidAction.EXECUTE);
-        helper.assertTrue(!ModItems.STACK_UPGRADE_TIER_2.get().canRemoveUpgradeFrom(storage, false).isSuccessful(), "Reject stack upgrade removal when furnace would overflow");
+        helper.assertTrue(!ModItems.STACK_UPGRADE_TIER_2.get().canRemoveUpgradeFrom(storage, false).isSuccessful(), "Reject overflowing stack upgrade removal");
         helper.assertTrue(!ModItems.STACK_UPGRADE_TIER_2.get().canSwapUpgradeFor(new ItemStack(ModItems.STACK_UPGRADE_STARTER_TIER.get()), 1, storage, false).isSuccessful(),
-                "Reject stack upgrade downgrade when furnace would overflow");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void firstSlotsRemainRealBackpackSlots(GameTestHelper helper) {
-        var storage = backpack();
-        var wrapper = melting(storage);
-        materials(wrapper);
-        helper.assertTrue(wrapper.getMeltingSlotCount() == 1 && wrapper.isMeltingSlot(0) && !wrapper.isMeltingSlot(1), "Use the first X available backpack slots");
-        storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 64));
-        wrapper.setHeating(false);
-        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
-        helper.assertTrue(storage.getInventoryHandler().getStackInSlot(0).getCount() == 64, "Binding must not move backpack input");
+                "Reject overflowing stack upgrade downgrade");
         helper.succeed();
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
-    public static void nativeBackpackSortResetsMovedInputAndKeepsNormalInsertion(GameTestHelper helper) {
+    public static void realBackpackSlotsSurviveSortingAndNormalInsertion(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
         materials(wrapper);
+        helper.assertTrue(wrapper.getMeltingSlotCount() == 1 && wrapper.isMeltingSlot(0) && !wrapper.isMeltingSlot(1),
+                "Only first X real backpack slots participate");
         wrapper.setHeating(false);
         storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.GOLD_INGOT));
         storage.getInventoryHandler().setStackInSlot(5, new ItemStack(Items.IRON_INGOT, 64));
         wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(storage.getInventoryHandler().getStackInSlot(0).is(Items.GOLD_INGOT), "Binding does not relocate input");
         wrapper.getFurnace().melting().heatItems(3000, 5);
         helper.assertTrue(wrapper.getFurnace().melting().getCurrentTime(0) > 0, "Start real gold recipe progress before sorting");
         storage.setSortBy(net.p3pp3rf1y.sophisticatedcore.common.gui.SortBy.COUNT);
@@ -191,27 +143,6 @@ public final class UpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
-    public static void backpackTickMeltsAndPersistsUsingInternalFuel(GameTestHelper helper) {
-        var storage = backpack();
-        var wrapper = melting(storage);
-        materials(wrapper);
-        ItemStack fuelTank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK));
-        TankItem.setTank(fuelTank, new FluidStack(Fluids.LAVA, 1000));
-        wrapper.getComponents().setStackInSlot(1, fuelTank);
-        storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.IRON_INGOT));
-        helper.onEachTick(() -> wrapper.tick(null, helper.getLevel(), BlockPos.ZERO));
-        helper.succeedWhen(() -> {
-            helper.assertTrue(wrapper.getTank().getContained() == 90, "Real backpack ticks must produce exactly one ingot of fluid");
-            helper.assertTrue(storage.getInventoryHandler().getStackInSlot(0).isEmpty(), "Consume the real backpack input");
-            var fuel = wrapper.getComponents().getStackInSlot(1).getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).orElseThrow(IllegalStateException::new);
-            helper.assertTrue(fuel.getFluidInTank(0).getAmount() < 1000, "Drain the installed Tinkers fuel tank");
-            var restored = new MeltingUpgradeWrapper(storage, wrapper.getUpgradeStack().copy(), ignored -> {});
-            helper.assertTrue(restored.getTank().getContained() == 90, "Actual wrapper save must persist output");
-            helper.assertTrue(restored.getFurnace().fuel().getFuel() > 0, "Persist remaining burning fuel");
-        });
-    }
-
     private static void prepareFuelAndInput(BackpackWrapper storage) {
         var wrapper = melting(storage);
         materials(wrapper);
@@ -222,60 +153,39 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
-    public static void placedBackpackDispatchesMeltingWithoutDirectUpgradeTick(GameTestHelper helper) {
-        var storage = backpack();
-        prepareFuelAndInput(storage);
+    public static void placedAndCarriedHostsMeltAndPersist(GameTestHelper helper) {
+        var placed = backpack();
+        var carried = backpack();
+        prepareFuelAndInput(placed);
+        prepareFuelAndInput(carried);
         helper.setBlock(BlockPos.ZERO, ModBlocks.NETHERITE_BACKPACK.get());
-        var blockEntity = (BackpackBlockEntity)helper.getBlockEntity(BlockPos.ZERO);
-        blockEntity.setBackpack(storage.getBackpack());
-        // The actual world block ticker must discover and run our upgrade.
-        helper.succeedWhen(() -> {
-            var installed = blockEntity.getBackpackWrapper();
-            var actual = (MeltingUpgradeWrapper)installed.getUpgradeHandler().getSlotWrappers().get(0);
-            helper.assertTrue(actual.getTank().getContained() == 90, "Placed backpack must dispatch melting through its real world ticker");
-            helper.assertTrue(installed.getInventoryHandler().getStackInSlot(0).isEmpty(), "Placed backpack must consume its actual input");
-        });
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
-    public static void carriedBackpackDispatchesThroughItemInventoryTick(GameTestHelper helper) {
-        var storage = backpack();
-        prepareFuelAndInput(storage);
-        ItemStack stack = storage.getBackpack();
+        var block = (BackpackBlockEntity)helper.getBlockEntity(BlockPos.ZERO);
+        block.setBackpack(placed.getBackpack());
+        ItemStack stack = carried.getBackpack();
         var player = helper.makeMockPlayer();
-        // Use the real backpack item entry point and its capability-owned wrapper.
-        // Slot -1 is the backpack's native equipped-slot convention.
         helper.onEachTick(() -> ((BackpackItem)stack.getItem()).inventoryTick(stack, helper.getLevel(), player, -1, false));
         helper.succeedWhen(() -> {
-            var actualStorage = stack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
-            var actual = (MeltingUpgradeWrapper)actualStorage.getUpgradeHandler().getSlotWrappers().get(0);
-            helper.assertTrue(actual.getTank().getContained() == 90, "Backpack item must discover and tick the installed melting upgrade");
-            helper.assertTrue(actualStorage.getInventoryHandler().getStackInSlot(0).isEmpty(), "Item capability must expose the consumed input");
+            var held = stack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+            for (var storage : java.util.List.of(block.getBackpackWrapper(), held)) {
+                var actual = (MeltingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
+                helper.assertTrue(actual.getTank().getContained() == 90 && storage.getInventoryHandler().getStackInSlot(0).isEmpty(),
+                        "Real placed and carried dispatch each consume one input and produce one ingot");
+                var fuel = actual.getComponents().getStackInSlot(1).getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
+                        .orElseThrow(IllegalStateException::new);
+                helper.assertTrue(fuel.getFluidInTank(0).getAmount() < 1000, "Actual host consumes installed fuel");
+                var restored = new MeltingUpgradeWrapper(storage, actual.getUpgradeStack().copy(), ignored -> {});
+                helper.assertTrue(restored.getTank().getContained() == 90 && restored.getFurnace().fuel().getFuel() > 0,
+                        "Actual host persists output and remaining burn");
+            }
         });
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void visibleBindingRecipesKeepBookIngredientsAndControllerRemainders(GameTestHelper helper) {
-        var recipe = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id("foundry_upgrade")).orElseThrow();
-        helper.assertTrue(!recipe.isSpecial() && recipe.getIngredients().size() == 2, "Expose a normal crafting recipe to JEI and recipe book");
-        helper.assertTrue(ControllerBinding.getController(recipe.getResultItem(helper.getLevel().registryAccess())).is(TinkerSmeltery.foundryController.asItem()), "Display a bound result instead of an empty custom-recipe result");
-        var menu = new AbstractContainerMenu(null, -1) {
-            public ItemStack quickMoveStack(Player player, int slot) { return ItemStack.EMPTY; }
-            public boolean stillValid(Player player) { return true; }
-        };
-        var grid = new TransientCraftingContainer(menu, 2, 2);
-        var oldController = new ItemStack(TinkerSmeltery.smelteryController);
-        oldController.getOrCreateTag().putInt("keep", 1300);
-        grid.setItem(3, ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), oldController));
-        grid.setItem(0, new ItemStack(TinkerSmeltery.foundryController));
-        var crafting = (net.minecraft.world.item.crafting.CraftingRecipe)recipe;
-        helper.assertTrue(crafting.matches(grid, helper.getLevel()), "Visible recipe remains unordered and supports clean rebinding");
-        helper.assertTrue(ItemStack.matches(crafting.getRemainingItems(grid).get(3), oldController), "Visible recipe cannot bypass exact controller return");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void actualCraftingRefundsControllerAndEveryInternalStack(GameTestHelper helper) {
+    public static void bindingAndClearingRefundEveryStoredItem(GameTestHelper helper) {
+        var visible = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id("foundry_upgrade")).orElseThrow();
+        helper.assertTrue(!visible.isSpecial() && visible.getIngredients().size() == 2
+                && ControllerBinding.getController(visible.getResultItem(helper.getLevel().registryAccess())).is(TinkerSmeltery.foundryController.asItem()),
+                "Expose ingredients and a bound result to JEI and the recipe book");
         for (int width : new int[]{2, 3}) {
             for (boolean unbind : new boolean[]{false, true}) {
                 var storage = backpack();
@@ -312,6 +222,11 @@ public final class UpgradeGameTests {
                 helper.assertTrue(unbind ? ControllerBinding.getController(output).isEmpty()
                                 : ControllerBinding.getController(output).is(TinkerSmeltery.foundryController.asItem()),
                         "Real recipe manager selects the requested unbinding or foundry conversion");
+                ItemStack independent = recipe.getRemainingItems(grid).get(width * width - 1);
+                independent.getOrCreateTag().putInt("ownership", 42);
+                helper.assertTrue(!controller.getTag().contains("ownership")
+                        && !ControllerBinding.getController(grid.getItem(width * width - 1)).getTag().contains("ownership"),
+                        "Controller remainder owns its NBT independently");
                 var result = new net.minecraft.world.inventory.ResultContainer();
                 result.setItem(0, output);
                 result.setRecipeUsed(recipe);
@@ -332,7 +247,7 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void customClearingRecipeLoadsAndPreservesOtherUpgrades(GameTestHelper helper) {
+    public static void clearingRecipeNetworkAndMoltenContentsGuard(GameTestHelper helper) {
         var id = new net.minecraft.resources.ResourceLocation("sophisticatedcore", "upgrade_clear");
         var loaded = helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
         helper.assertTrue(loaded instanceof org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe,
@@ -361,11 +276,6 @@ public final class UpgradeGameTests {
             grid.setItem(2, cleared);
             helper.assertTrue(!decoded.matches(grid, helper.getLevel()), "Already-clear upgrades cannot be cleared again");
         } finally { buffer.release(); }
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void moltenContentsBlockBothBindingAndCoreClearing(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
         materials(wrapper);
@@ -386,7 +296,7 @@ public final class UpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void stackedBucketsInteractThroughRealContainerMessage(GameTestHelper helper) {
+    public static void bucketMessagesWaitingRetryAndPersistence(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
         materials(wrapper);
@@ -407,13 +317,6 @@ public final class UpgradeGameTests {
             if (stack.is(Items.BUCKET)) empty += stack.getCount();
         }
         helper.assertTrue(filled == 1 && empty == 7, "Keep exactly one filled bucket and seven empty buckets");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void waitingBucketRetriesWhenFluidArrivesAndOutputIsTaken(GameTestHelper helper) {
-        var storage = backpack();
-        var wrapper = melting(storage);
         wrapper.getComponents().setStackInSlot(0, new ItemStack(TinkerSmeltery.searedBricks, 32));
         wrapper.setHeating(false);
         wrapper.getContainers().setStackInSlot(0, new ItemStack(Items.BUCKET, 8));
@@ -440,24 +343,4 @@ public final class UpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void bucketGuiSlotsPersistAndFuelDisplayRefreshes(GameTestHelper helper) {
-        var storage = backpack();
-        var wrapper = melting(storage);
-        materials(wrapper);
-        wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
-        wrapper.getContainers().setStackInSlot(0, new ItemStack(Items.BUCKET, 8));
-        helper.assertTrue(wrapper.getContainers().getStackInSlot(0).getCount() == 7, "GUI input consumes exactly one bucket");
-        helper.assertTrue(wrapper.getContainers().getStackInSlot(1).is(TinkerFluids.moltenIron.get().getBucket()), "GUI output receives molten iron bucket");
-        helper.assertTrue(wrapper.getTank().getContained() == 0, "GUI slot transfer drains fluid once");
-        var restored = new MeltingUpgradeWrapper(storage, wrapper.getUpgradeStack().copy(), ignored -> {});
-        helper.assertTrue(restored.getContainers().getStackInSlot(0).getCount() == 7 && !restored.getContainers().getStackInSlot(1).isEmpty(), "Closing/reloading cannot lose bucket slots");
-        ItemStack tank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK));
-        TankItem.setTank(tank, new FluidStack(Fluids.LAVA, 1000));
-        wrapper.getComponents().setStackInSlot(1, tank);
-        helper.assertTrue(wrapper.getFurnace().fuel().getFuelInfo().getTemperature() > 0, "Display current available fuel temperature");
-        wrapper.getComponents().extractItem(1, 1, false);
-        helper.assertTrue(wrapper.getFurnace().fuel().getFuelInfo().isEmpty(), "Removing a tank must immediately clear the displayed fuel and temperature");
-        helper.succeed();
-    }
 }

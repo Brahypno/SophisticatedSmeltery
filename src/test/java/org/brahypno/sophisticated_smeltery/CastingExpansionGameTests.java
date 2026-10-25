@@ -92,7 +92,7 @@ public final class CastingExpansionGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void furnaceBottomPrecedesTankAndTankCanFinishSameBatch(GameTestHelper helper) {
+    public static void sourcePriorityAndOutputCapacityConserveFluid(GameTestHelper helper) {
         var storage = storage(false, 180);
         addFurnace(storage, 45);
         furnace(storage).getTank().fill(new FluidStack(TinkerFluids.moltenGold.get(), 90), FluidAction.EXECUTE);
@@ -107,38 +107,34 @@ public final class CastingExpansionGameTests {
                 "Gold cannot mix with stacked iron, but matching iron from the tank remains usable");
         tick(helper, casting, 60);
         helper.assertTrue(casting.casting().inventory().getStackInSlot(1).getCount() == 2, "Both sources preserve exact output and fluid quantities");
-        helper.succeed();
-    }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void outputRequiresSameItemTagsAndStackCapacity(GameTestHelper helper) {
-        var storage = storage(false, 180);
-        var casting = casting(storage);
+        tank(storage).fill(new FluidStack(TinkerFluids.moltenIron.get(), 135), FluidAction.EXECUTE, true);
         var output = casting.casting().inventory();
-        output.setStackInSlot(0, cast("ingot_cast"));
-        output.setStackInSlot(1, new ItemStack(Items.GOLD_INGOT));
-        helper.assertTrue(casting.pour(helper.getLevel()) == 0, "Reject a different output before draining");
+        // Gold can use the bottom furnace fluid; use a foreign item to test rejection of all sources.
+        output.setStackInSlot(1, new ItemStack(Items.DIAMOND));
+        helper.assertTrue(casting.pour(helper.getLevel()) == 0, "Different result cannot overwrite output");
         ItemStack namedIron = new ItemStack(Items.IRON_INGOT);
         namedIron.getOrCreateTag().putInt("custom", 1);
         output.setStackInSlot(1, namedIron);
-        helper.assertTrue(casting.pour(helper.getLevel()) == 0, "Same item with different NBT cannot merge");
+        helper.assertTrue(casting.pour(helper.getLevel()) == 0, "Different NBT cannot merge");
         output.setStackInSlot(1, new ItemStack(Items.IRON_INGOT, 64));
-        helper.assertTrue(casting.pour(helper.getLevel()) == 0 && tank(storage).getContents().getAmount() == 180, "Full result stack consumes no fluid");
+        helper.assertTrue(casting.pour(helper.getLevel()) == 0 && tank(storage).getContents().getAmount() == 180
+                && furnace(storage).getTank().getContained() == 90, "Full result consumes neither source");
         output.setStackInSlot(1, new ItemStack(Items.IRON_INGOT, 63));
-        helper.assertTrue(casting.pour(helper.getLevel()) == 90, "Accept exactly the remaining stack space");
+        helper.assertTrue(casting.pour(helper.getLevel()) == 90, "Accept exactly remaining stack space from matching source");
         tick(helper, casting, 60);
-        helper.assertTrue(output.getStackInSlot(1).getCount() == 64 && tank(storage).getContents().getAmount() == 90, "Merge without overwriting or overflowing");
+        helper.assertTrue(output.getStackInSlot(1).getCount() == 64 && tank(storage).getContents().getAmount() == 90, "Merge without overflow");
         output.extractItem(1, 1, false);
         helper.assertTrue(casting.pour(helper.getLevel()) == 90 && output.extractItem(1, 63, false).getCount() == 63,
-                "Stacked completed items remain removable while the next batch cools");
-        helper.assertTrue(output.extractItem(0, 1, false).isEmpty(), "The active mold remains locked independently of completed output");
+                "Old output remains removable during the next cooldown");
+        helper.assertTrue(output.extractItem(0, 1, false).isEmpty(), "Active mold stays locked");
         tick(helper, casting, 60);
-        helper.assertTrue(output.getStackInSlot(1).getCount() == 1 && tank(storage).getContents().isEmpty(), "Next batch completes once after collecting earlier output");
+        helper.assertTrue(output.getStackInSlot(1).getCount() == 1 && tank(storage).getContents().isEmpty(), "Next batch finishes once");
         helper.succeed();
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void storageUsesOrdinaryThenMeltingSlotsAndWaitsWhenFull(GameTestHelper helper) {
+    public static void outputDeliveryHandlesFullStorageAndDynamicResults(GameTestHelper helper) {
         var storage = storage(false, 270);
         addFurnace(storage, 0);
         var casting = casting(storage);
@@ -165,32 +161,27 @@ public final class CastingExpansionGameTests {
         tick(helper, casting, 1);
         helper.assertTrue(storage.getInventoryHandler().getStackInSlot(0).is(Items.IRON_INGOT)
                 && casting.casting().inventory().getStackInSlot(1).isEmpty(), "Waiting output enters newly freed space exactly once");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void dynamicAndSwitchedResultsEnterStorageExactlyOnce(GameTestHelper helper) {
         for (boolean switched : new boolean[]{false, true}) {
-            var storage = storage(false, 0);
-            tank(storage).fill(new FluidStack(switched ? TinkerFluids.moltenGold.get() : TinkerFluids.moltenIron.get(), 90), FluidAction.EXECUTE, true);
-            var casting = casting(storage);
-            casting.setMode(switched ? PortableCasting.Mode.TABLE : PortableCasting.Mode.BASIN);
+            var dynamicStorage = storage(false, 0);
+            tank(dynamicStorage).fill(new FluidStack(switched ? TinkerFluids.moltenGold.get() : TinkerFluids.moltenIron.get(), 90), FluidAction.EXECUTE, true);
+            var dynamicCasting = casting(dynamicStorage);
+            dynamicCasting.setMode(switched ? PortableCasting.Mode.TABLE : PortableCasting.Mode.BASIN);
             ItemStack input = switched ? new ItemStack(Items.IRON_INGOT)
                     : new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.INGOT_TANK));
             input.getOrCreateTag().putInt("retained", 1729);
-            casting.casting().inventory().setStackInSlot(0, input);
-            casting.setOutputToStorage(true);
-            helper.assertTrue(casting.pour(helper.getLevel()) == 90, "Use the native recipe's actual amount");
-            tick(helper, casting, 60);
-            ItemStack result = storage.getInventoryHandler().getStackInSlot(0);
+            dynamicCasting.casting().inventory().setStackInSlot(0, input);
+            dynamicCasting.setOutputToStorage(true);
+            helper.assertTrue(dynamicCasting.pour(helper.getLevel()) == 90, "Use the native recipe's actual amount");
+            tick(helper, dynamicCasting, 60);
+            ItemStack result = dynamicStorage.getInventoryHandler().getStackInSlot(0);
             if (switched) helper.assertTrue(result.is(cast("ingot_cast").getItem()), "Deliver the switchSlots result, consuming the ingot template");
             else {
                 var handler = result.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElseThrow(IllegalStateException::new);
                 helper.assertTrue(result.getTag().getInt("retained") == 1729 && handler.getFluidInTank(0).getAmount() == 90,
                         "Preserve the result's dynamic fluid and custom NBT");
             }
-            helper.assertTrue(casting.casting().inventory().getStackInSlot(0).isEmpty() && casting.casting().inventory().getStackInSlot(1).isEmpty()
-                    && tank(storage).getContents().isEmpty(), "Deliver exactly once, without leaving a duplicate template or fluid");
+            helper.assertTrue(dynamicCasting.casting().inventory().getStackInSlot(0).isEmpty() && dynamicCasting.casting().inventory().getStackInSlot(1).isEmpty()
+                    && tank(dynamicStorage).getContents().isEmpty(), "Deliver exactly once, without leaving a duplicate template or fluid");
         }
         helper.succeed();
     }

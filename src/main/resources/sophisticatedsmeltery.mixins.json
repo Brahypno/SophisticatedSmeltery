@@ -6,6 +6,7 @@
   "refmap": "sophisticatedsmeltery.refmap.json",
   "mixins": [
     "HeatingControllerAccess",
+    "MobCatcherStorageAccess",
     "HeatingControllerMixin",
     "MultiblockShapeAccess",
     "HeatingMaterialsAccess",
@@ -15,6 +16,7 @@
     "CastingUpgradeExtractionMixin"
   ],
   "client": [
+    "StorageScreenControlsAccess",
     "BackpackControllerModelMixin"
   ],
   "injectors": {

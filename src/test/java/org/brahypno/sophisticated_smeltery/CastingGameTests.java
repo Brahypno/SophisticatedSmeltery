@@ -77,15 +77,10 @@ public final class CastingGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void tableCastingMatchesNativeAcrossCastTypes(GameTestHelper helper) {
+    public static void nativeCastingMatrixPreservesMaterialsCastsAndDynamicResults(GameTestHelper helper) {
         compareNative(helper, Mode.TABLE, cast("ingot_cast"), new FluidStack(TinkerFluids.moltenIron.get(), 180));
         for (boolean scorched : new boolean[]{false, true})
             compareNative(helper, Mode.TABLE, cast("ingot_sand_cast"), new FluidStack(TinkerFluids.moltenIron.get(), 180), scorched);
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void basinCastingMatchesNativeForBothMaterials(GameTestHelper helper) {
         compareNative(helper, Mode.BASIN, ItemStack.EMPTY, new FluidStack(TinkerFluids.moltenIron.get(), 1000));
         var engine = new PortableCasting(new CompoundTag(), () -> {}, true);
         engine.setMode(Mode.BASIN);
@@ -95,14 +90,9 @@ public final class CastingGameTests {
         helper.assertTrue(nativeBasin.getTank().fill(fluid, FluidAction.EXECUTE) == 0
                 && engine.pour(helper.getLevel(), iron(1000)) == 0, "Both empty scorched basins require a cast or platform");
         compareNative(helper, Mode.BASIN, cast("gold_platform"), fluid, true);
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void dynamicResultsAndSlotSwitchMatchNative(GameTestHelper helper) {
-        var tank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.INGOT_TANK));
-        tank.getOrCreateTag().putInt("retained", 1729);
-        compareNative(helper, Mode.BASIN, tank, new FluidStack(TinkerFluids.moltenIron.get(), 1000));
+        var tankItem = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.INGOT_TANK));
+        tankItem.getOrCreateTag().putInt("retained", 1729);
+        compareNative(helper, Mode.BASIN, tankItem, new FluidStack(TinkerFluids.moltenIron.get(), 1000));
         compareNative(helper, Mode.TABLE, new ItemStack(Items.IRON_INGOT), new FluidStack(TinkerFluids.moltenGold.get(), 90));
         helper.succeed();
     }

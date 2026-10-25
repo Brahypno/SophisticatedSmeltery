@@ -25,7 +25,7 @@ public final class ControllerBinding {
 
     public static ItemStack getController(ItemStack upgrade) {
         CompoundTag tag = upgrade.getTag();
-        return tag == null ? ItemStack.EMPTY : ItemStack.of(tag.getCompound(CONTROLLER));
+        return tag == null ? ItemStack.EMPTY : ItemStack.of(tag.getCompound(CONTROLLER).copy());
     }
 
     public static boolean supports(ItemStack stack) {
@@ -67,6 +67,10 @@ public final class ControllerBinding {
                 ItemStack stack = ItemStack.of((CompoundTag)entry);
                 if (!stack.isEmpty()) items.add(stack);
             }
+        }
+        for (Tag entry : state.getList(PortableMobMelting.DROPS, Tag.TAG_COMPOUND)) {
+            ItemStack stack = ItemStack.of(((CompoundTag)entry).copy());
+            if (!stack.isEmpty()) items.add(stack);
         }
         return items;
     }

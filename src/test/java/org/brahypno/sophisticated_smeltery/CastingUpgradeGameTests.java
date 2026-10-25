@@ -92,44 +92,31 @@ public final class CastingUpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void automaticCastingResumesPartialBatchThenStacksOutput(GameTestHelper helper) {
+    public static void automaticCastingRemovalReloadAndSharedFluidLifecycle(GameTestHelper helper) {
         var storage = backpack(45, true);
-        var casting = casting(storage, 1);
-        casting.setAutomatic(true);
-        tick(helper, casting, 100);
-        helper.assertTrue(casting.casting().fluid().getAmount() == 45 && casting.casting().timer() == 0,
-                "A half-filled automatic cast must wait without cooling");
-        furnace(storage).getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 135), FluidAction.EXECUTE);
-        tick(helper, casting, 120);
-        helper.assertTrue(casting.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)
-                && casting.casting().inventory().getStackInSlot(1).getCount() == 2
-                && furnace(storage).getTank().getContained() == 0 && casting.canRemove(),
-                "Changed furnace fluid completes the partial batch and matching output stacks without pickup");
-        helper.succeed();
-    }
-
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void removalLockFollowsPartialAndReloadedCoolingLifecycle(GameTestHelper helper) {
-        var storage = backpack(45);
         storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
         var busy = casting(storage, 1);
         helper.assertTrue(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get().canAddUpgradeTo(storage,
                 new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()), true, false).isSuccessful(), "Multiple casting upgrades have no added count limit");
-        busy.pour(helper.getLevel());
+        busy.setAutomatic(true);
+        tick(helper, busy, 100);
+        helper.assertTrue(busy.casting().fluid().getAmount() == 45 && busy.casting().timer() == 0, "Automatic half batch waits for more fluid");
         helper.assertTrue(!busy.canRemove() && !busy.casting().isCooling(), "Partial fluid locks removal even before cooling starts");
         helper.assertTrue(storage.getUpgradeHandler().extractItem(1, 1, true).isEmpty()
                 && storage.getUpgradeHandler().extractItem(1, 1, false).isEmpty(), "Both simulated and actual extraction must keep a filled upgrade installed");
         helper.assertTrue(!SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get().canSwapUpgradeFor(
-                new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()), 1, storage, false).isSuccessful(), "A filled upgrade cannot be bypassed by same-item swap");
+                new ItemStack(SophisticatedSmeltery.ADVANCED_SEARED_CASTING_UPGRADE.get()), 1, storage, false).isSuccessful(), "A filled upgrade cannot be bypassed by same-item swap");
         helper.assertTrue(!storage.getUpgradeHandler().extractItem(2, 1, false).isEmpty(), "Another empty casting upgrade remains independently removable");
         busy = casting(storage, 1); // The native upgrade handler rebuilds wrappers after another slot is removed.
         helper.assertTrue(busy.returnFluid(helper.getLevel()) == 45 && busy.canRemove(), "Return partial fluid before removal");
         ItemStack clean = storage.getUpgradeHandler().extractItem(1, 1, false);
         helper.assertTrue(!clean.isEmpty(), "The same upgrade unlocks after fluid is returned");
         storage.getUpgradeHandler().setStackInSlot(1, clean);
-        furnace(storage).getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 45), FluidAction.EXECUTE);
         var casting = casting(storage, 1);
-        casting.pour(helper.getLevel());
+        tick(helper, casting, 10);
+        helper.assertTrue(casting.casting().fluid().getAmount() == 45 && !casting.casting().isCooling(),
+                "Reinstalled automatic caster waits on the same half batch");
+        furnace(storage).getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 45), FluidAction.EXECUTE);
         tick(helper, casting, 20);
         storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
         var restored = casting(storage, 1);
@@ -143,27 +130,25 @@ public final class CastingUpgradeGameTests {
         tick(helper, restored, 40);
         helper.assertTrue(restored.canRemove() && restored.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT),
                 "Finish only the remaining cooling time, then unlock removal");
-        helper.succeed();
-    }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
-    public static void rebuiltAutomaticUpgradesShareOneFurnaceWithoutDuplication(GameTestHelper helper) {
-        var storage = backpack(180, true);
-        casting(storage, 1).pour(helper.getLevel());
+        // With the first paid output still present, rebuild a second automatic caster.
+        furnace(storage).getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 180), FluidAction.EXECUTE);
+        restored.pour(helper.getLevel());
         storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.ADVANCED_SEARED_CASTING_UPGRADE.get()));
         var first = casting(storage, 1);
         var second = casting(storage, 2);
         helper.assertTrue(furnace(storage).getTank().getContained() == 90 && first.casting().fluid().getAmount() == 90,
-                "Rebuilding wrappers before the next furnace tick cannot restore already poured fluid");
+                "Rebuilding before furnace tick cannot restore already poured fluid");
         second.casting().inventory().setStackInSlot(0, first.casting().inventory().getStackInSlot(0).copy());
         first.setAutomatic(true);
         second.setAutomatic(true);
         for (int tick = 0; tick < 60; tick++) { tick(helper, first, 1); tick(helper, second, 1); }
         helper.assertTrue(first.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)
-                        && second.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)
-                        && first.casting().inventory().getStackInSlot(1).getCount() == 1
-                        && second.casting().inventory().getStackInSlot(1).getCount() == 1
-                        && furnace(storage).getTank().getContained() == 0, "Two independent upgrades consume and produce exactly two native recipes");
+                && second.casting().inventory().getStackInSlot(1).is(Items.IRON_INGOT)
+                && first.casting().inventory().getStackInSlot(1).getCount() == 2
+                && second.casting().inventory().getStackInSlot(1).getCount() == 1
+                && furnace(storage).getTank().getContained() == 0 && first.canRemove() && second.canRemove(),
+                "Two independent casters stack and consume exactly two additional recipes");
         helper.succeed();
     }
 }

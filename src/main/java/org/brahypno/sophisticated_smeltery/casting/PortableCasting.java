@@ -207,7 +207,7 @@ public final class PortableCasting {
             ItemStack output = recipe.assemble(context, level.registryAccess());
             boolean consumed = recipe.isConsumed(context);
             boolean switchSlots = recipe.switchSlots();
-            if (!canAcceptResult(level)) return;
+            if (!canAcceptOutput(switchSlots ? (consumed ? ItemStack.EMPTY : inventory.getStackInSlot(0)) : output)) return;
             int used = required;
             // Exactly the native no-redstone slot policy, including dynamic cast consumption.
             loading = true;
@@ -234,6 +234,10 @@ public final class PortableCasting {
         ItemStack output = recipe.switchSlots()
                 ? (recipe.isConsumed(context) ? ItemStack.EMPTY : inventory.getStackInSlot(0))
                 : recipe.assemble(context, level.registryAccess());
+        return canAcceptOutput(output);
+    }
+
+    private boolean canAcceptOutput(ItemStack output) {
         ItemStack stored = inventory.getStackInSlot(1);
         if (output.isEmpty()) return true;
         return stored.isEmpty() ? output.getCount() <= Math.min(64, output.getMaxStackSize())

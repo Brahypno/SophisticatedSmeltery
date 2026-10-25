@@ -96,6 +96,21 @@ public final class ManualTestCommand {
         storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.IRON_INGOT, 3));
         storage.getInventoryHandler().setStackInSlot(1, new ItemStack(Items.RAW_IRON, 3));
         storage.getInventoryHandler().setStackInSlot(2, new ItemStack(Items.GOLD_INGOT, 3));
+        if (Boolean.getBoolean("sophisticatedsmeltery.mobMeltingSmoke")) {
+            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(ModItems.ADVANCED_MOB_CATCHER_UPGRADE.get()));
+            storage.getInventoryHandler().setStackInSlot(0, ItemStack.EMPTY);
+            var cow = net.minecraft.world.entity.EntityType.COW.create(player.serverLevel());
+            if (Boolean.getBoolean("sophisticatedsmeltery.mobMeltingReloadSmoke")) {
+                cow.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(100);
+                cow.setHealth(100);
+            }
+            var nbt = new net.minecraft.nbt.CompoundTag();
+            cow.saveWithoutId(nbt);
+            net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherStorage.addCapturedMob(storage,
+                    new net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.CapturedMob(java.util.UUID.randomUUID(),
+                            new net.minecraft.resources.ResourceLocation("minecraft", "cow"), nbt, 0, 1, 2, 2,
+                            false, "Cow", (int) cow.getHealth(), (int) cow.getMaxHealth()));
+        }
         if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
             if (Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke"))
                 player.getInventory().setItem(11, new ItemStack(ModItems.UPGRADE_BASE.get()));

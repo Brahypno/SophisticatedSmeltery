@@ -32,6 +32,8 @@ public final class HeatingSwitchClientTest {
     private static int ticks;
     private static int frames;
     private static int size;
+    private static int mobHealth;
+    private static int stoppedMobHealth;
 
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if (!Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke") || event.phase != TickEvent.Phase.END) return;
@@ -74,11 +76,26 @@ public final class HeatingSwitchClientTest {
             check(control.getX() == screen.getGuiLeft() - 22 && control.getY() == screen.getGuiTop() + 8,
                     "Heating switch must use the native upgrade switch position");
             check(!container.getUpgradeWrapper().isHeating(), "Fixture must start with heating off");
+            if (Boolean.getBoolean("sophisticatedsmeltery.mobMeltingSmoke")) {
+                MobMeltingReloadClientTest.assertDisplayed(screen, capturedMob(container));
+                mobHealth = capturedMob(container).currentHealth();
+                check(mobHealth > 0 && (size == 0 || mobHealth == stoppedMobHealth), "Heating off preserves captured health");
+            }
             for (var tab : tabs) assertIconAnchor(tab);
             capture(event, "switch-" + size + "-closed");
             click(screen, control.getX() + 3, control.getY() + 6);
             stage = 4;
         } else if (stage == 4 && container.getUpgradeWrapper().isHeating()) {
+            if (Boolean.getBoolean("sophisticatedsmeltery.mobMeltingSmoke")) {
+                var mob = capturedMob(container);
+                if (mob.currentHealth() >= mobHealth) return;
+                check(mob.currentHealth() == (int)Math.ceil(mob.entityNbt().getFloat("Health")),
+                        "The actual screen receives both display health and precise release NBT");
+                stoppedMobHealth = mob.currentHealth();
+                capture(event, "mob-melting-" + size);
+                SophisticatedSmeltery.LOGGER.info("ACTUAL MOB MELTING UI PASSED: health {} -> {}, shared heating switch, size={}",
+                        mobHealth, stoppedMobHealth, size);
+            }
             capture(event, "switch-" + size + "-on");
             click(screen, control.getX() + 3, control.getY() + 6);
             stage = 5;
@@ -115,6 +132,7 @@ public final class HeatingSwitchClientTest {
                 SophisticatedSmeltery.LOGGER.info("ACTUAL BACKPACK UI PASSED: scroll/no-scroll, off/on/off server synchronization, native icon anchors and open-tab captures");
                 if (Boolean.getBoolean("sophisticatedsmeltery.castingUpgradeSmoke")) CastingUpgradeClientTest.start();
                 else if (Boolean.getBoolean("sophisticatedsmeltery.meltingInteractionSmoke")) MeltingInteractionClientTest.start();
+                else if (Boolean.getBoolean("sophisticatedsmeltery.mobMeltingReloadSmoke")) MobMeltingReloadClientTest.start(stoppedMobHealth);
                 else { mc.player.closeContainer(); mc.stop(); }
                 stage = 9;
             }
@@ -126,6 +144,13 @@ public final class HeatingSwitchClientTest {
         var icon = tab.children().stream().filter(ItemButton.class::isInstance).map(ItemButton.class::cast).findFirst().orElseThrow();
         check(icon.getX() - tab.getX() == 1 && icon.getY() - tab.getY() == 4,
                 "Closed and open icons must retain the native magnet anchor");
+    }
+
+    private static net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.CapturedMob capturedMob(MeltingUpgradeContainer container) {
+        var mobs = net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherStorage.getCapturedMobs(
+                (net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.IBackpackWrapper)container.getUpgradeWrapper().getStorage());
+        check(mobs.size() == 1, "Actual backpack screen must contain the captured mob");
+        return mobs.get(0);
     }
 
     private static void resize(Minecraft mc, int width, int height) {

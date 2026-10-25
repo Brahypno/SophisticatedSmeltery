@@ -87,8 +87,12 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
     public int pour(Level level) {
         if (level.isClientSide || !isCastingEnabled()) return 0;
         refillCast();
+        return pour(level, fluidSources());
+    }
+
+    private int pour(Level level, List<FluidSource> sources) {
         int amount = 0;
-        for (FluidSource source : fluidSources()) {
+        for (FluidSource source : sources) {
             int poured = casting.pour(level, source.handler());
             if (poured > 0) { source.save().run(); amount += poured; }
             if (casting.isCooling()) break;
@@ -120,16 +124,19 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
             casting.bind(level);
             if (isCastingEnabled()) refillCast();
             if (isOutputToStorage()) exportOutput();
-            // Observe full contents: simulated drain can hide changes behind a tank's transfer limit.
-            List<FluidStack> fluids = fluidSources().stream().map(source -> source.handler().getFluidInTank(0).copy()).toList();
-            boolean fluidChanged = fluids.size() != lastFluids.size();
-            for (int i = 0; !fluidChanged && i < fluids.size(); i++)
-                fluidChanged = !fluids.get(i).isFluidStackIdentical(lastFluids.get(i));
-            if (isCastingEnabled() && isAutomatic() && !casting.isCooling() && (pourRequested || fluidChanged)) {
-                pour(level);
-                pourRequested = false;
+            if (isCastingEnabled() && isAutomatic() && !casting.isCooling()) {
+                var sources = fluidSources();
+                // Observe full contents: simulated drain can hide changes behind a tank's transfer limit.
+                List<FluidStack> fluids = sources.stream().map(source -> source.handler().getFluidInTank(0).copy()).toList();
+                boolean fluidChanged = fluids.size() != lastFluids.size();
+                for (int i = 0; !fluidChanged && i < fluids.size(); i++)
+                    fluidChanged = !fluids.get(i).isFluidStackIdentical(lastFluids.get(i));
+                if (pourRequested || fluidChanged) {
+                    pour(level, sources);
+                    pourRequested = false;
+                }
+                lastFluids = fluids;
             }
-            lastFluids = fluids;
             // Cooling and casting intentionally do not depend on the controller heating switch.
             casting.tick(level);
             if (isOutputToStorage()) exportOutput();
@@ -138,8 +145,9 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
     }
 
     private void refillCast() {
+        if (casting.hasFluid() || !casting.inventory().getStackInSlot(0).isEmpty()) return;
         ItemStack target = casting.lockedCast();
-        if (target.isEmpty() || casting.hasFluid() || !casting.inventory().getStackInSlot(0).isEmpty()) return;
+        if (target.isEmpty()) return;
         var inventory = storageWrapper.getInventoryHandler();
         for (int slot = 0; slot < inventory.getSlots(); slot++) {
             if (!ItemStack.isSameItemSameTags(target, inventory.getStackInSlot(slot))) continue;

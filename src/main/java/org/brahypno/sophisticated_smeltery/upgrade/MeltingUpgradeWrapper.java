@@ -23,6 +23,7 @@ import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeWrapperBase;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.tank.TankUpgradeItem;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
+import org.brahypno.sophisticated_smeltery.furnace.PortableMobMelting;
 import org.brahypno.sophisticated_smeltery.furnace.UpgradeTankHandler;
 import org.brahypno.sophisticated_smeltery.furnace.FurnaceFluidHandler;
 import slimeknights.tconstruct.smeltery.block.entity.tank.SmelteryTank;
@@ -33,6 +34,7 @@ import slimeknights.mantle.fluid.transfer.IFluidContainerTransfer.TransferDirect
 public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgradeWrapper, MeltingUpgradeItem>
         implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade {
     private final NativeFurnace furnace;
+    private final PortableMobMelting mobMelting;
     private final ItemStackHandler components;
     private final ItemStackHandler containers;
     private boolean transferring;
@@ -48,6 +50,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         CompoundTag tag = upgrade.getTag();
         CompoundTag state = tag == null ? new CompoundTag() : tag.getCompound(ControllerBinding.STATE);
         furnace = new NativeFurnace(ControllerBinding.getController(upgrade), state, this::fuelSources, () -> dirty = true);
+        mobMelting = new PortableMobMelting(this, state);
         components = new ItemStackHandler(9) {
             @Override public boolean isItemValid(int slot, ItemStack stack) { return furnace.acceptsMaterial(stack); }
             @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
@@ -160,6 +163,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         furnace.bindInputs(level, storageWrapper.getInventoryHandler(), inputSlots);
         if ((level.getGameTime() & 3) == 0 || (level.getGameTime() & 3) == 1) furnace.refreshInputs();
         furnace.tick(isHeating() && furnace.dimensions().volume() > 0, level.getGameTime());
+        if (level instanceof net.minecraft.server.level.ServerLevel server) mobMelting.tick(entity, server, pos);
         // Retry a waiting container only when fluid contents/order actually change.
         // Recipe progress and fuel burning must not cause repeated container lookups.
         if (lastContainerFluidRevision != furnace.fluidRevision()) {
@@ -230,6 +234,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     public void persist() {
         if (loading) return;
         CompoundTag state = furnace.save();
+        mobMelting.save(state);
         state.put("components", components.serializeNBT());
         state.put("containers", containers.serializeNBT());
         upgrade.getOrCreateTag().put(ControllerBinding.STATE, state);

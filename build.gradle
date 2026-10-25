@@ -126,9 +126,16 @@ minecraft {
                     "${mod_id}" { source sourceSets.test }
                 }
             }
-            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke') || project.hasProperty('castingUpgradeSmoke') || project.hasProperty('castingExpansionSmoke')) {
+            if (project.hasProperty('heatingSwitchSmoke') || project.hasProperty('meltingInteractionSmoke') || project.hasProperty('castingUpgradeSmoke') || project.hasProperty('castingExpansionSmoke') || project.hasProperty('mobMeltingSmoke') || project.hasProperty('mobMeltingReloadSmoke')) {
                 property 'sophisticatedsmeltery.heatingSwitchSmoke', 'true'
                 workingDirectory project.file('build/heating-switch-run')
+                if (project.hasProperty('mobMeltingSmoke') || project.hasProperty('mobMeltingReloadSmoke')) {
+                    property 'sophisticatedsmeltery.mobMeltingSmoke', 'true'
+                    workingDirectory project.file('build/mob-melting-run')
+                }
+                if (project.hasProperty('mobMeltingReloadSmoke')) {
+                    property 'sophisticatedsmeltery.mobMeltingReloadSmoke', 'true'
+                }
                 if (project.hasProperty('meltingInteractionSmoke')) {
                     property 'sophisticatedsmeltery.meltingInteractionSmoke', 'true'
                     workingDirectory project.file('build/melting-interactions-run')
