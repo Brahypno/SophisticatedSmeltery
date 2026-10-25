@@ -23,7 +23,7 @@ public final class VisibleControllerBindingRecipe extends ShapelessRecipe {
     private final ControllerBindingRecipe binding;
 
     public VisibleControllerBindingRecipe(ResourceLocation id, ItemStack controller) {
-        super(id, "sophisticatedsmeltery:controller_binding", CraftingBookCategory.MISC,
+        super(id, SophisticatedSmeltery.id("controller_binding").toString(), CraftingBookCategory.MISC,
                 ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controller),
                 NonNullList.of(Ingredient.EMPTY, Ingredient.of(SophisticatedSmeltery.MELTING_UPGRADE.get()), Ingredient.of(controller)));
         this.controller = controller;

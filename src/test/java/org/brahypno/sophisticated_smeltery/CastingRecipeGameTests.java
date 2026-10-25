@@ -16,7 +16,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
 
 /** Keep the custom tier-transfer contract; vanilla JSON pattern checks are not duplicated here. */
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class CastingRecipeGameTests {
     private static TransientCraftingContainer grid(ItemStack basic) {
@@ -32,7 +32,7 @@ public final class CastingRecipeGameTests {
         return grid;
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void tierUpgradePreservesIndependentStateAndClientPacket(GameTestHelper helper) {
         for (boolean scorched : new boolean[]{false, true}) {
             String prefix = scorched ? "advanced_scorched_" : "advanced_seared_";

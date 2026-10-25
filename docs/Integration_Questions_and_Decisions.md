@@ -102,7 +102,7 @@
 | 45 | 配置项及数据包覆盖 | 具体范围未定；不要因此先引入额外配置框架。 |
 | 46 | 语言、JEI、Jade、贴图 | 动态名称至少考虑英语和汉语；JEI、Jade 和资源交付范围尚未确定。 |
 | 47 | 第三方验收对象与其他模组 | 已指定 Smeltery、Foundry、Transmute 作为架构研究对象；其他对象未指定。 |
-| 48 | mod ID 的下划线差异及旧存档 | 未回答。当前 Java 入口为 `sophisticatedsmeltery`，Gradle 配置为 `sophisticated_smeltery`；实现前检查并统一，不声称用户已选定最终值或存在旧存档。 |
+| 48 | mod ID 的下划线差异及旧存档 | 已确认使用 `sophisticated_smeltery`；统一 Java 入口、资源命名空间、Mixin 配置及测试引用。未确认存在旧命名空间存档，本次不添加旧存档迁移。 |
 
 ## 4. 第二轮与追加澄清（编号与第一轮独立）
 

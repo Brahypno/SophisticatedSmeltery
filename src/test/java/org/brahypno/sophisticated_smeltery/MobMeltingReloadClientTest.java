@@ -23,7 +23,7 @@ import org.brahypno.sophisticated_smeltery.client.MeltingHeatingSwitch;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 
 /** Actual save, disconnect, disk reload, item use and captured-mob display regression. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class MobMeltingReloadClientTest {
     private static int stage = -1;
     private static int ticks;

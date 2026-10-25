@@ -22,7 +22,7 @@ import slimeknights.tconstruct.fluids.TinkerFluids;
 import slimeknights.tconstruct.smeltery.client.screen.module.GuiSmelteryTank;
 
 /** Full screen clicks and real server responses; never modifies the client cursor or inventory directly. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class MeltingInteractionClientTest {
     private static boolean running;
     private static int stage;

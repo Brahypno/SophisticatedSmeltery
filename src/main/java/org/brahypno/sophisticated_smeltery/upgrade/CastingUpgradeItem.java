@@ -34,7 +34,7 @@ public final class CastingUpgradeItem extends UpgradeItemBase<CastingUpgradeWrap
 
     @Override public UpgradeSlotChangeResult canSwapUpgradeFor(ItemStack target, int slot, IStorageWrapper storage, boolean client) {
         if (storage.getUpgradeHandler().getSlotWrappers().get(slot) instanceof CastingUpgradeWrapper casting && !casting.canRemove())
-            return new UpgradeSlotChangeResult.Fail(Component.translatable("error.sophisticatedsmeltery.empty_casting"), Set.of(slot), Set.of(), Set.of());
+            return new UpgradeSlotChangeResult.Fail(Component.translatable("error.sophisticated_smeltery.empty_casting"), Set.of(slot), Set.of(), Set.of());
         return super.canSwapUpgradeFor(target, slot, storage, client);
     }
 }

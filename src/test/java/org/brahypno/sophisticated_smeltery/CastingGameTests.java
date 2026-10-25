@@ -22,7 +22,7 @@ import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
 import slimeknights.tconstruct.smeltery.block.entity.CastingBlockEntity;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class CastingGameTests {
     private static ItemStack cast(String name) {
@@ -76,7 +76,7 @@ public final class CastingGameTests {
         helper.assertTrue(portable.fluid().isEmpty() && nativeTable.getTank().isEmpty(), "Exactly one recipe consumes its casting fluid");
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void nativeCastingMatrixPreservesMaterialsCastsAndDynamicResults(GameTestHelper helper) {
         compareNative(helper, Mode.TABLE, cast("ingot_cast"), new FluidStack(TinkerFluids.moltenIron.get(), 180));
         for (boolean scorched : new boolean[]{false, true})
@@ -97,7 +97,7 @@ public final class CastingGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void partialAndCoolingStatesSurviveReloadAndConserveFluid(GameTestHelper helper) {
         var casting = table(cast("ingot_cast"));
         var source = iron(45);
@@ -130,7 +130,7 @@ public final class CastingGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "casting_reload")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, batch = "casting_reload")
     public static void recipeReloadInvalidatesPreviewAndRunningCast(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var original = new ArrayList<>(manager.getRecipes());

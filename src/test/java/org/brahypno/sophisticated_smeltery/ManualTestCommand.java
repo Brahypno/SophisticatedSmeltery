@@ -25,7 +25,7 @@ import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
 import slimeknights.tconstruct.smeltery.item.TankItem;
 
 /** Development-only fixtures, available with runClient -PmanualTest. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery")
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID)
 public final class ManualTestCommand {
     @SubscribeEvent public static void register(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("ssmeltery_test")

@@ -1,10 +1,10 @@
 {
   "replace": false,
   "values": [
-    "sophisticatedsmeltery:melting_upgrade",
-    "sophisticatedsmeltery:seared_casting_upgrade",
-    "sophisticatedsmeltery:advanced_seared_casting_upgrade",
-    "sophisticatedsmeltery:scorched_casting_upgrade",
-    "sophisticatedsmeltery:advanced_scorched_casting_upgrade"
+    "sophisticated_smeltery:melting_upgrade",
+    "sophisticated_smeltery:seared_casting_upgrade",
+    "sophisticated_smeltery:advanced_seared_casting_upgrade",
+    "sophisticated_smeltery:scorched_casting_upgrade",
+    "sophisticated_smeltery:advanced_scorched_casting_upgrade"
   ]
 }

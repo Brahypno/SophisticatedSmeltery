@@ -25,7 +25,7 @@ import slimeknights.tconstruct.smeltery.client.screen.module.GuiMeltingModule;
 import slimeknights.tconstruct.library.client.GuiUtil;
 
 /** Opt-in client smoke test; never included in the main mod source set. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class ClientSmokePreview {
     private static boolean opened;
     private static boolean saved;
@@ -275,7 +275,7 @@ public final class ClientSmokePreview {
                 }
             }
             ItemStack blank = new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get());
-            String key = "item.sophisticatedsmeltery.melting_upgrade.tooltip";
+            String key = "item.sophisticated_smeltery.melting_upgrade.tooltip";
             String translated = net.minecraft.client.resources.language.I18n.get(key);
             if (!net.minecraft.client.resources.language.I18n.exists(key)
                     || blank.getTooltipLines(null, net.minecraft.world.item.TooltipFlag.NORMAL).stream().noneMatch(line -> line.getString().equals(translated))) {

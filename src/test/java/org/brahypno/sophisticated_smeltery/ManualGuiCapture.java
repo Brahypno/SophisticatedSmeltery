@@ -11,7 +11,7 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 
 /** Captures the first actual open melting tab during a manual dev run. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class ManualGuiCapture {
     private static int frames;
     private static boolean captured;

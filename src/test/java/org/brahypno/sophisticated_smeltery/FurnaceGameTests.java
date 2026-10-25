@@ -27,7 +27,7 @@ import slimeknights.tconstruct.smeltery.block.entity.module.MeltingModule;
 import slimeknights.tconstruct.smeltery.block.entity.module.MeltingModuleInventory;
 import slimeknights.tconstruct.smeltery.block.entity.multiblock.HeatingStructureMultiblock;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class FurnaceGameTests {
     private static NativeFurnace smeltery() {
@@ -48,7 +48,7 @@ public final class FurnaceGameTests {
         furnace.melting().heatItems(3000, 100000);
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void structureAndNativeControllerOverrides(GameTestHelper helper) {
         NativeFurnace furnace = smeltery();
         furnace.resize(4, 1);
@@ -75,7 +75,7 @@ public final class FurnaceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "recipe_reload")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, batch = "recipe_reload")
     public static void inputLifecycleAndRecipeReloadConserveItems(GameTestHelper helper) {
         NativeFurnace original = smeltery();
         ItemStackHandler inventory = inputs(original, helper);
@@ -130,7 +130,7 @@ public final class FurnaceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void fuelPriorityPauseAndIdlePersistence(GameTestHelper helper) {
         FluidTank internal = new FluidTank(1000);
         FluidTank backpack = new FluidTank(1000);
@@ -161,7 +161,7 @@ public final class FurnaceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void nativeSmelteryAlloysAndFoundryByproducts(GameTestHelper helper) {
         NativeFurnace furnace = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), new CompoundTag(),
                 () -> List.of(new FluidTank(1000)), () -> {});
@@ -199,7 +199,7 @@ public final class FurnaceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "fuel_selection")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, batch = "fuel_selection")
     public static void chooseLowestFuelMeetingReachableRecipeTemperatures(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var original = new ArrayList<>(manager.getRecipes());
@@ -243,7 +243,7 @@ public final class FurnaceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", batch = "recipe_reload")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, batch = "recipe_reload")
     public static void switchingTemperaturePreservesPaidBurnAcrossReload(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var original = new ArrayList<>(manager.getRecipes());

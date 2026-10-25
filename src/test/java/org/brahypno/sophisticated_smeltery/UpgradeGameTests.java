@@ -30,7 +30,7 @@ import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
 import slimeknights.tconstruct.smeltery.item.TankItem;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class UpgradeGameTests {
     private static ItemStack bound() {
@@ -49,7 +49,7 @@ public final class UpgradeGameTests {
         wrapper.getComponents().setStackInSlot(0, new ItemStack(TinkerSmeltery.searedBricks, 4));
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void controllerInstallationAndNativeNames(GameTestHelper helper) {
         MeltingUpgradeItem item = SophisticatedSmeltery.MELTING_UPGRADE.get();
         ItemStack blank = new ItemStack(item);
@@ -73,7 +73,7 @@ public final class UpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void capacityAndFuelGuardMaterialAndUpgradeRemoval(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
@@ -109,7 +109,7 @@ public final class UpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 650)
     public static void realBackpackSlotsSurviveSortingAndNormalInsertion(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);
@@ -152,7 +152,7 @@ public final class UpgradeGameTests {
         storage.getInventoryHandler().setStackInSlot(0, new ItemStack(Items.IRON_INGOT));
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 650)
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 650)
     public static void placedAndCarriedHostsMeltAndPersist(GameTestHelper helper) {
         var placed = backpack();
         var carried = backpack();
@@ -180,7 +180,7 @@ public final class UpgradeGameTests {
         });
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void bindingAndClearingRefundEveryStoredItem(GameTestHelper helper) {
         var visible = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id("foundry_upgrade")).orElseThrow();
         helper.assertTrue(!visible.isSpecial() && visible.getIngredients().size() == 2
@@ -246,7 +246,7 @@ public final class UpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void clearingRecipeNetworkAndMoltenContentsGuard(GameTestHelper helper) {
         var id = new net.minecraft.resources.ResourceLocation("sophisticatedcore", "upgrade_clear");
         var loaded = helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
@@ -295,7 +295,7 @@ public final class UpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void bucketMessagesWaitingRetryAndPersistence(GameTestHelper helper) {
         var storage = backpack();
         var wrapper = melting(storage);

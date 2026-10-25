@@ -26,7 +26,7 @@ import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import org.lwjgl.glfw.GLFW;
 
 /** Real screen clicks and server synchronization on a backpack with no melting upgrade. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class CastingExpansionClientTest {
     private static boolean running;
     private static int stage;
@@ -199,7 +199,7 @@ public final class CastingExpansionClientTest {
             frames = 0;
             return false;
         }
-        String role = Component.translatable("gui.sophisticatedsmeltery." + key).getString();
+        String role = Component.translatable("gui.sophisticated_smeltery." + key).getString();
         String expected = slot.hasItem() ? slot.getItem().getHoverName().getString() : role;
         check(!tooltipLines.isEmpty() && tooltipLines.get(0).equals(expected), "Slot tooltip must show the role only when empty, otherwise the original item: " + tooltipLines);
         check(!slot.hasItem() || !tooltipLines.contains(role), "A filled slot must not add an input/output label");

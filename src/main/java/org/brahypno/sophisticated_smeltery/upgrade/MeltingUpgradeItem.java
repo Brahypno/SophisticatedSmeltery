@@ -28,12 +28,12 @@ public final class MeltingUpgradeItem extends UpgradeItemBase<MeltingUpgradeWrap
     @Override public Component getName(ItemStack stack) {
         ItemStack controller = ControllerBinding.getController(stack);
         if (controller.isEmpty()) return super.getName(stack);
-        return Component.translatable("item.sophisticatedsmeltery.melting_upgrade.bound", ControllerBinding.getControllerName(controller));
+        return Component.translatable("item.sophisticated_smeltery.melting_upgrade.bound", ControllerBinding.getControllerName(controller));
     }
 
     @Override public List<IUpgradeItem.UpgradeConflictDefinition> getUpgradeConflicts() {
         return List.of(new IUpgradeItem.UpgradeConflictDefinition(item -> item instanceof MeltingUpgradeItem, 0,
-                Component.translatable("error.sophisticatedsmeltery.one_controller")));
+                Component.translatable("error.sophisticated_smeltery.one_controller")));
     }
 
     @Override public UpgradeSlotChangeResult checkExtraInsertConditions(ItemStack stack, IStorageWrapper storage,
@@ -57,6 +57,6 @@ public final class MeltingUpgradeItem extends UpgradeItemBase<MeltingUpgradeWrap
     }
 
     private static UpgradeSlotChangeResult fail(String key) {
-        return new UpgradeSlotChangeResult.Fail(Component.translatable("error.sophisticatedsmeltery." + key), Set.of(), Set.of(), Set.of());
+        return new UpgradeSlotChangeResult.Fail(Component.translatable("error.sophisticated_smeltery." + key), Set.of(), Set.of(), Set.of());
     }
 }

@@ -22,7 +22,7 @@ import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import slimeknights.tconstruct.fluids.TinkerFluids;
 
 /** Opt-in actual screen and authoritative server state test, following the heating switch regression. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class CastingUpgradeClientTest {
     private static boolean running;
     private static int stage;

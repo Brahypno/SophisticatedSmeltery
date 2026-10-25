@@ -4,6 +4,8 @@
 
 ## 功能状态与验收（2026-10-25）
 
+mod ID 已统一为 `sophisticated_smeltery`，同步 Java 入口、事件订阅、Mixin 配置与 refmap、资源目录、配方/进度/标签、语言键及测试模板。重新编译与正式构建通过，29 项 GameTest 全部通过，日志 `build/mod-id-verification.log`；`gradlew.bat runClient -PheatingSwitchSmoke --offline` 通过滚动/非滚动背包界面的开关同步及 JEI 升阶配方检查，日志 `build/mod-id-client-verification.log`。产物 `build/libs/sophisticated_smeltery-0.5-SNAPSHOT.jar` 已核对元数据、Mixin 清单、新命名空间资源及测试文件隔离。旧命名空间存档迁移未包含在本次修改中。
+
 “已实现”表示代码已接入；“自动验证”只覆盖所列测试；“用户已确认”仅记录对话中明确确认的部分。其余人工操作仍待验收，不以编译或单独控件截图替代。
 
 用户反馈随身背包重进世界后牛不可见、仍有受伤声音及掉落。新增显示断言后已复现：实际菜单中存在捕获记录，但 `storageInventoryControls` 未创建原生捕获器显示控件，见 `build/mob-reload-repro.log` 的 `The actual screen is missing its captured-mob display control`。此前客户端检查只核对捕获数据和血量，没有覆盖控件缺失。

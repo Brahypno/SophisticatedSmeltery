@@ -26,7 +26,7 @@ import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import org.lwjgl.glfw.GLFW;
 
 /** Actual screen, scroll clipping, input dispatch, server packet and resize regression. Opt-in only. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class HeatingSwitchClientTest {
     private static int stage;
     private static int ticks;

@@ -24,7 +24,7 @@ import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class CastingExpansionGameTests {
     private static ItemStack cast(String name) {
@@ -60,7 +60,7 @@ public final class CastingExpansionGameTests {
         for (int tick = 0; tick < count; tick++) casting.tick(null, helper.getLevel(), BlockPos.ZERO);
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void standaloneSwitchPreservesReturnCoolingAndSavedSettings(GameTestHelper helper) {
         var storage = storage(false, 45);
         var casting = casting(storage);
@@ -91,7 +91,7 @@ public final class CastingExpansionGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void sourcePriorityAndOutputCapacityConserveFluid(GameTestHelper helper) {
         var storage = storage(false, 180);
         addFurnace(storage, 45);
@@ -133,7 +133,7 @@ public final class CastingExpansionGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void outputDeliveryHandlesFullStorageAndDynamicResults(GameTestHelper helper) {
         var storage = storage(false, 270);
         addFurnace(storage, 0);
@@ -186,7 +186,7 @@ public final class CastingExpansionGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void scorchedLockRefillsExactConsumedTemplateAndSurvivesReload(GameTestHelper helper) {
         var storage = storage(true, 270);
         var casting = casting(storage);

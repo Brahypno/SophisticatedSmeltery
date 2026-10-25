@@ -6,5 +6,5 @@
     "B": {"item": "tconstruct:seared_brick"},
     "U": {"item": "sophisticatedbackpacks:upgrade_base"}
   },
-  "result": {"item": "sophisticatedsmeltery:melting_upgrade"}
+  "result": {"item": "sophisticated_smeltery:melting_upgrade"}
 }

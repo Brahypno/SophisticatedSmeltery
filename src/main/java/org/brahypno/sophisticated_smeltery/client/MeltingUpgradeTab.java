@@ -41,7 +41,7 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         openTabDimension = new Dimension(138, container.getUpgradeWrapper().getBackpackTanks().isEmpty() ? 200 : 224);
     }
 
-    static Component text(String key, Object... args) { return Component.translatable("gui.sophisticatedsmeltery." + key, args); }
+    static Component text(String key, Object... args) { return Component.translatable("gui.sophisticated_smeltery." + key, args); }
 
     private void updateNativeModules() {
         var wrapper = getContainer().getUpgradeWrapper();

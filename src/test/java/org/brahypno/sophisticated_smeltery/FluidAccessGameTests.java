@@ -28,7 +28,7 @@ import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import slimeknights.tconstruct.fluids.TinkerFluids;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class FluidAccessGameTests {
     private static BackpackWrapper backpack() {
@@ -43,7 +43,7 @@ public final class FluidAccessGameTests {
         return (MeltingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
     }
     private static FluidStack iron(int amount) { return new FluidStack(TinkerFluids.moltenIron.get(), amount); }
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void placedFluidCapabilitySimulationPriorityAndLifecycle(GameTestHelper helper) {
         var pos = new BlockPos(1, 1, 1);
         helper.setBlock(pos, ModBlocks.NETHERITE_BACKPACK.get());
@@ -113,7 +113,7 @@ public final class FluidAccessGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void rightClickChoosesDirectionAndConsumesBlockedTransfers(GameTestHelper helper) {
         var pos = new BlockPos(1, 1, 1);
         helper.setBlock(pos, ModBlocks.NETHERITE_BACKPACK.get());

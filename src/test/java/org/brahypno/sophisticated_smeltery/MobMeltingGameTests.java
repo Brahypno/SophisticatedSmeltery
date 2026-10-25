@@ -44,7 +44,7 @@ import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
 import slimeknights.tconstruct.smeltery.block.entity.module.EntityMeltingModule;
 import slimeknights.tconstruct.smeltery.item.TankItem;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class MobMeltingGameTests {
     private static BackpackWrapper backpack(boolean foundry, boolean fuel) {
@@ -93,7 +93,7 @@ public final class MobMeltingGameTests {
         });
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 100)
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
     public static void nativeDamageAndFluidsWithPartialOverlap(GameTestHelper helper) {
         atPulse(helper, () -> {
             for (boolean foundry : new boolean[]{false, true}) {
@@ -129,7 +129,7 @@ public final class MobMeltingGameTests {
         });
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 100)
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
     public static void heatingFuelCapacityImmunityAndOutsideSlots(GameTestHelper helper) {
         atPulse(helper, () -> {
             var storage = backpack(false, false);
@@ -197,7 +197,7 @@ public final class MobMeltingGameTests {
         }
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 100)
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
     public static void realDeathDropsOverflowReloadAndRefund(GameTestHelper helper) {
         atPulse(helper, () -> {
             var probe = new LootProbe();
@@ -250,7 +250,7 @@ public final class MobMeltingGameTests {
         });
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery", timeoutTicks = 120)
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 120)
     public static void actualPlacedAndCarriedHostsProcessNewCaptures(GameTestHelper helper) {
         var placed = backpack(false, true);
         var carried = backpack(false, true);

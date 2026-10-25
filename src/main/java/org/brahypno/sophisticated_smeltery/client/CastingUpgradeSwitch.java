@@ -13,11 +13,12 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ButtonDefinitions;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ToggleButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.GuiHelper;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
+import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 
 /** Keep the wrapper scheduled for cooling while the user switches off new pours. */
-@Mod.EventBusSubscriber(modid = "sophisticatedsmeltery", value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class CastingUpgradeSwitch extends ToggleButton<Boolean> {
     private final StorageScreenBase<?> screen;
     private final int slot;

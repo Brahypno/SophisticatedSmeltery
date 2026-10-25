@@ -7,7 +7,7 @@
         "items": [
           {
             "items": [
-              "sophisticatedsmeltery:melting_upgrade"
+              "sophisticated_smeltery:melting_upgrade"
             ]
           }
         ]
@@ -19,7 +19,7 @@
         "items": [
           {
             "items": [
-              "tconstruct:smeltery_controller"
+              "tconstruct:foundry_controller"
             ]
           }
         ]
@@ -34,7 +34,7 @@
   ],
   "rewards": {
     "recipes": [
-      "sophisticatedsmeltery:smeltery_upgrade"
+      "sophisticated_smeltery:foundry_upgrade"
     ]
   }
 }

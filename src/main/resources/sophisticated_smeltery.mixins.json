@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "org.brahypno.sophisticated_smeltery.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "sophisticatedsmeltery.refmap.json",
+  "refmap": "sophisticated_smeltery.refmap.json",
   "mixins": [
     "HeatingControllerAccess",
     "MobCatcherStorageAccess",

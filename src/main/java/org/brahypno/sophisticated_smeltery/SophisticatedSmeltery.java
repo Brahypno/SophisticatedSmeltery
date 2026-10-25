@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 
 @Mod(SophisticatedSmeltery.MODID)
 public class SophisticatedSmeltery {
-    public static final String MODID = "sophisticatedsmeltery";
+    public static final String MODID = "sophisticated_smeltery";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
@@ -48,7 +48,7 @@ public class SophisticatedSmeltery {
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SCORCHED_CASTING_UPGRADE = ITEMS.register("advanced_scorched_casting_upgrade", () -> new CastingUpgradeItem(true, true));
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final RegistryObject<CreativeModeTab> CREATIVE_TAB = CREATIVE_TABS.register(MODID, () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.sophisticatedsmeltery"))
+            .title(Component.translatable("itemGroup.sophisticated_smeltery"))
             .icon(() -> MELTING_UPGRADE.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
                 output.accept(MELTING_UPGRADE.get());

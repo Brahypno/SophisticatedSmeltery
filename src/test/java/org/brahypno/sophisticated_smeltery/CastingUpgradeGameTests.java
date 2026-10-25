@@ -21,7 +21,7 @@ import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import slimeknights.tconstruct.fluids.TinkerFluids;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
-@GameTestHolder("sophisticatedsmeltery")
+@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class CastingUpgradeGameTests {
     private static BackpackWrapper backpack(int amount) {
@@ -53,7 +53,7 @@ public final class CastingUpgradeGameTests {
         for (int tick = 0; tick < count; tick++) casting.tick(null, helper.getLevel(), BlockPos.ZERO);
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void basicTierStaysManualAndCastsWithHeatingOff(GameTestHelper helper) {
         var storage = backpack(180);
         for (var item : java.util.List.of(SophisticatedSmeltery.SEARED_CASTING_UPGRADE, SophisticatedSmeltery.ADVANCED_SEARED_CASTING_UPGRADE,
@@ -91,7 +91,7 @@ public final class CastingUpgradeGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void automaticCastingRemovalReloadAndSharedFluidLifecycle(GameTestHelper helper) {
         var storage = backpack(45, true);
         storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
