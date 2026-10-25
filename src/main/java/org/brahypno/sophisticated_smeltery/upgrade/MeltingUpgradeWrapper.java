@@ -180,12 +180,17 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         return result;
     }
 
-    private List<IFluidHandler> fuelSources() {
+    public List<IFluidHandler> getInternalFuelTanks() {
         List<IFluidHandler> result = new ArrayList<>();
         for (int slot = 0; slot < components.getSlots(); slot++) {
             ItemStack stack = components.getStackInSlot(slot);
             if (furnace.isFuelTank(stack)) stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(result::add);
         }
+        return result;
+    }
+
+    private List<IFluidHandler> fuelSources() {
+        List<IFluidHandler> result = getInternalFuelTanks();
         result.addAll(getBackpackTanks());
         return result;
     }

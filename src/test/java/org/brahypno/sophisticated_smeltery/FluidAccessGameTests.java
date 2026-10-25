@@ -14,19 +14,24 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.p3pp3rf1y.sophisticatedbackpacks.api.CapabilityBackpackWrapper;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackBlockEntity;
+import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackBlock;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackWrapper;
 import net.p3pp3rf1y.sophisticatedbackpacks.init.ModBlocks;
 import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
 import org.brahypno.sophisticated_smeltery.furnace.BackpackFluidInteraction;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.furnace.UpgradeTankHandler;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import slimeknights.tconstruct.fluids.TinkerFluids;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
+import slimeknights.tconstruct.smeltery.block.component.SearedTankBlock;
 
 @GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
@@ -110,6 +115,97 @@ public final class FluidAccessGameTests {
         helper.assertTrue(block.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH)
                 .orElseThrow(IllegalStateException::new).fill(iron(100), IFluidHandler.FluidAction.SIMULATE) == 0,
                 "Removing controller must invalidate pipe access");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void fuelInputPrefersInstalledContainersAndOverflowsIntoFurnace(GameTestHelper helper) {
+        var pos = new BlockPos(1, 1, 1);
+        helper.setBlock(pos, ModBlocks.NETHERITE_BACKPACK.get());
+        var block = (BackpackBlockEntity)helper.getBlockEntity(pos);
+        block.setBackpack(backpack().getBackpack());
+        var storage = (BackpackWrapper)block.getBackpackWrapper();
+        var furnace = melting(storage);
+        furnace.getComponents().setStackInSlot(1,
+                new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK)));
+        var internal = furnace.getInternalFuelTanks().get(0);
+        int total = 0;
+        int furnaceTotal = 0;
+        var handlers = new java.util.EnumMap<Direction, IFluidHandler>(Direction.class);
+        for (Direction side : Direction.values()) {
+            handlers.put(side, block.getCapability(ForgeCapabilities.FLUID_HANDLER, side).orElseThrow(IllegalStateException::new));
+        }
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            helper.setBlock(pos, block.getBlockState().setValue(BackpackBlock.FACING, facing));
+            for (Direction side : Direction.values()) {
+                var handler = handlers.get(side);
+                var before = furnace.getUpgradeStack().copy();
+                helper.assertTrue(handler.fill(new FluidStack(Fluids.LAVA, 50), IFluidHandler.FluidAction.SIMULATE) == 50
+                                && internal.getFluidInTank(0).getAmount() == total && furnace.getTank().getContained() == furnaceTotal
+                                && ItemStack.matches(before, furnace.getUpgradeStack()),
+                        "Simulation leaves both destinations unchanged on " + side + " facing " + facing);
+                helper.assertTrue(handler.fill(new FluidStack(Fluids.LAVA, 50), IFluidHandler.FluidAction.EXECUTE) == 50,
+                        "All sides still accept fuel");
+                if (side == facing.getClockWise() || side == facing.getCounterClockWise()) total += 50;
+                else furnaceTotal += 50;
+                helper.assertTrue(internal.getFluidInTank(0).getAmount() == total && furnace.getTank().getContained() == furnaceTotal,
+                        "Only left and right prefer fuel containers, including cached capabilities after rotation: " + side + " facing " + facing);
+            }
+        }
+        var restored = new MeltingUpgradeWrapper(storage, furnace.getUpgradeStack().copy(), ignored -> {});
+        helper.assertTrue(restored.getInternalFuelTanks().get(0).getFluidInTank(0).getAmount() == total,
+                "External input saves internal tank contents immediately");
+        var unsidedSource = new FluidTank(50);
+        unsidedSource.fill(new FluidStack(Fluids.LAVA, 50), IFluidHandler.FluidAction.EXECUTE);
+        helper.assertTrue(BackpackFluidInteraction.transfer(storage, unsidedSource, true) == 50
+                        && internal.getFluidInTank(0).getAmount() == total && furnace.getTank().getContained() == furnaceTotal + 50,
+                "Held-backpack transfers retain furnace priority without a backpack face");
+        var unsided = block.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElseThrow(IllegalStateException::new);
+        helper.assertTrue(unsided.fill(new FluidStack(Fluids.LAVA, 50), IFluidHandler.FluidAction.EXECUTE) == 50
+                        && internal.getFluidInTank(0).getAmount() == total && furnace.getTank().getContained() == furnaceTotal + 100,
+                "Unsided capability retains furnace priority");
+        helper.assertTrue(unsided.drain(furnaceTotal + 100, IFluidHandler.FluidAction.EXECUTE).getAmount() == furnaceTotal + 100
+                        && internal.getFluidInTank(0).getAmount() == total,
+                "Extraction still prefers furnace and leaves internal fuel intact");
+
+        var oldCapability = block.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.WEST);
+        storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(ModItems.TANK_UPGRADE.get()));
+        helper.assertTrue(!oldCapability.isPresent(), "Side capabilities invalidate when upgrades change");
+        furnace = melting(storage);
+        internal = furnace.getInternalFuelTanks().get(0);
+        var ordinary = (UpgradeTankHandler)furnace.getBackpackTanks().get(0);
+        internal.fill(new FluidStack(Fluids.LAVA, internal.getTankCapacity(0) - total - 100), IFluidHandler.FluidAction.EXECUTE);
+        ordinary.tank().fill(new FluidStack(Fluids.LAVA, ordinary.getTankCapacity(0) - 200), IFluidHandler.FluidAction.EXECUTE, true);
+        var lateral = block.getBlockState().getValue(BackpackBlock.FACING).getClockWise();
+        var handler = block.getCapability(ForgeCapabilities.FLUID_HANDLER, lateral).orElseThrow(IllegalStateException::new);
+        var before = furnace.getUpgradeStack().copy();
+        helper.assertTrue(handler.fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.SIMULATE) == 1000
+                        && internal.getFluidInTank(0).getAmount() == internal.getTankCapacity(0) - 100
+                        && ordinary.getFluidInTank(0).getAmount() == ordinary.getTankCapacity(0) - 200
+                        && furnace.getTank().getContained() == 0 && ItemStack.matches(before, furnace.getUpgradeStack()),
+                "Simulated fuel input checks all destinations without changing contents or NBT");
+        var source = new FluidTank(1000);
+        source.fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE);
+        helper.assertTrue(FluidUtil.tryFluidTransfer(handler, source, 1000, true).getAmount() == 1000 && source.isEmpty()
+                        && internal.getFluidInTank(0).getAmount() == internal.getTankCapacity(0)
+                        && ordinary.getFluidInTank(0).getAmount() == ordinary.getTankCapacity(0)
+                        && furnace.getTank().getContained() == 700,
+                "Lateral transfer fills internal tank, backpack tank, then furnace with the remainder");
+
+        // An incompatible installed tank must not prevent furnace fallback.
+        storage.getUpgradeHandler().setStackInSlot(1, ItemStack.EMPTY);
+        furnace = melting(storage);
+        internal = furnace.getInternalFuelTanks().get(0);
+        internal.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+        internal.fill(new FluidStack(Fluids.WATER, 100), IFluidHandler.FluidAction.EXECUTE);
+        handler = block.getCapability(ForgeCapabilities.FLUID_HANDLER, lateral).orElseThrow(IllegalStateException::new);
+        helper.assertTrue(handler.fill(new FluidStack(TinkerFluids.blazingBlood.get(), 100), IFluidHandler.FluidAction.EXECUTE) == 100
+                        && internal.getFluidInTank(0).getFluid() == Fluids.WATER && furnace.getTank().getContained() == 800,
+                "Recognize other native fuel recipes and fall back past incompatible containers");
+        furnace.getComponents().setStackInSlot(1, ItemStack.EMPTY);
+        helper.assertTrue(handler.fill(new FluidStack(Fluids.LAVA, 100), IFluidHandler.FluidAction.EXECUTE) == 100
+                        && furnace.getTank().getContained() == 900,
+                "Fuel still enters furnace when no fuel containers are installed");
         helper.succeed();
     }
 

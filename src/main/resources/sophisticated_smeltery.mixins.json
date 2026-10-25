@@ -13,7 +13,8 @@
     "MantleBlockEntityMixin",
     "MeltingModuleMixin",
     "MeltingInventoryMixin",
-    "CastingUpgradeExtractionMixin"
+    "CastingUpgradeExtractionMixin",
+    "BackpackFluidSideMixin"
   ],
   "client": [
     "StorageScreenControlsAccess",

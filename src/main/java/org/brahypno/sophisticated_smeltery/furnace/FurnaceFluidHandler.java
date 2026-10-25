@@ -1,16 +1,21 @@
 package org.brahypno.sophisticated_smeltery.furnace;
 
 import javax.annotation.Nullable;
+import java.util.function.BooleanSupplier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageFluidHandler;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
+import slimeknights.tconstruct.library.recipe.fuel.MeltingFuelLookup;
 
-/** Furnace first, followed by the backpack's existing tanks and wrapper upgrades. */
+/** Side-aware views can prefer installed fuel containers; other access prefers the furnace. */
 public record FurnaceFluidHandler(MeltingUpgradeWrapper furnace, @Nullable IStorageFluidHandler next,
-                                  ItemStack container) implements IStorageFluidHandler {
+                                  ItemStack container, BooleanSupplier preferFuel) implements IStorageFluidHandler {
+    public FurnaceFluidHandler(MeltingUpgradeWrapper furnace, @Nullable IStorageFluidHandler next, ItemStack container) {
+        this(furnace, next, container, () -> false);
+    }
     private int furnaceTanks() { return furnace.getTank().getTanks(); }
     @Override public ItemStack getContainer() { return container; }
     @Override public int getTanks() { return furnaceTanks() + (next == null ? 0 : next.getTanks()); }
@@ -31,13 +36,32 @@ public record FurnaceFluidHandler(MeltingUpgradeWrapper furnace, @Nullable IStor
     }
     @Override public int fill(FluidStack fluid, FluidAction action) { return fill(fluid, action, false); }
     @Override public int fill(FluidStack fluid, FluidAction action, boolean ignoreInOutLimit) {
-        int filled = furnace.getTank().fill(fluid, action);
-        if (filled > 0 && action.execute()) furnace.persist();
+        if (preferFuel.getAsBoolean() && !fluid.isEmpty() && MeltingFuelLookup.findFuel(fluid.getFluid()) != null) {
+            int filled = 0;
+            for (var tank : furnace.getInternalFuelTanks()) {
+                if (filled >= fluid.getAmount()) break;
+                filled += tank.fill(new FluidStack(fluid, fluid.getAmount() - filled), action);
+            }
+            if (filled > 0 && action.execute()) furnace.persist();
+            if (next != null && filled < fluid.getAmount()) {
+                filled += next.fill(new FluidStack(fluid, fluid.getAmount() - filled), action, ignoreInOutLimit);
+            }
+            if (filled < fluid.getAmount()) {
+                filled += fillFurnace(new FluidStack(fluid, fluid.getAmount() - filled), action);
+            }
+            return filled;
+        }
+        int filled = fillFurnace(fluid, action);
         if (next != null && filled < fluid.getAmount()) {
             FluidStack remainder = fluid.copy();
             remainder.shrink(filled);
             filled += next.fill(remainder, action, ignoreInOutLimit);
         }
+        return filled;
+    }
+    private int fillFurnace(FluidStack fluid, FluidAction action) {
+        int filled = furnace.getTank().fill(fluid, action);
+        if (filled > 0 && action.execute()) furnace.persist();
         return filled;
     }
     @Override public FluidStack drain(int amount, FluidAction action) { return drain(amount, action, false); }
