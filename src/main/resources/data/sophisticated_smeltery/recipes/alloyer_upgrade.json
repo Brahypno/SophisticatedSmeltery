@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "sophisticatedbackpacks:upgrade_base" },
+    { "item": "tconstruct:scorched_alloyer" }
+  ],
+  "result": { "item": "sophisticated_smeltery:scorched_alloyer_upgrade" }
+}

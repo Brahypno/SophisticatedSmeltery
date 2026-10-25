@@ -15,6 +15,7 @@ public final class ClientRegistration {
         event.enqueueWork(() -> {
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.MELTING_CONTAINER, MeltingUpgradeTab::new);
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.CASTING_CONTAINER, CastingUpgradeTab::new);
+            UpgradeGuiManager.registerTab(SophisticatedSmeltery.ALLOYER_CONTAINER, AlloyerUpgradeTab::new);
             UpgradeGuiManager.registerInventoryControl(MeltingUpgradeItem.TYPE, screen ->
                     screen.getMenu().getUpgradeContainers().values().stream()
                             .filter(MeltingUpgradeContainer.class::isInstance)

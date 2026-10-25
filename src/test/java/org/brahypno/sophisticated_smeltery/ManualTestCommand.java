@@ -34,7 +34,41 @@ public final class ManualTestCommand {
                 .then(Commands.literal("smeltery").executes(context -> give(context, false)))
                 .then(Commands.literal("casting").executes(context -> give(context, false, true)))
                 .then(Commands.literal("casting_expansion").executes(ManualTestCommand::giveCastingExpansion))
+                .then(Commands.literal("alloyer").executes(ManualTestCommand::giveAlloyer))
                 .then(Commands.literal("foundry").executes(context -> give(context, true))));
+    }
+
+    private static int giveAlloyer(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ItemStack backpack = new ItemStack(ModItems.NETHERITE_BACKPACK.get());
+        var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), new ItemStack(TinkerSmeltery.foundryController)));
+        var furnace = (MeltingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
+        furnace.getComponents().setStackInSlot(0, new ItemStack(TinkerSmeltery.scorchedBricks, 32));
+        furnace.setHeating(false);
+        storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(SophisticatedSmeltery.ALLOYER_UPGRADE.get()));
+        var alloyer = (org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(1);
+        alloyer.setHeating(false);
+        for (int slot = 0; slot < 8; slot++) {
+            ItemStack tank = new ItemStack(TinkerSmeltery.scorchedTank.get(SearedTankBlock.TankType.INGOT_TANK));
+            if (slot >= 6) TankItem.setTank(tank, new FluidStack(slot == 6 ? TinkerFluids.moltenCopper.get() : TinkerFluids.moltenGold.get(), 90));
+            alloyer.getComponents().setStackInSlot(slot, tank);
+        }
+        if (Boolean.getBoolean("sophisticatedsmeltery.alloyerLiquidSmoke")) {
+            ItemStack fuelTank = new ItemStack(TinkerSmeltery.scorchedTank.get(SearedTankBlock.TankType.FUEL_TANK));
+            TankItem.setTank(fuelTank, new FluidStack(Fluids.LAVA, 1000));
+            alloyer.getComponents().setStackInSlot(8, fuelTank);
+        } else alloyer.getComponents().setStackInSlot(8, new ItemStack(Items.COAL, 16));
+        alloyer.getTank().fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE);
+        alloyer.persist();
+        storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
+        player.getInventory().selected = 0;
+        player.getInventory().setItem(0, backpack);
+        player.getInventory().setItem(11, new ItemStack(Items.BUCKET));
+        player.inventoryMenu.broadcastChanges();
+        backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int giveCastingExpansion(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

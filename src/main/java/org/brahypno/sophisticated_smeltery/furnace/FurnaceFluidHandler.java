@@ -7,16 +7,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageFluidHandler;
-import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import slimeknights.tconstruct.library.recipe.fuel.MeltingFuelLookup;
 
 /** Side-aware views can prefer installed fuel containers; other access prefers the furnace. */
-public record FurnaceFluidHandler(MeltingUpgradeWrapper furnace, @Nullable IStorageFluidHandler next,
+public record FurnaceFluidHandler(FluidStorageUpgrade furnace, @Nullable IStorageFluidHandler next,
                                   ItemStack container, BooleanSupplier preferFuel) implements IStorageFluidHandler {
-    public FurnaceFluidHandler(MeltingUpgradeWrapper furnace, @Nullable IStorageFluidHandler next, ItemStack container) {
+    public FurnaceFluidHandler(FluidStorageUpgrade furnace, @Nullable IStorageFluidHandler next, ItemStack container) {
         this(furnace, next, container, () -> false);
     }
     private int furnaceTanks() { return furnace.getTank().getTanks(); }
+    public FurnaceFluidHandler withFuelPreference(BooleanSupplier preference) {
+        return new FurnaceFluidHandler(furnace, next instanceof FurnaceFluidHandler nested ? nested.withFuelPreference(preference) : next,
+                container, preference);
+    }
     @Override public ItemStack getContainer() { return container; }
     @Override public int getTanks() { return furnaceTanks() + (next == null ? 0 : next.getTanks()); }
     @Override public FluidStack getFluidInTank(int tank) {
@@ -85,7 +89,9 @@ public record FurnaceFluidHandler(MeltingUpgradeWrapper furnace, @Nullable IStor
     }
     @Override public FluidStack drain(TagKey<Fluid> tag, int amount, FluidAction action, boolean ignoreInOutLimit) {
         // Search the actual fluids, rather than limiting tag drains to the bottom fluid.
-        for (FluidStack fluid : furnace.getTank().getFluids()) {
+        IFluidHandler storage = furnace.getTank();
+        for (int tank = 0; tank < storage.getTanks(); tank++) {
+            FluidStack fluid = storage.getFluidInTank(tank);
             if (fluid.getFluid().is(tag)) return drain(new FluidStack(fluid, amount), action, ignoreInOutLimit);
         }
         return next == null ? FluidStack.EMPTY : next.drain(tag, amount, action, ignoreInOutLimit);

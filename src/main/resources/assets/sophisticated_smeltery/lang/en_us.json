@@ -1,4 +1,13 @@
 {
+  "item.sophisticated_smeltery.scorched_alloyer_upgrade": "Scorched Alloyer Upgrade",
+  "item.sophisticated_smeltery.scorched_alloyer_upgrade.tooltip": "Alloys fluids independently alongside melting upgrades. Includes an output tank and a 3x3 component grid for eight input tanks and one fuel slot.",
+  "error.sophisticated_smeltery.empty_alloyer": "Empty the output, ingredient and fuel tanks before removing this upgrade.",
+  "gui.sophisticated_smeltery.alloyer_switch_hint": "Pause or resume alloying and fuel consumption. Remaining paid burn time is preserved.",
+  "gui.sophisticated_smeltery.alloyer_output": "Output tank",
+  "gui.sophisticated_smeltery.alloyer_input": "Input tank %s",
+  "gui.sophisticated_smeltery.alloyer_target_hint": "Click to select the container target: output or inputs 1–8. You can also use containers directly on each fluid display.",
+  "gui.sophisticated_smeltery.alloyer_input_hint": "Input tank %s: install one tank accepted by the alloyer tank tag.",
+  "gui.sophisticated_smeltery.alloyer_fuel_hint": "Fuel slot (ninth slot): insert solid fuel or a fuel tank. Backpack tanks can also supply liquid fuel.",
   "itemGroup.sophisticated_smeltery": "Sophisticated Smeltery",
   "item.sophisticated_smeltery.advanced_transmute_upgrade": "Blank Advanced Transmute Upgrade",
   "item.sophisticated_smeltery.advanced_transmute_upgrade.bound": "Advanced %s Upgrade",

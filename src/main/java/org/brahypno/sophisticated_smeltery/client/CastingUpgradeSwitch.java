@@ -16,6 +16,7 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeContainer;
 
 /** Keep the wrapper scheduled for cooling while the user switches off new pours. */
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
@@ -44,7 +45,7 @@ public final class CastingUpgradeSwitch extends ToggleButton<Boolean> {
     @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
         var previous = screen.getMenu().getUpgradeContainers().get(slot - 1);
         backing(graphics, slot, slot > 0 && (screen.getMenu().canDisableUpgrade(slot - 1)
-                || previous instanceof CastingUpgradeContainer || previous instanceof MeltingUpgradeContainer));
+                || previous instanceof CastingUpgradeContainer || previous instanceof MeltingUpgradeContainer || previous instanceof AlloyerUpgradeContainer));
         if (screen.getMenu().canDisableUpgrade(slot + 1)) backing(graphics, slot + 1, true);
         super.renderBg(graphics, minecraft, mouseX, mouseY);
     }

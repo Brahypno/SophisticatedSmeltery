@@ -32,5 +32,11 @@ public final class ControllerIconRegistration {
             if (plate != null && table != null) event.getModels().put(modelId, new CastingIconModel(plate, table, state,
                     item.startsWith("advanced_") && advanced != null ? advanced.getParticleIcon() : null));
         }
+        var alloyerState = TinkerSmeltery.scorchedAlloyer.get().defaultBlockState();
+        var alloyerModel = event.getModels().get(BlockModelShaper.stateToModelLocation(alloyerState));
+        var alloyerId = new ModelResourceLocation(SophisticatedSmeltery.ALLOYER_UPGRADE.getId(), "inventory");
+        var alloyerPlate = event.getModels().get(alloyerId);
+        if (alloyerPlate != null && alloyerModel != null)
+            event.getModels().put(alloyerId, new CastingIconModel(alloyerPlate, alloyerModel, alloyerState, null));
     }
 }

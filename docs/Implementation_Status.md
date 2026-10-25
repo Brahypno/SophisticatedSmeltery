@@ -1,5 +1,7 @@
 # 基础熔炼联动实施记录
 
+新增独立焦褐合金炉升级，复用现有 3×3 组件槽布局（八个原料储罐位和一个燃料位），自带原生产物罐，可与标准熔炼升级共存。实现与验证入口见 [Alloyer_Implementation.md](Alloyer_Implementation.md)。
+
 设计约束与用户决定见 [Integration_Questions_and_Decisions.md](Integration_Questions_and_Decisions.md)。
 
 ## 功能状态与验收（2026-10-25）

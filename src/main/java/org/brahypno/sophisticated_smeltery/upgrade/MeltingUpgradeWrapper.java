@@ -26,13 +26,14 @@ import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.furnace.PortableMobMelting;
 import org.brahypno.sophisticated_smeltery.furnace.UpgradeTankHandler;
 import org.brahypno.sophisticated_smeltery.furnace.FurnaceFluidHandler;
+import org.brahypno.sophisticated_smeltery.furnace.FluidStorageUpgrade;
 import slimeknights.tconstruct.smeltery.block.entity.tank.SmelteryTank;
 import slimeknights.mantle.fluid.FluidTransferHelper;
 import slimeknights.mantle.fluid.transfer.FluidContainerTransferManager;
 import slimeknights.mantle.fluid.transfer.IFluidContainerTransfer.TransferDirection;
 
 public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgradeWrapper, MeltingUpgradeItem>
-        implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade {
+        implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade, FluidStorageUpgrade {
     @Nullable private final NativeFurnace furnace;
     // Inactive upgrades expose no fluid capacity and never notify a tank parent.
     private final SmelteryTank<?> emptyTank = new SmelteryTank<>(null);

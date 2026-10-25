@@ -13,6 +13,7 @@ import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeItem;
 
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID)
 public final class BackpackFluidInteraction {
@@ -34,7 +35,7 @@ public final class BackpackFluidInteraction {
         if (!(event.getItemStack().getItem() instanceof BackpackItem)) return;
         var storage = event.getItemStack().getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElse(null);
         if (storage == null || storage.getRenderInfo().getUpgradeItems().stream()
-                .noneMatch(stack -> stack.getItem() instanceof MeltingUpgradeItem)) return;
+                .noneMatch(stack -> stack.getItem() instanceof MeltingUpgradeItem || stack.getItem() instanceof AlloyerUpgradeItem)) return;
         var block = event.getLevel().getBlockEntity(event.getPos());
         if (block == null) return;
         IFluidHandler target = block.getCapability(ForgeCapabilities.FLUID_HANDLER, event.getFace()).orElse(null);

@@ -70,6 +70,8 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
     private List<FluidSource> fluidSources() {
         List<FluidSource> sources = new ArrayList<>();
         controller().ifPresent(controller -> sources.add(new FluidSource(controller.getTank(), controller::persist)));
+        storageWrapper.getUpgradeHandler().getTypeWrappers(AlloyerUpgradeItem.TYPE)
+                .forEach(alloyer -> sources.add(new FluidSource(alloyer.getTank(), alloyer::persist)));
         storageWrapper.getUpgradeHandler().getTypeWrappers(TankUpgradeItem.TYPE)
                 .forEach(tank -> sources.add(new FluidSource(new UpgradeTankHandler(tank), () -> {})));
         return sources;

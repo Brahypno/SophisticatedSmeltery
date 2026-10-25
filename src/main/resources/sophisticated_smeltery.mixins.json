@@ -8,6 +8,8 @@
     "HeatingControllerAccess",
     "MobCatcherStorageAccess",
     "HeatingControllerMixin",
+    "AlloyerControllerMixin",
+    "PortableFluidTankMixin",
     "MultiblockShapeAccess",
     "HeatingMaterialsAccess",
     "MantleBlockEntityMixin",

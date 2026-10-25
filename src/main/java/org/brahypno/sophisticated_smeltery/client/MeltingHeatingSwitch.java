@@ -15,6 +15,8 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.GuiHelper;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeContainer;
+import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 
 /** Screen-level control: inventory controls are clipped by the storage scroll panel. */
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
@@ -57,8 +59,10 @@ public final class MeltingHeatingSwitch extends ToggleButton<Boolean> {
     }
 
     @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
+        var previous = screen.getMenu().getUpgradeContainers().get(target.slot - 1);
         renderSwitchBacking(graphics, target.slot,
-                target.slot > 0 && screen.getMenu().canDisableUpgrade(target.slot - 1));
+                target.slot > 0 && (screen.getMenu().canDisableUpgrade(target.slot - 1)
+                        || previous instanceof CastingUpgradeContainer || previous instanceof AlloyerUpgradeContainer));
         // The native following segment otherwise treats this always-enabled wrapper as a gap.
         if (screen.getMenu().canDisableUpgrade(target.slot + 1)) renderSwitchBacking(graphics, target.slot + 1, true);
         super.renderBg(graphics, minecraft, mouseX, mouseY);

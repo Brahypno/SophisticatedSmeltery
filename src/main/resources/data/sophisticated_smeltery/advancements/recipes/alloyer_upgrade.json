@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_controller": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["tconstruct:scorched_alloyer"] }] }
+    }
+  },
+  "requirements": [["has_controller"]],
+  "rewards": { "recipes": ["sophisticated_smeltery:alloyer_upgrade"] }
+}

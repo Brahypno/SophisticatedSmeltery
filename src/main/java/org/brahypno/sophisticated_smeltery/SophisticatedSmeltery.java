@@ -29,6 +29,7 @@ import org.brahypno.sophisticated_smeltery.recipe.VisibleControllerBindingRecipe
 import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
+import org.brahypno.sophisticated_smeltery.furnace.PortableAlloyer;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
@@ -37,6 +38,9 @@ import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeContainer;
 import org.slf4j.Logger;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
@@ -46,6 +50,7 @@ public class SophisticatedSmeltery {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
+    public static final RegistryObject<AlloyerUpgradeItem> ALLOYER_UPGRADE = ITEMS.register("scorched_alloyer_upgrade", AlloyerUpgradeItem::new);
     public static final RegistryObject<MeltingUpgradeItem> ADVANCED_TRANSMUTE_UPGRADE = ITEMS.register("advanced_transmute_upgrade", () -> new MeltingUpgradeItem(true));
     public static final RegistryObject<CastingUpgradeItem> SEARED_CASTING_UPGRADE = ITEMS.register("seared_casting_upgrade", CastingUpgradeItem::new);
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SEARED_CASTING_UPGRADE = ITEMS.register("advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
@@ -57,6 +62,7 @@ public class SophisticatedSmeltery {
             .icon(() -> MELTING_UPGRADE.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
                 output.accept(MELTING_UPGRADE.get());
+                output.accept(ALLOYER_UPGRADE.get());
                 addBoundFurnaces(output::accept);
                 output.accept(SEARED_CASTING_UPGRADE.get());
                 output.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
@@ -78,6 +84,8 @@ public class SophisticatedSmeltery {
             new UpgradeContainerType<>(MeltingUpgradeContainer::new);
     public static final UpgradeContainerType<CastingUpgradeWrapper, CastingUpgradeContainer> CASTING_CONTAINER =
             new UpgradeContainerType<>(CastingUpgradeContainer::new);
+    public static final UpgradeContainerType<AlloyerUpgradeWrapper, AlloyerUpgradeContainer> ALLOYER_CONTAINER =
+            new UpgradeContainerType<>(AlloyerUpgradeContainer::new);
 
     public SophisticatedSmeltery() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -89,6 +97,7 @@ public class SophisticatedSmeltery {
         MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) ->
                 event.addListener((ResourceManagerReloadListener)resources -> {
                     NativeFurnace.invalidateRecipes();
+                    PortableAlloyer.invalidateRecipes();
                     PortableCasting.invalidateRecipes();
                 }));
     }
@@ -96,6 +105,7 @@ public class SophisticatedSmeltery {
     private void setup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
+            UpgradeContainerRegistry.register(ALLOYER_UPGRADE.getId(), ALLOYER_CONTAINER);
             UpgradeContainerRegistry.register(ADVANCED_TRANSMUTE_UPGRADE.getId(), MELTING_CONTAINER);
             UpgradeContainerRegistry.register(SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
             UpgradeContainerRegistry.register(ADVANCED_SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
@@ -107,6 +117,7 @@ public class SophisticatedSmeltery {
     private void creativeItems(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MELTING_UPGRADE.get());
+            event.accept(ALLOYER_UPGRADE.get());
             addBoundFurnaces(event::accept);
             event.accept(SEARED_CASTING_UPGRADE.get());
             event.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());

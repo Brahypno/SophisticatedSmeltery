@@ -96,6 +96,12 @@ minecraft {
         }
 
         client {
+            if (project.hasProperty('alloyerSmoke')) {
+                property 'sophisticatedsmeltery.alloyerSmoke', 'true'
+                if (project.hasProperty('alloyerLiquidSmoke')) property 'sophisticatedsmeltery.alloyerLiquidSmoke', 'true'
+                workingDirectory project.file('build/alloyer-client-run')
+                mods { "${mod_id}" { source sourceSets.test } }
+            }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
             if (project.hasProperty('clientSmokeTest') || project.hasProperty('bucketControlSmoke') || project.hasProperty('heatBarSmoke') || project.hasProperty('wideSlotsSmoke') || project.hasProperty('backpackControllerSmoke')) {

@@ -11,6 +11,8 @@ import net.p3pp3rf1y.sophisticatedcore.crafting.UpgradeClearRecipe;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeWrapper;
 
 /** Core's clearing rules, with molten-content checks and controller returns for melting upgrades. */
 public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
@@ -21,6 +23,7 @@ public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack stack = grid.getItem(slot);
             if (stack.getItem() instanceof MeltingUpgradeItem && !ControllerBinding.cleanForBinding(stack)) return false;
+            if (stack.getItem() instanceof AlloyerUpgradeItem && !AlloyerUpgradeWrapper.cleanForClearing(stack)) return false;
         }
         return true;
     }

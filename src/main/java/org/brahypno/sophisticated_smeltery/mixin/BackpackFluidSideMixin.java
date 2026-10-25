@@ -35,7 +35,7 @@ public abstract class BackpackFluidSideMixin {
             source.addListener(ignored -> sophisticatedsmeltery$clearFluidSides());
         }
         LazyOptional<IFluidHandler> sided = sophisticatedsmeltery$fluidSides.computeIfAbsent(side, direction ->
-                LazyOptional.of(() -> new FurnaceFluidHandler(handler.furnace(), handler.next(), handler.container(), () -> {
+                LazyOptional.of(() -> handler.withFuelPreference(() -> {
                     var state = ((BackpackBlockEntity)(Object)this).getBlockState();
                     return state.hasProperty(BackpackBlock.FACING) && direction.getAxis().isHorizontal()
                             && direction.getAxis() != state.getValue(BackpackBlock.FACING).getAxis();

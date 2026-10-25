@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Supplier;
+import java.util.function.Consumer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.ForgeHooks;
+import slimeknights.tconstruct.library.recipe.TinkerRecipeTypes;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
@@ -19,6 +23,8 @@ import slimeknights.tconstruct.smeltery.block.entity.module.MultitankFuelModule;
 public final class PortableFuelModule extends MultitankFuelModule {
     private final Supplier<List<IFluidHandler>> sources;
     private final IntUnaryOperator temperatureDemand;
+    private Supplier<ItemStack> solidSource = () -> ItemStack.EMPTY;
+    private Consumer<ItemStack> solidRemainder = ignored -> {};
     private FluidStack lastFuel = FluidStack.EMPTY;
     private final List<Burn> pausedBurns = new ArrayList<>();
 
@@ -86,7 +92,12 @@ public final class PortableFuelModule extends MultitankFuelModule {
         this.temperatureDemand = temperatureDemand;
     }
 
-    public boolean hasSources() { return !sources.get().isEmpty(); }
+    public boolean hasSources() { return !sources.get().isEmpty() || solidTime() > 0; }
+    public void setSolidSource(Supplier<ItemStack> source, Consumer<ItemStack> remainder) {
+        solidSource = source;
+        solidRemainder = remainder;
+    }
+    private int solidTime() { return ForgeHooks.getBurnTime(solidSource.get(), TinkerRecipeTypes.FUEL.get()) / 4; }
 
     @Override public FuelInfo getFuelInfo() {
         List<IFluidHandler> available = sources.get();
@@ -108,7 +119,7 @@ public final class PortableFuelModule extends MultitankFuelModule {
                 }
             }
         }
-        return FuelInfo.EMPTY;
+        return solidTime() > 0 ? FuelInfo.ITEM : FuelInfo.EMPTY;
     }
 
     @Override public FluidStack getLastFluid() { return getFuelInfo().getFluid(); }
@@ -189,11 +200,14 @@ public final class PortableFuelModule extends MultitankFuelModule {
                 maximum = Math.max(maximum, recipe.getTemperature());
             }
         }
-        int required = temperatureDemand.applyAsInt(maximum);
+        int solidTemperature = solidTime() > 0 ? MeltingFuelLookup.getSolid().getTemperature() : 0;
+        int required = temperatureDemand.applyAsInt(Math.max(maximum, solidTemperature));
         Candidate best = null;
         for (Candidate candidate : available) {
             if (candidate.temperature >= required && (best == null || candidate.temperature < best.temperature)) best = candidate;
         }
+        // Keep the native liquid-before-solid priority. A null source and burn denotes fresh solid fuel.
+        if (best == null && solidTemperature > 0 && solidTemperature >= required) best = new Candidate(null, null, solidTemperature);
         return new Selection(best, required);
     }
 
@@ -209,6 +223,24 @@ public final class PortableFuelModule extends MultitankFuelModule {
             if (best.saved != null) {
                 pausedBurns.remove(best.saved);
                 restore(best.saved);
+                parent.setChangedFast();
+                return temperature;
+            }
+            if (best.source == null) {
+                ItemStack stack = solidSource.get();
+                int duration = solidTime();
+                if (duration <= 0) return 0;
+                ItemStack remainder = stack.copy();
+                remainder.shrink(1);
+                ItemStack container = stack.copyWithCount(1).getCraftingRemainingItem();
+                // Container fuels occupy one slot, so their remainder can stay in that same slot.
+                if (!container.isEmpty()) remainder = container;
+                fuel = fuelQuality = duration;
+                var recipe = MeltingFuelLookup.getSolid();
+                temperature = recipe.getTemperature();
+                rate = recipe.getRate();
+                lastFuel = FluidStack.EMPTY;
+                solidRemainder.accept(remainder);
                 parent.setChangedFast();
                 return temperature;
             }

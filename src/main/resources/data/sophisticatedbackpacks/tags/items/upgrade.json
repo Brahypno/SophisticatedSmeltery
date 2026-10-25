@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "sophisticated_smeltery:melting_upgrade",
+    "sophisticated_smeltery:scorched_alloyer_upgrade",
     "sophisticated_smeltery:advanced_transmute_upgrade",
     "sophisticated_smeltery:seared_casting_upgrade",
     "sophisticated_smeltery:advanced_seared_casting_upgrade",
