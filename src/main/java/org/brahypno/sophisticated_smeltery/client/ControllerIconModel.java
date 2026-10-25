@@ -34,6 +34,7 @@ import slimeknights.tconstruct.smeltery.block.controller.ControllerBlock;
 final class ControllerIconModel implements BakedModel {
     private final BakedModel base;
     private final List<BakedQuad> overlay;
+    private final boolean bound;
     private final Map<Block, BakedModel> boundModels = new HashMap<>();
     private final ItemOverrides overrides = new ItemOverrides() {
         @Override public BakedModel resolve(BakedModel original, ItemStack stack, @Nullable ClientLevel level,
@@ -44,8 +45,29 @@ final class ControllerIconModel implements BakedModel {
         }
     };
 
-    ControllerIconModel(BakedModel base) { this(base, List.of()); }
-    private ControllerIconModel(BakedModel base, List<BakedQuad> overlay) { this.base = base; this.overlay = overlay; }
+    ControllerIconModel(BakedModel base, BakedModel brick) {
+        this.base = base;
+        this.bound = false;
+        this.overlay = brick.getQuads(null, null, RandomSource.create(0)).stream().map(quad -> {
+            int[] vertices = quad.getVertices().clone();
+            int stride = vertices.length / 4;
+            for (int vertex = 0; vertex < 4; vertex++) {
+                int offset = vertex * stride;
+                // Fit the brick into the central 8x8 area, in front of both plate faces.
+                for (int axis = 0; axis < 2; axis++) {
+                    vertices[offset + axis] = Float.floatToRawIntBits(0.25f + Float.intBitsToFloat(vertices[offset + axis]) * 0.5f);
+                }
+                float depth = Float.intBitsToFloat(vertices[offset + 2]);
+                vertices[offset + 2] = Float.floatToRawIntBits(0.5f + (depth - 0.5f) * 2);
+            }
+            return new BakedQuad(vertices, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade(), quad.hasAmbientOcclusion());
+        }).toList();
+    }
+    private ControllerIconModel(BakedModel base, List<BakedQuad> overlay) {
+        this.base = base;
+        this.overlay = overlay;
+        this.bound = true;
+    }
 
     private BakedModel withController(Block block) {
         BlockState state = block.defaultBlockState();
@@ -79,5 +101,5 @@ final class ControllerIconModel implements BakedModel {
     @Override public boolean isCustomRenderer() { return false; }
     @Override public TextureAtlasSprite getParticleIcon() { return base.getParticleIcon(); }
     @Override public ItemTransforms getTransforms() { return base.getTransforms(); }
-    @Override public ItemOverrides getOverrides() { return overlay.isEmpty() ? overrides : ItemOverrides.EMPTY; }
+    @Override public ItemOverrides getOverrides() { return bound ? ItemOverrides.EMPTY : overrides; }
 }

@@ -1,0 +1,26 @@
+package org.brahypno.sophisticated_smeltery.recipe;
+
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
+import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
+
+/** Extra refunds can exceed the crafting grid's one-remainder-per-slot capacity. */
+@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID)
+public final class ControllerCraftingRefunds {
+    private ControllerCraftingRefunds() {}
+
+    @SubscribeEvent public static void crafted(PlayerEvent.ItemCraftedEvent event) {
+        if (event.getEntity().level().isClientSide || !(event.getCrafting().getItem() instanceof MeltingUpgradeItem)) return;
+        for (int slot = 0; slot < event.getInventory().getContainerSize(); slot++) {
+            ItemStack input = event.getInventory().getItem(slot);
+            if (!(input.getItem() instanceof MeltingUpgradeItem)) continue;
+            for (ItemStack returned : ControllerBinding.getStoredItems(input)) {
+                event.getEntity().getInventory().placeItemBackInInventory(returned);
+            }
+        }
+    }
+}

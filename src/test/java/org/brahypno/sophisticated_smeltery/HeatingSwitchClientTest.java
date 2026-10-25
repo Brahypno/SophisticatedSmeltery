@@ -69,6 +69,7 @@ public final class HeatingSwitchClientTest {
                 .map(child -> (UpgradeSettingsTab<?>)child).toList();
         boolean scrolling = screen.children().stream().anyMatch(child -> child.getClass().getSimpleName().equals("InventoryScrollPanel"));
         if (stage == 3) {
+            CastingRecipeJeiProbe.verifyUniqueTierRecipes();
             check(scrolling == (size == 0), "Exercise both actual scrolling and non-scrolling backpack screens");
             check(control.getX() == screen.getGuiLeft() - 22 && control.getY() == screen.getGuiTop() + 8,
                     "Heating switch must use the native upgrade switch position");
@@ -88,6 +89,7 @@ public final class HeatingSwitchClientTest {
         } else if (stage == 6 && container.isOpen()) {
             var melting = tabs.stream().filter(MeltingUpgradeTab.class::isInstance).findFirst().orElseThrow();
             assertIconAnchor(melting);
+            TabFrameClientProbe.verifyContinuousHeader(event, melting);
             capture(event, "switch-" + size + "-melting-open");
             // The open panel covers the following tab. Close it before clicking the magnet.
             click(screen, melting.getX() + 8, melting.getY() + 12);

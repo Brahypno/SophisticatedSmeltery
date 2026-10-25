@@ -1,4 +1,5 @@
 {
+  "itemGroup.sophisticatedsmeltery": "Sophisticated Smeltery",
   "item.sophisticatedsmeltery.seared_casting_upgrade": "Seared Casting Upgrade",
   "item.sophisticatedsmeltery.advanced_seared_casting_upgrade": "Advanced Seared Casting Upgrade",
   "item.sophisticatedsmeltery.advanced_seared_casting_upgrade.tooltip": "Pours manually or automatically, preferring the furnace's bottom fluid before tank upgrades.",

@@ -17,7 +17,11 @@
 
 已补充整页自动交互：`gradle runClient -PmeltingInteractionSmoke --offline` 在独立测试世界执行开关/页签回归，并实际点击液层、手持堆叠桶取液、右键注液、三模式按钮和桶输入/输出槽。检查连续处理两种流体并核对 8 个容器的最终守恒；日志 `build/melting-interactions-test.log`，截图 `build/bucket-ui-first-output.png`、`build/bucket-ui-injection-complete.png`。下列对应项目自动路径已通过，仍可按个人操作习惯复验；流体单位、Shift 和资源包组合尚未因此覆盖。
 
-1. 空白升级显示紫黑占位图；绑定后使用精妙背包空白升级作底板，中心显示控制器正面。用工作台验证无序绑定和换绑返还原控制器；检查 JEI 和配方书能查看绑定配方。
+1. 空白升级显示紫黑占位图；绑定后使用精妙背包空白升级作底板，中心显示控制器正面。先排空炉内熔液，在 2×2/3×3 合成格中验证冶炼炉升级 + 熔铸炉 = 熔铸炉升级，单独放入绑定升级则产出空白熔炼升级。两种合成都返还原控制器及内部材料、燃料罐（保留液体）、桶输入/输出；物品进玩家背包，放不下按原版规则掉落。新升级内部应为空。检查 JEI/配方书绑定配方，以及两种高级浇筑升级各只有一条升阶配方；冶炼炉页左上边框应连续。
+
+   本轮 `gradlew.bat runGameTestServer runClient build -PheatingSwitchSmoke --offline` 已通过全部 53 项 GameTest、两种高级浇筑升级的真实 JEI 唯一性检查、滚动/非滚动背包中的冶炼炉页顶边像素检查及正式 JAR 构建。日志 `build/controller-feedback-verification.log`，截图 `build/switch-{0,1}-melting-open.png`。
+
+   清空配方随后改为自定义 `UpgradeClearingRecipe` 并移除解绑 Mixin。`gradlew.bat runGameTestServer build --offline` 通过全部 54 项 GameTest，额外验证原清空配方 ID 加载自定义类、客户端序列化往返，以及其他升级的清空规则；实际取出返还和炉液拦截测试继续通过。日志 `build/custom-clearing-recipe-tests.log`。
 2. 打开背包熔炼设置页，检查材料槽、106×106 分层炉液、原生数量单位及 Shift 提示、升级模板旁的加热开关，以及竖向热量条和状态提示；不再有合金开关、槽数和燃烧量文本。
 3. 默认关闭时输入不减少。开启后输入保持在原背包槽中，完成时扣料并增加炉液；关闭中途冷却并暂停剩余燃烧量。
 4. 手持空桶（包括堆叠）左击指定炉液取出，液体桶右击注入；空手左击一种液体应将其移到底层。检查桶输入/输出槽及自动/注入/取出模式。测试背包每种炉液各 1000 mB，便于排空。燃料液柱采用同样的容器交互；拿走内部罐后悬停不能显示旧燃料温度。

@@ -128,7 +128,7 @@ public final class UpgradeGameTests {
         TankItem.setTank(fuelTank, new FluidStack(Fluids.LAVA, 1000));
         wrapper.getComponents().setStackInSlot(1, fuelTank);
         helper.assertTrue(!wrapper.canRemove(), "Internal lava must be emptied before controller removal");
-        helper.assertTrue(!ControllerBinding.cleanForBinding(wrapper.getUpgradeStack()), "Installed materials and fuel cannot be copied through crafting");
+        helper.assertTrue(ControllerBinding.cleanForBinding(wrapper.getUpgradeStack()), "Internal materials and fuel tanks are refunded when rebinding");
         helper.succeed();
     }
 
@@ -271,6 +271,117 @@ public final class UpgradeGameTests {
         var crafting = (net.minecraft.world.item.crafting.CraftingRecipe)recipe;
         helper.assertTrue(crafting.matches(grid, helper.getLevel()), "Visible recipe remains unordered and supports clean rebinding");
         helper.assertTrue(ItemStack.matches(crafting.getRemainingItems(grid).get(3), oldController), "Visible recipe cannot bypass exact controller return");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void actualCraftingRefundsControllerAndEveryInternalStack(GameTestHelper helper) {
+        for (int width : new int[]{2, 3}) {
+            for (boolean unbind : new boolean[]{false, true}) {
+                var storage = backpack();
+                var wrapper = melting(storage);
+                var expected = new java.util.ArrayList<ItemStack>();
+                for (int slot = 0; slot < 9; slot++) {
+                    ItemStack component = new ItemStack(TinkerSmeltery.searedBricks, slot + 1);
+                    component.setHoverName(Component.literal("Material " + slot));
+                    if (slot == 1) {
+                        component = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK));
+                        TankItem.setTank(component, new FluidStack(Fluids.LAVA, 1000));
+                    }
+                    expected.add(component.copy());
+                    wrapper.getComponents().setStackInSlot(slot, component);
+                }
+                wrapper.getContainers().setStackInSlot(0, new ItemStack(Items.BUCKET, 8));
+                wrapper.getContainers().setStackInSlot(1, new ItemStack(Items.MILK_BUCKET));
+                expected.add(new ItemStack(Items.BUCKET, 8));
+                expected.add(new ItemStack(Items.MILK_BUCKET));
+                ItemStack controller = ControllerBinding.getController(wrapper.getUpgradeStack());
+                controller.setHoverName(Component.literal("Original furnace"));
+                wrapper.getUpgradeStack().getOrCreateTag().put(ControllerBinding.CONTROLLER, controller.save(new CompoundTag()));
+                var player = helper.makeMockPlayer();
+                var grid = new TransientCraftingContainer(new AbstractContainerMenu(null, -1) {
+                    public ItemStack quickMoveStack(Player p, int slot) { return ItemStack.EMPTY; }
+                    public boolean stillValid(Player p) { return true; }
+                }, width, width);
+                grid.setItem(width * width - 1, wrapper.getUpgradeStack().copy());
+                if (!unbind) grid.setItem(0, new ItemStack(TinkerSmeltery.foundryController));
+                var recipe = helper.getLevel().getRecipeManager().getRecipeFor(
+                        net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, helper.getLevel()).orElseThrow();
+                ItemStack output = recipe.assemble(grid, helper.getLevel().registryAccess());
+                helper.assertTrue(!output.hasTag() || !output.getTag().contains(ControllerBinding.STATE), "Never copy refunded furnace contents into output");
+                helper.assertTrue(unbind ? ControllerBinding.getController(output).isEmpty()
+                                : ControllerBinding.getController(output).is(TinkerSmeltery.foundryController.asItem()),
+                        "Real recipe manager selects the requested unbinding or foundry conversion");
+                var result = new net.minecraft.world.inventory.ResultContainer();
+                result.setItem(0, output);
+                result.setRecipeUsed(recipe);
+                var resultSlot = new net.minecraft.world.inventory.ResultSlot(player, grid, result, 0, 0, 0);
+                resultSlot.onTake(player, resultSlot.remove(1));
+                helper.assertTrue(ItemStack.matches(grid.getItem(width * width - 1), controller), "Actual result-slot consumption returns the exact old furnace");
+                for (ItemStack refund : expected) {
+                    int count = 0;
+                    for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+                        ItemStack returned = player.getInventory().getItem(slot);
+                        if (ItemStack.isSameItemSameTags(refund, returned)) count += returned.getCount();
+                    }
+                    helper.assertTrue(count == refund.getCount(), "Return every internal stack exactly once, including tank fluid and custom NBT: " + refund);
+                }
+            }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void customClearingRecipeLoadsAndPreservesOtherUpgrades(GameTestHelper helper) {
+        var id = new net.minecraft.resources.ResourceLocation("sophisticatedcore", "upgrade_clear");
+        var loaded = helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
+        helper.assertTrue(loaded instanceof org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe,
+                "The existing clear recipe ID must load the custom implementation instead of a competing recipe");
+        var recipe = (org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe)loaded;
+        var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        try {
+            SophisticatedSmeltery.UPGRADE_CLEAR.get().toNetwork(buffer, recipe);
+            var decoded = SophisticatedSmeltery.UPGRADE_CLEAR.get().fromNetwork(id, buffer);
+            var grid = new TransientCraftingContainer(new AbstractContainerMenu(null, -1) {
+                public ItemStack quickMoveStack(Player p, int slot) { return ItemStack.EMPTY; }
+                public boolean stillValid(Player p) { return true; }
+            }, 2, 2);
+            ItemStack otherUpgrade = new ItemStack(ModItems.STACK_UPGRADE_TIER_2.get());
+            otherUpgrade.setHoverName(Component.literal("Configured upgrade"));
+            grid.setItem(2, otherUpgrade);
+            helper.assertTrue(decoded.matches(grid, helper.getLevel()), "Client-decoded recipe still clears other configured upgrades");
+            ItemStack cleared = decoded.assemble(grid, helper.getLevel().registryAccess());
+            helper.assertTrue(cleared.is(otherUpgrade.getItem()) && cleared.getCount() == 1 && !cleared.hasTag(),
+                    "Preserve Core's ordinary upgrade clearing result");
+            helper.assertTrue(decoded.getRemainingItems(grid).stream().allMatch(ItemStack::isEmpty) && otherUpgrade.hasTag(),
+                    "Other upgrades have no controller remainder and their inputs are not mutated");
+            grid.setItem(0, new ItemStack(Items.DIRT));
+            helper.assertTrue(!decoded.matches(grid, helper.getLevel()), "Keep the single-input clearing rule");
+            grid.setItem(0, ItemStack.EMPTY);
+            grid.setItem(2, cleared);
+            helper.assertTrue(!decoded.matches(grid, helper.getLevel()), "Already-clear upgrades cannot be cleared again");
+        } finally { buffer.release(); }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = "sophisticatedsmeltery")
+    public static void moltenContentsBlockBothBindingAndCoreClearing(GameTestHelper helper) {
+        var storage = backpack();
+        var wrapper = melting(storage);
+        materials(wrapper);
+        wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 90), IFluidHandler.FluidAction.EXECUTE);
+        wrapper.onBeforeRemoved();
+        var grid = new TransientCraftingContainer(new AbstractContainerMenu(null, -1) {
+            public ItemStack quickMoveStack(Player p, int slot) { return ItemStack.EMPTY; }
+            public boolean stillValid(Player p) { return true; }
+        }, 2, 2);
+        grid.setItem(3, wrapper.getUpgradeStack().copy());
+        var manager = helper.getLevel().getRecipeManager();
+        helper.assertTrue(manager.getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, helper.getLevel()).isEmpty(),
+                "Core clearing cannot erase molten furnace contents");
+        grid.setItem(0, new ItemStack(TinkerSmeltery.foundryController));
+        helper.assertTrue(manager.getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, helper.getLevel()).isEmpty(),
+                "Drain molten contents before changing furnace type");
         helper.succeed();
     }
 

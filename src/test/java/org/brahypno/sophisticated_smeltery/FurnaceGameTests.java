@@ -309,7 +309,9 @@ public final class FurnaceGameTests {
             cachedOnly.put("fuel", state.getCompound("fuel").copy());
             cachedOnly.getCompound("fuel").putInt("fuel", 0);
             upgrade.getOrCreateTag().put(ControllerBinding.STATE, cachedOnly);
-            helper.assertTrue(!ControllerBinding.cleanForBinding(upgrade), "Paused paid fuel must prevent clean rebinding even without active burn");
+            helper.assertTrue(ControllerBinding.cleanForBinding(upgrade), "Drained furnace may be rebound with paused burn state");
+            helper.assertTrue(!ControllerBinding.bind(upgrade, new ItemStack(TinkerSmeltery.foundryController)).getTag().contains(ControllerBinding.STATE),
+                    "Rebinding resets old burn state rather than transferring it to a different furnace");
 
             var loaded = new NativeFurnace(new ItemStack(TinkerSmeltery.smelteryController), state, () -> List.of(lava, blood), () -> {});
             loaded.resize(state.getInt("materials"), 1);

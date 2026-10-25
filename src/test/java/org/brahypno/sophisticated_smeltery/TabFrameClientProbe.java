@@ -8,6 +8,21 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
 /** Compare real rendered panel pixels against the native magnet, including the 128-pixel boundary. */
 final class TabFrameClientProbe {
     private static int[] nativeFrame;
+    static void verifyContinuousHeader(ScreenEvent.Render.Post event, UpgradeSettingsTab<?> tab) {
+        event.getGuiGraphics().flush();
+        var mc = Minecraft.getInstance();
+        double scale = mc.getWindow().getGuiScale();
+        try (var screenshot = Screenshot.takeScreenshot(mc.getMainRenderTarget())) {
+            for (int y = 0; y < 3; y++) {
+                int expected = screenshot.getPixelRGBA((int)((tab.getX() + 8) * scale), (int)((tab.getY() + y) * scale));
+                for (int x = 0; x < 6; x++) {
+                    if (screenshot.getPixelRGBA((int)((tab.getX() + x) * scale), (int)((tab.getY() + y) * scale)) != expected)
+                        throw new IllegalStateException("Melting header has a gap at " + x + "," + y);
+                }
+            }
+        }
+        SophisticatedSmeltery.LOGGER.info("MELTING HEADER PASSED: continuous top edge at width {}", tab.getWidth());
+    }
     static void record(ScreenEvent.Render.Post event, UpgradeSettingsTab<?> magnet) { nativeFrame = pixels(event, magnet); }
     static void verify(ScreenEvent.Render.Post event, UpgradeSettingsTab<?> casting) {
         if (nativeFrame == null) throw new IllegalStateException("Native magnet frame reference was not captured");

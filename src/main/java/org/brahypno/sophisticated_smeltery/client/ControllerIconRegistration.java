@@ -16,7 +16,8 @@ public final class ControllerIconRegistration {
         BackpackControllerModel.clearCache();
         ModelResourceLocation location = new ModelResourceLocation(SophisticatedSmeltery.id("melting_upgrade"), "inventory");
         BakedModel original = event.getModels().get(location);
-        if (original != null) event.getModels().put(location, new ControllerIconModel(original));
+        BakedModel brick = event.getModels().get(new ModelResourceLocation(TinkerSmeltery.searedBrick.getId(), "inventory"));
+        if (original != null && brick != null) event.getModels().put(location, new ControllerIconModel(original, brick));
         BakedModel advanced = event.getModels().get(new ModelResourceLocation(
                 new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"), "inventory"));
         for (String item : java.util.List.of("seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade")) {

@@ -68,14 +68,13 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     }
 
     @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
-        if (getWidth() <= 128) {
+        if (getWidth() <= 125) {
             super.renderBg(graphics, minecraft, mouseX, mouseY);
         } else {
-            // Core's wide-panel path puts the left border at x instead of x - 3.
-            // Keep the same attachment edge and icon/title anchors as native narrow tabs.
+            // Skip the texture's entire left corner, keeping the attachment edge continuous.
             int half = getHeight() / 2;
             GuiHelper.renderTiledControlBackground(graphics, x, y, getWidth(), getHeight(),
-                    131, 0, 125, 256, 0, 6, half, getHeight() - half);
+                    134, 0, 122, 256, 0, 6, half, getHeight() - half);
             graphics.blit(GuiHelper.GUI_CONTROLS, x - 3, y, 128, 256 - getHeight(), 3, getHeight());
         }
         if (!getContainer().isOpen()) return;

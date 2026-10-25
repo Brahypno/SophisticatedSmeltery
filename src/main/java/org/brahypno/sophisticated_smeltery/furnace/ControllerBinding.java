@@ -7,6 +7,8 @@ import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -49,25 +51,30 @@ public final class ControllerBinding {
 
     public static ItemStack bind(ItemStack upgrade, ItemStack controller) {
         ItemStack result = upgrade.copyWithCount(1);
+        // The old furnace's contents are refunded when crafting, never copied into the new furnace.
+        result.getOrCreateTag().remove(STATE);
         result.getOrCreateTag().put(CONTROLLER, controller.copyWithCount(1).save(new CompoundTag()));
         return result;
+    }
+
+    public static List<ItemStack> getStoredItems(ItemStack upgrade) {
+        List<ItemStack> items = new ArrayList<>();
+        CompoundTag tag = upgrade.getTag();
+        if (tag == null) return items;
+        CompoundTag state = tag.getCompound(STATE);
+        for (String inventory : List.of("components", "containers")) {
+            for (Tag entry : state.getCompound(inventory).getList("Items", Tag.TAG_COMPOUND)) {
+                ItemStack stack = ItemStack.of((CompoundTag)entry);
+                if (!stack.isEmpty()) items.add(stack);
+            }
+        }
+        return items;
     }
 
     public static boolean cleanForBinding(ItemStack upgrade) {
         CompoundTag tag = upgrade.getTag();
         if (tag == null) return true;
         CompoundTag state = tag.getCompound(STATE);
-        if (!state.getCompound("tank").getList("fluids", Tag.TAG_COMPOUND).isEmpty()
-                || !state.getCompound("components").getList("Items", Tag.TAG_COMPOUND).isEmpty()
-                || !state.getCompound("containers").getList("Items", Tag.TAG_COMPOUND).isEmpty()
-                || state.getCompound("fuel").getInt("fuel") > 0) return false;
-        for (Tag entry : state.getCompound("fuel").getList("pausedBurns", Tag.TAG_COMPOUND)) {
-            if (((CompoundTag)entry).getInt("fuel") > 0) return false;
-        }
-        for (Tag entry : state.getList("progress", Tag.TAG_COMPOUND)) {
-            int time = ((CompoundTag)entry).getInt("time");
-            if (time != 0) return false;
-        }
-        return true;
+        return state.getCompound("tank").getList("fluids", Tag.TAG_COMPOUND).isEmpty();
     }
 }

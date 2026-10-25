@@ -1,4 +1,5 @@
 {
+  "itemGroup.sophisticatedsmeltery": "精妙匠魂",
   "item.sophisticatedsmeltery.seared_casting_upgrade": "焦黑浇筑升级",
   "item.sophisticatedsmeltery.advanced_seared_casting_upgrade": "高级焦黑浇筑升级",
   "item.sophisticatedsmeltery.advanced_seared_casting_upgrade.tooltip": "优先使用炉内底层流体，也可使用储罐升级；支持手动或自动浇筑。",

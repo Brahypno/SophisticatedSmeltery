@@ -8,16 +8,25 @@ import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
-import net.p3pp3rf1y.sophisticatedcore.crafting.UpgradeNextTierRecipe;
+import net.p3pp3rf1y.sophisticatedcore.upgrades.IUpgradeItem;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 
-/** Native upgrade-state transfer, also visible to the vanilla recipe book. */
-public final class CastingTierRecipe extends UpgradeNextTierRecipe {
-    public CastingTierRecipe(ShapedRecipe recipe) { super(recipe); }
-    @Override public boolean isSpecial() { return false; }
+/** Visible tier recipe with state transfer, without Core's extra JEI display recipe. */
+public final class CastingTierRecipe extends ShapedRecipe {
+    public CastingTierRecipe(ShapedRecipe recipe) {
+        super(recipe.getId(), recipe.getGroup(), recipe.category(), recipe.getRecipeWidth(), recipe.getRecipeHeight(),
+                recipe.getIngredients(), recipe.getResultItem(RegistryAccess.EMPTY));
+    }
     @Override public ItemStack assemble(CraftingContainer grid, RegistryAccess registries) {
-        // The native implementation shares the input tag; give the crafted item its own copy.
-        return super.assemble(grid, registries).copy();
+        ItemStack result = super.assemble(grid, registries);
+        for (int slot = 0; slot < grid.getContainerSize(); slot++) {
+            ItemStack input = grid.getItem(slot);
+            if (input.getItem() instanceof IUpgradeItem<?>) {
+                result.setTag(input.hasTag() ? input.getTag().copy() : null);
+                break;
+            }
+        }
+        return result;
     }
     @Override public RecipeSerializer<?> getSerializer() { return SophisticatedSmeltery.CASTING_TIER.get(); }
     public static final class Serializer implements RecipeSerializer<CastingTierRecipe> {
@@ -29,7 +38,7 @@ public final class CastingTierRecipe extends UpgradeNextTierRecipe {
             return new CastingTierRecipe(shaped.fromNetwork(id, buffer));
         }
         @Override public void toNetwork(FriendlyByteBuf buffer, CastingTierRecipe recipe) {
-            shaped.toNetwork(buffer, recipe.getCompose());
+            shaped.toNetwork(buffer, recipe);
         }
     }
 }

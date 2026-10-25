@@ -3,6 +3,8 @@ package org.brahypno.sophisticated_smeltery;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -23,6 +25,7 @@ import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerType;
 import org.brahypno.sophisticated_smeltery.recipe.ControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.VisibleControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
+import org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
@@ -43,6 +46,17 @@ public class SophisticatedSmeltery {
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SEARED_CASTING_UPGRADE = ITEMS.register("advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
     public static final RegistryObject<CastingUpgradeItem> SCORCHED_CASTING_UPGRADE = ITEMS.register("scorched_casting_upgrade", () -> new CastingUpgradeItem(false, true));
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SCORCHED_CASTING_UPGRADE = ITEMS.register("advanced_scorched_casting_upgrade", () -> new CastingUpgradeItem(true, true));
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    public static final RegistryObject<CreativeModeTab> CREATIVE_TAB = CREATIVE_TABS.register(MODID, () -> CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.sophisticatedsmeltery"))
+            .icon(() -> MELTING_UPGRADE.get().getDefaultInstance())
+            .displayItems((parameters, output) -> {
+                output.accept(MELTING_UPGRADE.get());
+                output.accept(SEARED_CASTING_UPGRADE.get());
+                output.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
+                output.accept(SCORCHED_CASTING_UPGRADE.get());
+                output.accept(ADVANCED_SCORCHED_CASTING_UPGRADE.get());
+            }).build());
     public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MODID);
     public static final RegistryObject<RecipeSerializer<ControllerBindingRecipe>> BIND_CONTROLLER = RECIPES.register(
             "bind_controller", () -> new SimpleCraftingRecipeSerializer<>(ControllerBindingRecipe::new));
@@ -50,6 +64,8 @@ public class SophisticatedSmeltery {
             "controller_binding", VisibleControllerBindingRecipe.Serializer::new);
     public static final RegistryObject<RecipeSerializer<CastingTierRecipe>> CASTING_TIER = RECIPES.register(
             "casting_upgrade_tier", CastingTierRecipe.Serializer::new);
+    public static final RegistryObject<RecipeSerializer<UpgradeClearingRecipe>> UPGRADE_CLEAR = RECIPES.register(
+            "upgrade_clear", () -> new SimpleCraftingRecipeSerializer<>(UpgradeClearingRecipe::new));
     public static final UpgradeContainerType<MeltingUpgradeWrapper, MeltingUpgradeContainer> MELTING_CONTAINER =
             new UpgradeContainerType<>(MeltingUpgradeContainer::new);
     public static final UpgradeContainerType<CastingUpgradeWrapper, CastingUpgradeContainer> CASTING_CONTAINER =
@@ -58,6 +74,7 @@ public class SophisticatedSmeltery {
     public SophisticatedSmeltery() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         ITEMS.register(bus);
+        CREATIVE_TABS.register(bus);
         RECIPES.register(bus);
         bus.addListener(this::setup);
         bus.addListener(this::creativeItems);
