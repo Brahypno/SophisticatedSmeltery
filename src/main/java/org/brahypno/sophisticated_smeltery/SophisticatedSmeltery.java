@@ -1,12 +1,14 @@
 package org.brahypno.sophisticated_smeltery;
 
 import com.mojang.logging.LogUtils;
+import java.util.function.Consumer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -27,6 +29,7 @@ import org.brahypno.sophisticated_smeltery.recipe.VisibleControllerBindingRecipe
 import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
+import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
@@ -35,6 +38,7 @@ import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import org.slf4j.Logger;
+import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
 @Mod(SophisticatedSmeltery.MODID)
 public class SophisticatedSmeltery {
@@ -52,6 +56,7 @@ public class SophisticatedSmeltery {
             .icon(() -> MELTING_UPGRADE.get().getDefaultInstance())
             .displayItems((parameters, output) -> {
                 output.accept(MELTING_UPGRADE.get());
+                addBoundFurnaces(output::accept);
                 output.accept(SEARED_CASTING_UPGRADE.get());
                 output.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
                 output.accept(SCORCHED_CASTING_UPGRADE.get());
@@ -98,10 +103,21 @@ public class SophisticatedSmeltery {
     private void creativeItems(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MELTING_UPGRADE.get());
+            addBoundFurnaces(event::accept);
             event.accept(SEARED_CASTING_UPGRADE.get());
             event.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
             event.accept(SCORCHED_CASTING_UPGRADE.get());
             event.accept(ADVANCED_SCORCHED_CASTING_UPGRADE.get());
+        }
+    }
+
+    private static void addBoundFurnaces(Consumer<ItemStack> output) {
+        ItemStack upgrade = new ItemStack(MELTING_UPGRADE.get());
+        output.accept(ControllerBinding.bind(upgrade, new ItemStack(TinkerSmeltery.smelteryController)));
+        output.accept(ControllerBinding.bind(upgrade, new ItemStack(TinkerSmeltery.foundryController)));
+        ResourceLocation transmuteController = new ResourceLocation("esotericism_tinker", "transmute_controller");
+        if (ForgeRegistries.ITEMS.containsKey(transmuteController)) {
+            output.accept(ControllerBinding.bind(upgrade, new ItemStack(ForgeRegistries.ITEMS.getValue(transmuteController))));
         }
     }
 
