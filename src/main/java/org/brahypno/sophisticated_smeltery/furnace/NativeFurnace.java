@@ -78,10 +78,15 @@ public final class NativeFurnace {
     public FurnaceDimensions dimensions() { return dimensions; }
     public boolean canAlloy() { return alloying != null; }
     public int fluidRevision() { return ((PortableController)controller).sophisticatedsmeltery$getFluidRevision(); }
+    public int heatingTemperature() { return (fuel.hasFuel() ? fuel.getTemperature() : 0) + heatPolicy.temperatureBonus(controller); }
+    public void updateHeatComponents(IItemHandler components) {
+        heatPolicy.updateComponents(controller, components, dimensions.volume() > 0);
+    }
     private int requiredFuelTemperature(int maximum) {
         int required = 0;
+        int bonus = heatPolicy.temperatureBonus(controller);
         for (int slot = 0; slot < melting().getSlots(); slot++) {
-            int temperature = melting().getRequiredTemp(slot);
+            int temperature = Math.max(0, melting().getRequiredTemp(slot) - bonus);
             if (melting().getRequiredTime(slot) > 0 && melting().getCurrentTime(slot) >= 0 && temperature <= maximum) required = Math.max(required, temperature);
         }
         if (alloying != null && controller.getLevel() != null) {

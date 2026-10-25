@@ -49,6 +49,78 @@ public final class UpgradeGameTests {
         wrapper.getComponents().setStackInSlot(0, new ItemStack(TinkerSmeltery.searedBricks, 4));
     }
 
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
+    public static void missingControllerFallsBackWithoutLosingStoredState(GameTestHelper helper) {
+        var donor = melting(backpack());
+        materials(donor);
+        ItemStack fuelTank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK));
+        TankItem.setTank(fuelTank, new FluidStack(Fluids.LAVA, 1000));
+        donor.getComponents().setStackInSlot(1, fuelTank);
+        donor.getContainers().setStackInSlot(1, new ItemStack(Items.MILK_BUCKET));
+        donor.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 90), IFluidHandler.FluidAction.EXECUTE);
+        donor.persist();
+        ItemStack saved = donor.getUpgradeStack().copy();
+        saved.getTag().getCompound(ControllerBinding.CONTROLLER).putString("id",
+                net.minecraftforge.fml.ModList.get().isLoaded("esotericism_tinker")
+                        ? "missing_test_mod:controller" : "esotericism_tinker:transmute_controller");
+        var state = saved.getTag().getCompound(ControllerBinding.STATE);
+        var unknown = new CompoundTag();
+        unknown.putString("id", "missing_test_mod:component");
+        unknown.putByte("Count", (byte)3);
+        unknown.putInt("Slot", 8);
+        state.getCompound("components").getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND).add(unknown);
+        var drops = new net.minecraft.nbt.ListTag();
+        drops.add(new ItemStack(Items.DIAMOND, 7).save(new CompoundTag()));
+        state.put("mobDrops", drops);
+        CompoundTag expected = saved.getTag().copy();
+
+        var storage = new BackpackWrapper(new ItemStack(ModItems.NETHERITE_BACKPACK.get()));
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, saved);
+        var empty = melting(storage);
+        helper.assertTrue(!empty.isOperational() && empty.getFurnace() == null && !empty.isHeating()
+                        && empty.getMeltingSlotCount() == 0 && empty.getTank().getCapacity() == 0 && empty.canRemove(),
+                "A missing controller becomes an empty inactive and removable upgrade");
+        helper.assertTrue(saved.getMaxStackSize() == 1 && saved.getHoverName().equals(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()).getHoverName()),
+                "Display the blank upgrade name but keep saved contents in a single item");
+        helper.assertTrue(empty.getComponents().insertItem(0, new ItemStack(TinkerSmeltery.searedBricks), false).getCount() == 1
+                        && empty.getContainers().insertItem(0, new ItemStack(Items.BUCKET), false).getCount() == 1,
+                "Inactive slots must reject items instead of accepting unsaved contents");
+        var fluid = empty.wrapHandler(null, storage.getBackpack());
+        helper.assertTrue(fluid.fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE) == 0
+                        && fluid.drain(1000, IFluidHandler.FluidAction.EXECUTE).isEmpty(),
+                "A dormant upgrade cannot expose or change its preserved furnace fluids");
+        var player = helper.makeMockPlayer();
+        var container = new MeltingUpgradeContainer(player, 0, empty, SophisticatedSmeltery.MELTING_CONTAINER);
+        var action = new CompoundTag();
+        action.putString("action", "heating");
+        container.handleMessage(action);
+        empty.tick(null, helper.getLevel(), BlockPos.ZERO);
+        empty.persist();
+        empty.onBeforeRemoved();
+        helper.assertTrue(saved.getTag().equals(expected), "Preserve the exact original NBT including missing IDs, fluids, containers and drops");
+
+        ItemStack restoredStack = saved.copy();
+        restoredStack.getTag().getCompound(ControllerBinding.CONTROLLER).putString("id", "tconstruct:smeltery_controller");
+        var restored = new MeltingUpgradeWrapper(storage, restoredStack, ignored -> {});
+        helper.assertTrue(restored.isOperational() && restored.getTank().getContained() == 90
+                        && restored.getComponents().getStackInSlot(0).getCount() == 4
+                        && restored.getComponents().getStackInSlot(1).getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM)
+                            .orElseThrow(IllegalStateException::new).getFluidInTank(0).getAmount() == 1000,
+                "Recreating an available controller restores its saved fluid and materials");
+
+        helper.setBlock(BlockPos.ZERO, ModBlocks.NETHERITE_BACKPACK.get());
+        var block = (BackpackBlockEntity)helper.getBlockEntity(BlockPos.ZERO);
+        block.setBackpack(storage.getBackpack());
+        ItemStack held = storage.getBackpack().copy();
+        helper.onEachTick(() -> ((BackpackItem)held.getItem()).inventoryTick(held, helper.getLevel(), player, -1, false));
+        helper.succeedWhen(() -> {
+            var placed = (MeltingUpgradeWrapper)block.getBackpackWrapper().getUpgradeHandler().getSlotWrappers().get(0);
+            helper.assertTrue(!placed.isOperational() && placed.getUpgradeStack().getTag().equals(expected),
+                    "Actual placed and carried host loading keeps the missing-controller upgrade inactive and intact");
+        });
+    }
+
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void controllerInstallationAndNativeNames(GameTestHelper helper) {
         MeltingUpgradeItem item = SophisticatedSmeltery.MELTING_UPGRADE.get();

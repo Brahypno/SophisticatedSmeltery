@@ -71,17 +71,25 @@ public final class ManualTestCommand {
         var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
         storage.getInventoryHandler();
         var controller = foundry ? TinkerSmeltery.foundryController : TinkerSmeltery.smelteryController;
-        storage.getUpgradeHandler().setStackInSlot(0, ControllerBinding.bind(
-                new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), new ItemStack(controller)));
+        boolean transmute = Boolean.getBoolean("sophisticatedsmeltery.transmuteMobSmoke");
+        boolean missing = Boolean.getBoolean("sophisticatedsmeltery.missingControllerSmoke");
+        ItemStack controllerStack = transmute ? transmuteItem("transmute_controller", 1) : new ItemStack(controller);
+        ItemStack upgradeStack = ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controllerStack);
+        if (missing) upgradeStack.getTag().getCompound(ControllerBinding.CONTROLLER).putString("id", "esotericism_tinker:transmute_controller");
+        storage.getUpgradeHandler().setStackInSlot(0, upgradeStack);
         var wrapper = (MeltingUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
         wrapper.setHeating(false);
-        wrapper.getComponents().setStackInSlot(0, new ItemStack(foundry ? TinkerSmeltery.scorchedBricks : TinkerSmeltery.searedBricks, 32));
-        ItemStack tank = new ItemStack((foundry ? TinkerSmeltery.scorchedTank : TinkerSmeltery.searedTank).get(SearedTankBlock.TankType.FUEL_TANK));
-        TankItem.setTank(tank, new FluidStack(Fluids.LAVA, 1000));
-        wrapper.getComponents().setStackInSlot(1, tank);
-        wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
-        wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenGold.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
-        wrapper.persist();
+        if (!missing) {
+            wrapper.getComponents().setStackInSlot(0, transmute ? transmuteItem("ashen_bricks", 32)
+                    : new ItemStack(foundry ? TinkerSmeltery.scorchedBricks : TinkerSmeltery.searedBricks, 32));
+            ItemStack tank = transmute ? transmuteItem("ashen_fuel_tank", 1)
+                    : new ItemStack((foundry ? TinkerSmeltery.scorchedTank : TinkerSmeltery.searedTank).get(SearedTankBlock.TankType.FUEL_TANK));
+            TankItem.setTank(tank, new FluidStack(Fluids.LAVA, 1000));
+            wrapper.getComponents().setStackInSlot(1, tank);
+            wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
+            wrapper.getTank().fill(new FluidStack(TinkerFluids.moltenGold.get(), 1000), IFluidHandler.FluidAction.EXECUTE);
+            wrapper.persist();
+        }
         if (Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke")) {
             storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM
                     .get(new net.minecraft.resources.ResourceLocation("sophisticatedbackpacks", "advanced_magnet_upgrade"))));
@@ -125,5 +133,10 @@ public final class ManualTestCommand {
         player.addItem(new ItemStack(Items.BUCKET, 8));
         context.getSource().sendSuccess(() -> Component.literal("Test backpack supplied. Heating is OFF. /ssmeltery_test foundry supplies the other controller."), false);
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static ItemStack transmuteItem(String name, int count) {
+        return new ItemStack(net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(
+                new net.minecraft.resources.ResourceLocation("esotericism_tinker", name)), count);
     }
 }

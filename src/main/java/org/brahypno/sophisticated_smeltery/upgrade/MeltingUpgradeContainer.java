@@ -63,6 +63,7 @@ public final class MeltingUpgradeContainer extends UpgradeContainerBase<MeltingU
     }
 
     @Override public void handleMessage(CompoundTag data) {
+        if (!upgradeWrapper.isOperational()) return;
         switch (data.getString("action")) {
             case "heating" -> upgradeWrapper.setHeating(!upgradeWrapper.isHeating());
             case "bucketMode" -> upgradeWrapper.cycleTransferDirection();

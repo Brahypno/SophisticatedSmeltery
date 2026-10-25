@@ -70,6 +70,23 @@ public final class HeatingSwitchClientTest {
         var tabs = screen.getUpgradeSettingsControl().children().stream().filter(UpgradeSettingsTab.class::isInstance)
                 .map(child -> (UpgradeSettingsTab<?>)child).toList();
         boolean scrolling = screen.children().stream().anyMatch(child -> child.getClass().getSimpleName().equals("InventoryScrollPanel"));
+        if (Boolean.getBoolean("sophisticatedsmeltery.missingControllerSmoke")) {
+            var wrapper = container.getUpgradeWrapper();
+            check(!wrapper.isOperational() && !wrapper.isHeating() && wrapper.getMeltingSlotCount() == 0
+                    && wrapper.getTank().getContained() == 0, "Missing controller stays empty and inactive in the actual screen");
+            if (stage == 3) {
+                var melting = tabs.stream().filter(MeltingUpgradeTab.class::isInstance).findFirst().orElseThrow();
+                click(screen, melting.getX() + 8, melting.getY() + 12);
+                stage = 4;
+            } else if (stage == 4 && container.isOpen()) {
+                capture(event, "missing-controller-empty");
+                SophisticatedSmeltery.LOGGER.info("MISSING CONTROLLER UI PASSED: actual backpack opens, blank tab expands, no furnace or heat, removable preserved upgrade");
+                stage = 9;
+                mc.player.closeContainer();
+                mc.stop();
+            }
+            return;
+        }
         if (stage == 3) {
             CastingRecipeJeiProbe.verifyUniqueTierRecipes();
             check(scrolling == (size == 0), "Exercise both actual scrolling and non-scrolling backpack screens");

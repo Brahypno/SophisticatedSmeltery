@@ -19,6 +19,8 @@ import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.IBackpackWrapper;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.CapturedMob;
@@ -26,19 +28,19 @@ import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherHandle
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherStorage;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.StorageContainerMenuBase;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
+import org.brahypno.sophisticated_smeltery.compat.TransmuteMobMelting;
 import org.brahypno.sophisticated_smeltery.mixin.MobCatcherStorageAccess;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import slimeknights.tconstruct.common.TinkerDamageTypes;
 import slimeknights.tconstruct.common.TinkerTags;
 import slimeknights.tconstruct.library.recipe.entitymelting.EntityMeltingRecipeCache;
-import slimeknights.tconstruct.smeltery.block.entity.controller.FoundryBlockEntity;
-import slimeknights.tconstruct.smeltery.block.entity.controller.SmelteryBlockEntity;
 import slimeknights.tconstruct.smeltery.block.entity.module.EntityMeltingModule;
 
 /** Captured entities stay in catcher storage; only a detached damage/loot instance is created. */
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID)
 public final class PortableMobMelting {
     public static final String DROPS = "mobDrops";
+    public record Melt(int damage, List<FluidStack> fluids) {}
     private record Capture(LivingEntity entity, List<ItemStack> drops) {}
     private static final ThreadLocal<Capture> CAPTURE = new ThreadLocal<>();
     private final MeltingUpgradeWrapper upgrade;
@@ -68,11 +70,11 @@ public final class PortableMobMelting {
     }
 
     public void tick(@Nullable Entity host, ServerLevel level, BlockPos pos) {
-        boolean changed = flushDrops();
         NativeFurnace furnace = upgrade.getFurnace();
-        Class<?> controllerType = furnace.controller().getClass();
+        if (furnace == null) return;
+        boolean changed = flushDrops();
+        boolean transmute = ModList.get().isLoaded("esotericism_tinker") && TransmuteMobMelting.supports(furnace.controller());
         if (upgrade.isHeating() && upgrade.getMeltingSlotCount() > 0 && level.getGameTime() % 20 == 12
-                && (controllerType == SmelteryBlockEntity.class || controllerType == FoundryBlockEntity.class)
                 && upgrade.getStorage() instanceof IBackpackWrapper backpack) {
             List<CapturedMob> mobs = new ArrayList<>(MobCatcherStorage.getCapturedMobs(backpack));
             boolean mobsChanged = false;
@@ -90,10 +92,17 @@ public final class PortableMobMelting {
                 DamageSource source = TinkerDamageTypes.source(level.registryAccess(), living.fireImmune()
                         ? TinkerDamageTypes.SMELTERY_MAGIC : TinkerDamageTypes.SMELTERY_HEAT);
                 if (living.isInvulnerableTo(source)) continue;
-                var recipe = EntityMeltingRecipeCache.findRecipe(level.getRecipeManager(), living.getType());
-                var output = recipe == null ? EntityMeltingModule.getDefaultFluid() : recipe.getOutput(living);
-                if (upgrade.getTank().fill(output, FluidAction.SIMULATE) != output.getAmount()) continue;
-                if (!furnace.fuel().hasFuel() && furnace.fuel().findFuel(false) <= 0) continue;
+                Melt melt;
+                if (transmute) melt = TransmuteMobMelting.recipe(level, living);
+                else {
+                    var recipe = EntityMeltingRecipeCache.findRecipe(level.getRecipeManager(), living.getType());
+                    melt = new Melt(recipe == null ? 2 : recipe.getDamage(),
+                            List.of(recipe == null ? EntityMeltingModule.getDefaultFluid() : recipe.getOutput(living)));
+                }
+                long amount = melt.fluids().stream().mapToLong(FluidStack::getAmount).sum();
+                if (amount > upgrade.getTank().getCapacity() - upgrade.getTank().getContained()) continue;
+                boolean heater = transmute && furnace.heatingTemperature() > 0;
+                if (!heater && !furnace.fuel().hasFuel() && furnace.fuel().findFuel(false) <= 0) continue;
 
                 // Captured mobs do not tick. A full second elapsed since the previous pulse.
                 living.invulnerableTime = 0;
@@ -104,7 +113,7 @@ public final class PortableMobMelting {
                 CAPTURE.set(new Capture(living, pendingDrops));
                 boolean hurt;
                 try {
-                    hurt = living.hurt(source, recipe == null ? 2 : recipe.getDamage());
+                    hurt = living.hurt(source, melt.damage());
                 } finally {
                     living.captureDrops(oldDrops);
                     if (previous == null) CAPTURE.remove();
@@ -112,8 +121,8 @@ public final class PortableMobMelting {
                     extraDrops.forEach(drop -> pendingDrops.add(drop.getItem().copy()));
                 }
                 if (hurt) {
-                    if (!furnace.fuel().hasFuel()) furnace.fuel().findFuel(true);
-                    upgrade.getTank().fill(output, FluidAction.EXECUTE);
+                    if (!heater && !furnace.fuel().hasFuel()) furnace.fuel().findFuel(true);
+                    for (var fluid : melt.fluids()) upgrade.getTank().fill(fluid, FluidAction.EXECUTE);
                 }
                 if (!living.isAlive()) {
                     mobs.remove(index--);

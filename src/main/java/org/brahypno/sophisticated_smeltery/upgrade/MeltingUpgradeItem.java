@@ -23,11 +23,11 @@ public final class MeltingUpgradeItem extends UpgradeItemBase<MeltingUpgradeWrap
 
     public MeltingUpgradeItem() { super(SINGLE_CONTROLLER); }
     @Override public UpgradeType<MeltingUpgradeWrapper> getType() { return TYPE; }
-    @Override public int getMaxStackSize(ItemStack stack) { return ControllerBinding.getController(stack).isEmpty() ? 64 : 1; }
+    @Override public int getMaxStackSize(ItemStack stack) { return stack.hasTag() && stack.getTag().contains(ControllerBinding.CONTROLLER) ? 1 : 64; }
 
     @Override public Component getName(ItemStack stack) {
         ItemStack controller = ControllerBinding.getController(stack);
-        if (controller.isEmpty()) return super.getName(stack);
+        if (!ControllerBinding.supports(controller)) return super.getName(stack);
         return Component.translatable("item.sophisticated_smeltery.melting_upgrade.bound", ControllerBinding.getControllerName(controller));
     }
 

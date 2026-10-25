@@ -1,5 +1,25 @@
 # 后续开发计划
 
+## 嬗变炉可选联动（2026-10-25：开始建立基线）
+
+已接入本地 Maven 的 `org.brahypno:esotericism_tinker:1.6.2fix`。游戏依赖声明为 `mandatory=false`，正式 JAR 不打包 estinker；开发编译使用 `compileOnly`，运行时通过 `-PwithEstinker=true` 显式加载。版本由 `gradle.properties` 的 `estinker_version` 管理。
+
+验证入口：
+
+- 无 estinker：`gradlew.bat runGameTestServer build --offline`。
+- 有 estinker：`gradlew.bat runGameTestServer build -PwithEstinker=true --offline`。
+- 联动客户端：`gradlew.bat runClient -PwithEstinker=true --offline`。
+
+`1.6.2fix` 已解决旧 SNAPSHOT 的专用服务端加载阻塞。真实控制器的合成、熔炼和默认副产物对照已通过，详细规则及容量截断现象见 [Transmute_Verification.md](Transmute_Verification.md)。用户确认：原生与便携的结果一致，说明正确调用了嬗变炉提供的熔炼模块；本轮按原生规则验收，保留原生容量行为。
+
+基线 GameTest 使用注册表取得真实嬗变炉控制器，不在测试类签名中引用可选模组类型；未加载时检查绑定配方禁用，加载时检查配方启用、实际原生控制器/熔炼模块、容量覆写、燃料驱动的双物品批次和炉液保存恢复。测试结果及限制记入 [Implementation_Status.md](Implementation_Status.md)。
+
+后续按以下顺序推进：
+
+1. 补齐嬗变炉输入替换和配方重载的专用验证，继续以实际原生模块为行为基准。
+2. 加热器、加速器已按用户要求接入原九格方块槽；后续明确模式方块及外接合金开关的背包映射，再实现这些组件。
+3. 嬗变炉生物副产物路径、三炉型携带/放置、实际 GUI 和磁盘保存重进均已验证；卸载 estinker 后的缺失控制器已回退为空白停用状态，并保留原始 NBT。后续验收长期存档。所有支持炉型的物品与生物熔炼保持统一覆盖。
+
 ## 熔炼槽加宽（2026-10-25：暂缓）
 
 用户确认：当前先不实现，清除本轮本地临时试排与截图测试改动，待用户要求继续时再开发。

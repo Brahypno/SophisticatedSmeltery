@@ -136,6 +136,14 @@ minecraft {
                 if (project.hasProperty('mobMeltingReloadSmoke')) {
                     property 'sophisticatedsmeltery.mobMeltingReloadSmoke', 'true'
                 }
+                if (project.hasProperty('transmuteMobSmoke')) {
+                    property 'sophisticatedsmeltery.transmuteMobSmoke', 'true'
+                    workingDirectory project.file('build/transmute-mob-run')
+                }
+                if (project.hasProperty('missingControllerSmoke')) {
+                    property 'sophisticatedsmeltery.missingControllerSmoke', 'true'
+                    workingDirectory project.file('build/missing-controller-run')
+                }
                 if (project.hasProperty('meltingInteractionSmoke')) {
                     property 'sophisticatedsmeltery.meltingInteractionSmoke', 'true'
                     workingDirectory project.file('build/melting-interactions-run')
@@ -163,6 +171,8 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
+            workingDirectory project.file(providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)
+                    ? 'build/gametest-estinker' : 'build/gametest-base')
             property 'forge.enabledGameTestNamespaces', mod_id
             mods {
                 "${mod_id}" {
@@ -245,6 +255,13 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     implementation fg.deobf("slimeknights.tconstruct:TConstruct:${minecraft_version}-${tcon_version}")
     implementation fg.deobf("slimeknights.mantle:Mantle:${minecraft_version}-${mantle_version}")
+
+    // Optional integration API from the locally published mod; never bundle it.
+    compileOnly fg.deobf("org.brahypno:esotericism_tinker:${estinker_version}")
+    // Opt in with -PwithEstinker=true to test with the full mod installed.
+    if (providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)) {
+        runtimeOnly fg.deobf("org.brahypno:esotericism_tinker:${estinker_version}")
+    }
 
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")

@@ -1,6 +1,11 @@
 package org.brahypno.sophisticated_smeltery;
 
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
@@ -47,17 +52,29 @@ import slimeknights.tconstruct.smeltery.item.TankItem;
 @GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class MobMeltingGameTests {
+    private static int[] furnaces() { return ModList.get().isLoaded("esotericism_tinker") ? new int[]{0, 1, 2} : new int[]{0, 1}; }
+
+    private static ItemStack transmuteItem(String name, int count) {
+        return new ItemStack(ForgeRegistries.ITEMS.getValue(new ResourceLocation("esotericism_tinker", name)), count);
+    }
+
     private static BackpackWrapper backpack(boolean foundry, boolean fuel) {
+        return backpack(foundry ? 1 : 0, fuel);
+    }
+
+    private static BackpackWrapper backpack(int kind, boolean fuel) {
         var storage = new BackpackWrapper(new ItemStack(ModItems.NETHERITE_BACKPACK.get()));
         storage.getInventoryHandler();
         storage.getUpgradeHandler().setStackInSlot(0, ControllerBinding.bind(
                 new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()),
-                new ItemStack(foundry ? TinkerSmeltery.foundryController : TinkerSmeltery.smelteryController)));
+                kind == 2 ? transmuteItem("transmute_controller", 1)
+                        : new ItemStack(kind == 1 ? TinkerSmeltery.foundryController : TinkerSmeltery.smelteryController)));
         storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(ModItems.ADVANCED_MOB_CATCHER_UPGRADE.get()));
         var upgrade = melting(storage);
         int count = 1;
         while (upgrade.getFurnace().calculate(count + 1).volume() == 0) count++;
-        upgrade.getComponents().setStackInSlot(0, new ItemStack(foundry ? TinkerSmeltery.scorchedBricks : TinkerSmeltery.searedBricks, count));
+        upgrade.getComponents().setStackInSlot(0, kind == 2 ? transmuteItem("ashen_bricks", count)
+                : new ItemStack(kind == 1 ? TinkerSmeltery.scorchedBricks : TinkerSmeltery.searedBricks, count));
         if (fuel) addFuel(upgrade);
         return storage;
     }
@@ -70,6 +87,8 @@ public final class MobMeltingGameTests {
         ItemStack tank = new ItemStack(TinkerSmeltery.searedTank.get(SearedTankBlock.TankType.FUEL_TANK));
         if (upgrade.getFurnace().controller() instanceof slimeknights.tconstruct.smeltery.block.entity.controller.FoundryBlockEntity) {
             tank = new ItemStack(TinkerSmeltery.scorchedTank.get(SearedTankBlock.TankType.FUEL_TANK));
+        } else if (upgrade.getFurnace().controller().getClass().getName().endsWith(".TransmuteBlockEntity")) {
+            tank = transmuteItem("ashen_fuel_tank", 1);
         }
         TankItem.setTank(tank, new FluidStack(Fluids.LAVA, 1000));
         upgrade.getComponents().setStackInSlot(1, tank);
@@ -93,11 +112,101 @@ public final class MobMeltingGameTests {
         });
     }
 
+    private static void nativeTransmute(GameTestHelper helper, MeltingUpgradeWrapper upgrade, LivingEntity mob,
+                                        net.minecraftforge.fluids.capability.IFluidHandler tank) {
+        try {
+            upgrade.getFurnace().controller().setLevel(helper.getLevel());
+            Class<?> type = Class.forName("org.brahypno.esotericismtinker.smeltery.block.entity.module.ByproductEntityMeltingModule");
+            var module = type.getConstructor(slimeknights.mantle.block.entity.MantleBlockEntity.class,
+                    net.minecraftforge.fluids.capability.IFluidHandler.class, java.util.function.BooleanSupplier.class,
+                    java.util.function.Function.class, java.util.function.Supplier.class).newInstance(
+                    upgrade.getFurnace().controller(), tank, (java.util.function.BooleanSupplier)() -> true,
+                    (java.util.function.Function<ItemStack, ItemStack>)stack -> stack,
+                    (java.util.function.Supplier<net.minecraft.world.phys.AABB>)mob::getBoundingBox);
+            type.getMethod("interactWithEntities").invoke(module);
+        } catch (ReflectiveOperationException e) { throw new IllegalStateException(e); }
+    }
+
+    private static void reloadRecipeCaches(GameTestHelper helper) {
+        slimeknights.tconstruct.common.recipe.RecipeCacheInvalidator.reload(false);
+        // Real datapack loading reconstructs fuel recipes after clearing their lookup.
+        // replaceRecipes() reuses existing instances, so restore that lookup explicitly here.
+        helper.getLevel().getRecipeManager().getAllRecipesFor(slimeknights.tconstruct.library.recipe.TinkerRecipeTypes.FUEL.get())
+                .forEach(slimeknights.tconstruct.library.recipe.fuel.MeltingFuelLookup::addFuel);
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100, batch = "estinker_mobs")
+    public static void transmuteCustomPriorityByproductsCapacityHeatersAndReload(GameTestHelper helper) {
+        if (!ModList.get().isLoaded("esotericism_tinker")) { helper.succeed(); return; }
+        atPulse(helper, () -> {
+            var manager = helper.getLevel().getRecipeManager();
+            var original = new ArrayList<>(manager.getRecipes());
+            try {
+                var serializer = ForgeRegistries.RECIPE_SERIALIZERS.getValue(new ResourceLocation("esotericism_tinker", "byproduct_entity_melting"));
+                var recipes = new ArrayList<>(original);
+                for (int priority : new int[]{1, 10}) {
+                    var json = com.google.gson.JsonParser.parseString("{\"entity\":{\"type\":\"minecraft:cow\"},"
+                            + "\"result\":{\"fluid\":\"tconstruct:molten_iron\",\"amount\":" + (priority == 10 ? 90 : 1)
+                            + "},\"damage\":3,\"priority\":" + priority
+                            + ",\"byproducts\":[{\"fluid\":\"tconstruct:molten_copper\",\"amount\":30},{\"fluid\":\"tconstruct:molten_gold\",\"amount\":20}]}").getAsJsonObject();
+                    recipes.add(serializer.fromJson(SophisticatedSmeltery.id("mob_priority_" + priority), json));
+                }
+                manager.replaceRecipes(recipes);
+                reloadRecipeCaches(helper);
+                var storage = backpack(2, true);
+                var upgrade = melting(storage);
+                var cow = EntityType.COW.create(helper.getLevel());
+                cow.setHealth(10);
+                cow.setPos(helper.absolutePos(new BlockPos(1, 2, 1)).getCenter());
+                var captured = capture(storage, cow, 0, 2, 2);
+                helper.getLevel().addFreshEntity(cow);
+                var nativeController = ControllerBinding.create(transmuteItem("transmute_controller", 1));
+                nativeController.getTank().setCapacity(10000);
+                nativeTransmute(helper, upgrade, cow, nativeController.getTank());
+                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, captured.id()).orElseThrow().currentHealth() == cow.getHealth()
+                        && cow.getHealth() == 7, "Use the native custom recipe damage and priority");
+                helper.assertTrue(upgrade.getTank().getFluids().equals(nativeController.getTank().getFluids())
+                        && upgrade.getTank().getContained() == 140 && upgrade.getTank().getFluids().size() == 3,
+                        "Use the native main and all byproducts exactly, without the fallback multiplier");
+                cow.discard();
+                var restored = new MeltingUpgradeWrapper(storage, upgrade.getUpgradeStack().copy(), ignored -> {});
+                helper.assertTrue(restored.getTank().getFluids().equals(upgrade.getTank().getFluids()), "Save every fluid immediately");
+                upgrade.getTank().drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+                upgrade.getTank().fill(new FluidStack(Fluids.WATER, upgrade.getTank().getCapacity() - 90), FluidAction.EXECUTE);
+                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, captured.id()).orElseThrow().currentHealth() == 7,
+                        "Captured-mob capacity protection includes all byproducts before damage");
+
+                var heated = backpack(2, false);
+                var heatedUpgrade = melting(heated);
+                heatedUpgrade.getComponents().setStackInSlot(1, transmuteItem("ashen_fuel_tank", 1));
+                heatedUpgrade.getComponents().setStackInSlot(2, transmuteItem("ashen_heater", 1));
+                var target = capture(heated, EntityType.COW.create(helper.getLevel()), 0, 2, 2);
+                heatedUpgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(heated, target.id()).orElseThrow().currentHealth() == 7
+                        && heatedUpgrade.getTank().getContained() == 140 && !heatedUpgrade.getFurnace().fuel().hasFuel(),
+                        "Native heater heat powers mob melting without burning fuel");
+                // Removing custom recipes must restore the native fallback and its configured multiplier.
+                manager.replaceRecipes(original);
+                reloadRecipeCaches(helper);
+                heatedUpgrade.getTank().drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+                heatedUpgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(heated, target.id()).orElseThrow().currentHealth() == 5
+                        && heatedUpgrade.getTank().getContained() > 0, "Recipe reload restores fallback damage and output");
+                SophisticatedSmeltery.LOGGER.info("TRANSMUTE MOB MELTING PASSED: native custom priority/damage/main/byproducts, complete capacity, heater-only heat, save and recipe reload");
+            } finally {
+                manager.replaceRecipes(original);
+                reloadRecipeCaches(helper);
+            }
+        });
+    }
+
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
     public static void nativeDamageAndFluidsWithPartialOverlap(GameTestHelper helper) {
         atPulse(helper, () -> {
-            for (boolean foundry : new boolean[]{false, true}) {
-                var storage = backpack(foundry, true);
+            for (int kind : furnaces()) {
+                var storage = backpack(kind, true);
                 var upgrade = melting(storage);
                 // A tall footprint crosses the prefix boundary; its top-left occupied slot is sufficient.
                 for (var type : new EntityType<?>[]{EntityType.COW, EntityType.IRON_GOLEM, EntityType.BLAZE}) {
@@ -108,9 +217,9 @@ public final class MobMeltingGameTests {
                     helper.getLevel().addFreshEntity(nativeMob);
                     FluidTank nativeTank = new FluidTank(10000);
                     upgrade.getFurnace().controller().setLevel(helper.getLevel());
-                    var nativeModule = new EntityMeltingModule(upgrade.getFurnace().controller(), nativeTank,
-                            () -> true, stack -> stack, nativeMob::getBoundingBox);
-                    nativeModule.interactWithEntities();
+                    if (kind == 2) nativeTransmute(helper, upgrade, nativeMob, nativeTank);
+                    else new EntityMeltingModule(upgrade.getFurnace().controller(), nativeTank,
+                            () -> true, stack -> stack, nativeMob::getBoundingBox).interactWithEntities();
                     upgrade.tick(null, helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
                     var updated = MobCatcherStorage.getCapturedMob(storage, captured.id()).orElseThrow();
                     helper.assertTrue(updated.entityNbt().getFloat("Health") == nativeMob.getHealth()
@@ -132,49 +241,51 @@ public final class MobMeltingGameTests {
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
     public static void heatingFuelCapacityImmunityAndOutsideSlots(GameTestHelper helper) {
         atPulse(helper, () -> {
-            var storage = backpack(false, false);
-            var upgrade = melting(storage);
-            var cow = EntityType.COW.create(helper.getLevel());
-            cow.setHealth(10);
-            var target = capture(storage, cow, 0, 2, 2);
-            var outside = capture(storage, cow, 20, 1, 1);
-            cow.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 1000));
-            var resistant = capture(storage, cow, 30, 1, 1);
-            cow.removeAllEffects();
-            cow.setInvulnerable(true);
-            var invulnerable = capture(storage, cow, 31, 1, 1);
-            var boss = EntityType.WITHER.create(helper.getLevel());
-            helper.assertTrue(boss.getType().is(TinkerTags.EntityTypes.MELTING_BLACKLIST), "Native blacklist fixture");
-            var blacklisted = capture(storage, boss, 32, 1, 1);
-            upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
-            helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, target.id()).orElseThrow().currentHealth() == 10,
-                    "No fuel means no damage");
-            addFuel(upgrade);
-            upgrade.setHeating(false);
-            upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
-            helper.assertTrue(upgrade.getTank().getContained() == 0, "The shared heating switch disables mob processing");
-            upgrade.setHeating(true);
-            upgrade.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), upgrade.getTank().getCapacity() - 1), FluidAction.EXECUTE);
-            upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
-            helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, target.id()).orElseThrow().currentHealth() == 10
-                            && !upgrade.getFurnace().fuel().hasFuel(), "Insufficient space must not damage or start fuel");
-            upgrade.getTank().drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
-            upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
-            helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, target.id()).orElseThrow().currentHealth() < 10,
-                    "Automatic processing resumes when space exists");
-            for (var untouched : new CapturedMob[]{outside, resistant, invulnerable, blacklisted}) {
-                helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, untouched.id()).orElseThrow().entityNbt().equals(untouched.entityNbt()),
-                        "Outside or immune captured records remain unchanged");
-            }
-            for (var immune : new CapturedMob[]{resistant, invulnerable, blacklisted}) {
-                var isolated = backpack(false, true);
-                var entity = (LivingEntity)MobCatcherStorage.getEntityType(immune).orElseThrow().create(helper.getLevel());
-                entity.load(immune.entityNbt().copy());
-                var inRange = capture(isolated, entity, 0, 1, 1);
-                melting(isolated).tick(null, helper.getLevel(), BlockPos.ZERO);
-                helper.assertTrue(MobCatcherStorage.getCapturedMob(isolated, inRange.id()).orElseThrow().entityNbt().equals(inRange.entityNbt())
-                                && melting(isolated).getTank().getContained() == 0 && !melting(isolated).getFurnace().fuel().hasFuel(),
-                        "An in-range immune or blacklisted mob must not take damage, produce fluid, or ignite fuel");
+            for (int kind : furnaces()) {
+                var storage = backpack(kind, false);
+                var upgrade = melting(storage);
+                var cow = EntityType.COW.create(helper.getLevel());
+                cow.setHealth(10);
+                var target = capture(storage, cow, 0, 2, 2);
+                var outside = capture(storage, cow, 20, 1, 1);
+                cow.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 1000));
+                var resistant = capture(storage, cow, 30, 1, 1);
+                cow.removeAllEffects();
+                cow.setInvulnerable(true);
+                var invulnerable = capture(storage, cow, 31, 1, 1);
+                var boss = EntityType.WITHER.create(helper.getLevel());
+                helper.assertTrue(boss.getType().is(TinkerTags.EntityTypes.MELTING_BLACKLIST), "Native blacklist fixture");
+                var blacklisted = capture(storage, boss, 32, 1, 1);
+                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, target.id()).orElseThrow().currentHealth() == 10,
+                        "No fuel means no damage");
+                addFuel(upgrade);
+                upgrade.setHeating(false);
+                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(upgrade.getTank().getContained() == 0, "The shared heating switch disables mob processing");
+                upgrade.setHeating(true);
+                upgrade.getTank().fill(new FluidStack(TinkerFluids.moltenIron.get(), upgrade.getTank().getCapacity() - 1), FluidAction.EXECUTE);
+                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, target.id()).orElseThrow().currentHealth() == 10
+                                && !upgrade.getFurnace().fuel().hasFuel(), "Insufficient space must not damage or start fuel");
+                upgrade.getTank().drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, target.id()).orElseThrow().currentHealth() < 10,
+                        "Automatic processing resumes when space exists");
+                for (var untouched : new CapturedMob[]{outside, resistant, invulnerable, blacklisted}) {
+                    helper.assertTrue(MobCatcherStorage.getCapturedMob(storage, untouched.id()).orElseThrow().entityNbt().equals(untouched.entityNbt()),
+                            "Outside or immune captured records remain unchanged");
+                }
+                for (var immune : new CapturedMob[]{resistant, invulnerable, blacklisted}) {
+                    var isolated = backpack(kind, true);
+                    var entity = (LivingEntity)MobCatcherStorage.getEntityType(immune).orElseThrow().create(helper.getLevel());
+                    entity.load(immune.entityNbt().copy());
+                    var inRange = capture(isolated, entity, 0, 1, 1);
+                    melting(isolated).tick(null, helper.getLevel(), BlockPos.ZERO);
+                    helper.assertTrue(MobCatcherStorage.getCapturedMob(isolated, inRange.id()).orElseThrow().entityNbt().equals(inRange.entityNbt())
+                                    && melting(isolated).getTank().getContained() == 0 && !melting(isolated).getFurnace().fuel().hasFuel(),
+                            "An in-range immune or blacklisted mob must not take damage, produce fluid, or ignite fuel");
+                }
             }
         });
     }
@@ -203,72 +314,80 @@ public final class MobMeltingGameTests {
             var probe = new LootProbe();
             MinecraftForge.EVENT_BUS.register(probe);
             try {
-                var storage = backpack(false, true);
-                var upgrade = melting(storage);
-                var cow = EntityType.COW.create(helper.getLevel());
-                cow.setHealth(1);
-                cow.getPersistentData().putUUID("mobMeltingTest", probe.marker);
-                capture(storage, cow, 0, 1, 1);
-                for (int slot = 1; slot < storage.getInventoryHandler().getSlots(); slot++)
-                    storage.getInventoryHandler().setStackInSlot(slot, new ItemStack(Items.COBBLESTONE, 64));
-                probe.cancelHurt = true;
-                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
-                helper.assertTrue(upgrade.getTank().getContained() == 0 && probe.deaths == 0,
-                        "Cancelled actual damage produces neither fluid nor death");
-                probe.cancelHurt = false;
-                upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
-                helper.assertTrue(probe.deaths == 1 && MobCatcherStorage.getCapturedMobs(storage).isEmpty(),
-                        "Real death event fires once and removes the captured record");
-                helper.assertTrue(storage.getInventoryHandler().isSlotAccessible(0)
-                                && storage.getInventoryHandler().getStackInSlot(0).is(Items.DIAMOND),
-                        "Death frees the occupied slot and its loot can use that slot");
-                ItemStack saved = storage.getUpgradeHandler().getStackInSlot(0).copy();
-                helper.assertTrue(saved.getTag().getCompound(ControllerBinding.STATE).getList(PortableMobMelting.DROPS, Tag.TAG_COMPOUND).size() == 1,
-                        "Full inventory preserves the remaining actual event-modified loot");
-                helper.assertTrue(ControllerBinding.getStoredItems(saved).stream().filter(stack -> stack.is(Items.DIAMOND))
-                        .mapToInt(ItemStack::getCount).sum() == 64, "Binding/clearing refunds include pending loot");
-                var restored = new MeltingUpgradeWrapper(storage, saved, ignored -> {});
-                restored.setHeating(false);
-                storage.getInventoryHandler().setStackInSlot(0, ItemStack.EMPTY);
-                storage.getInventoryHandler().setStackInSlot(10, ItemStack.EMPTY);
-                restored.tick(null, helper.getLevel(), BlockPos.ZERO);
-                restored.tick(null, helper.getLevel(), BlockPos.ZERO);
-                helper.assertTrue(storage.getInventoryHandler().getStackInSlot(10).is(Items.DIAMOND)
-                                && storage.getInventoryHandler().getStackInSlot(10).getCount() == 64
-                                && storage.getInventoryHandler().getStackInSlot(0).isEmpty() && probe.deaths == 1,
-                        "Reload delivers once while off, prefers ordinary slots, and cannot rerun the death");
-                helper.assertTrue(saved.getTag().getCompound(ControllerBinding.STATE).getList(PortableMobMelting.DROPS, Tag.TAG_COMPOUND).isEmpty(),
-                        "Delivery immediately saves the empty pending queue");
+                for (int kind : furnaces()) {
+                    var storage = backpack(kind, true);
+                    var upgrade = melting(storage);
+                    var cow = EntityType.COW.create(helper.getLevel());
+                    cow.setHealth(1);
+                    cow.getPersistentData().putUUID("mobMeltingTest", probe.marker);
+                    capture(storage, cow, 0, 1, 1);
+                    for (int slot = 1; slot < storage.getInventoryHandler().getSlots(); slot++)
+                        storage.getInventoryHandler().setStackInSlot(slot, new ItemStack(Items.COBBLESTONE, 64));
+                    probe.cancelHurt = true;
+                    upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                    helper.assertTrue(upgrade.getTank().getContained() == 0 && probe.deaths == 0,
+                            "Cancelled actual damage produces neither fluid nor death");
+                    probe.cancelHurt = false;
+                    upgrade.tick(null, helper.getLevel(), BlockPos.ZERO);
+                    helper.assertTrue(probe.deaths == 1 && MobCatcherStorage.getCapturedMobs(storage).isEmpty(),
+                            "Real death event fires once and removes the captured record");
+                    helper.assertTrue(storage.getInventoryHandler().isSlotAccessible(0)
+                                    && storage.getInventoryHandler().getStackInSlot(0).is(Items.DIAMOND),
+                            "Death frees the occupied slot and its loot can use that slot");
+                    ItemStack saved = storage.getUpgradeHandler().getStackInSlot(0).copy();
+                    helper.assertTrue(saved.getTag().getCompound(ControllerBinding.STATE).getList(PortableMobMelting.DROPS, Tag.TAG_COMPOUND).size() == 1,
+                            "Full inventory preserves the remaining actual event-modified loot");
+                    helper.assertTrue(ControllerBinding.getStoredItems(saved).stream().filter(stack -> stack.is(Items.DIAMOND))
+                            .mapToInt(ItemStack::getCount).sum() == 64, "Binding/clearing refunds include pending loot");
+                    var restored = new MeltingUpgradeWrapper(storage, saved, ignored -> {});
+                    restored.setHeating(false);
+                    storage.getInventoryHandler().setStackInSlot(0, ItemStack.EMPTY);
+                    storage.getInventoryHandler().setStackInSlot(10, ItemStack.EMPTY);
+                    restored.tick(null, helper.getLevel(), BlockPos.ZERO);
+                    restored.tick(null, helper.getLevel(), BlockPos.ZERO);
+                    helper.assertTrue(storage.getInventoryHandler().getStackInSlot(10).is(Items.DIAMOND)
+                                    && storage.getInventoryHandler().getStackInSlot(10).getCount() == 64
+                                    && storage.getInventoryHandler().getStackInSlot(0).isEmpty() && probe.deaths == 1,
+                            "Reload delivers once while off, prefers ordinary slots, and cannot rerun the death");
+                    helper.assertTrue(saved.getTag().getCompound(ControllerBinding.STATE).getList(PortableMobMelting.DROPS, Tag.TAG_COMPOUND).isEmpty(),
+                            "Delivery immediately saves the empty pending queue");
 
-                var cancelled = backpack(false, true);
-                capture(cancelled, cow, 0, 1, 1);
-                probe.cancelDrops = true;
-                melting(cancelled).tick(null, helper.getLevel(), BlockPos.ZERO);
-                helper.assertTrue(cancelled.getInventoryHandler().getStackInSlot(0).isEmpty()
-                                && MobCatcherStorage.getCapturedMobs(cancelled).isEmpty(), "Respect another mod cancelling drops");
+                    var cancelled = backpack(kind, true);
+                    capture(cancelled, cow, 0, 1, 1);
+                    probe.cancelDrops = true;
+                    melting(cancelled).tick(null, helper.getLevel(), BlockPos.ZERO);
+                    helper.assertTrue(cancelled.getInventoryHandler().getStackInSlot(0).isEmpty()
+                                    && MobCatcherStorage.getCapturedMobs(cancelled).isEmpty(), "Respect another mod cancelling drops");
+                    probe.deaths = 0;
+                    probe.cancelDrops = false;
+                }
             } finally { MinecraftForge.EVENT_BUS.unregister(probe); }
         });
     }
 
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 120)
     public static void actualPlacedAndCarriedHostsProcessNewCaptures(GameTestHelper helper) {
-        var placed = backpack(false, true);
-        var carried = backpack(false, true);
-        helper.setBlock(BlockPos.ZERO, ModBlocks.NETHERITE_BACKPACK.get());
-        var block = (BackpackBlockEntity)helper.getBlockEntity(BlockPos.ZERO);
-        block.setBackpack(placed.getBackpack());
         var player = helper.makeMockPlayer();
-        ItemStack held = carried.getBackpack();
-        var carriedHost = held.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
-        for (var storage : new IBackpackWrapper[]{block.getBackpackWrapper(), carriedHost}) {
+        var hosts = new ArrayList<IBackpackWrapper>();
+        for (int kind : furnaces()) {
+            var placed = backpack(kind, true);
+            ItemStack held = backpack(kind, true).getBackpack();
+            BlockPos pos = new BlockPos(0, kind * 2, 0);
+            helper.setBlock(pos, ModBlocks.NETHERITE_BACKPACK.get());
+            var block = (BackpackBlockEntity)helper.getBlockEntity(pos);
+            block.setBackpack(placed.getBackpack());
+            hosts.add(block.getBackpackWrapper());
+            hosts.add(held.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new));
+            helper.onEachTick(() -> ((BackpackItem)held.getItem()).inventoryTick(held, helper.getLevel(), player, -1, false));
+        }
+        for (var storage : hosts) {
             var cow = EntityType.COW.create(helper.getLevel());
             cow.setHealth(10);
             capture(storage, cow, 0, 2, 2);
             helper.assertTrue(MobCatcherStorage.getCapturedMobs(storage).size() == 1, "Capture into the actual resolved host");
         }
-        helper.onEachTick(() -> ((BackpackItem)held.getItem()).inventoryTick(held, helper.getLevel(), player, -1, false));
         helper.succeedWhen(() -> {
-            for (var storage : new IBackpackWrapper[]{block.getBackpackWrapper(), carriedHost}) {
+            for (var storage : hosts) {
                 var records = MobCatcherStorage.getCapturedMobs(storage);
                 helper.assertTrue(!records.isEmpty(), "Actual host must retain the captured record: " + storage.getContentsUuid());
                 var mob = records.get(0);

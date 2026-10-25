@@ -39,8 +39,8 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
     }
 
     private int currentTemperature() {
-        var fuel = container.getUpgradeWrapper().getFurnace().fuel();
-        return fuel.hasFuel() ? fuel.getTemperature() : 0;
+        var furnace = container.getUpgradeWrapper().getFurnace();
+        return furnace == null ? 0 : furnace.heatingTemperature();
     }
 
     private static Slot hoveredHeatBar(StorageScreenBase<?> screen, MeltingUpgradeContainer container, double mouseX, double mouseY) {

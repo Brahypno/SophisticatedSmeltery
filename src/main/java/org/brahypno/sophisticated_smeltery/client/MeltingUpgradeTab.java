@@ -26,8 +26,13 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     private Object displayedTank;
 
     public MeltingUpgradeTab(MeltingUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
-        super(container, position, screen, container.getUpgradeWrapper().getFurnace().controller().getDisplayName(),
+        super(container, position, screen, container.getUpgradeWrapper().isOperational()
+                        ? container.getUpgradeWrapper().getFurnace().controller().getDisplayName() : container.getUpgradeStack().getHoverName(),
                 container.getUpgradeStack().getHoverName());
+        if (!container.getUpgradeWrapper().isOperational()) {
+            openTabDimension = new Dimension(138, 200);
+            return;
+        }
         addHideableChild(new NativeTank(new Position(x + 5, y + 24)));
         addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
         addHideableChild(new BucketTransferModeButton(new Position(x + 82, y + 163),

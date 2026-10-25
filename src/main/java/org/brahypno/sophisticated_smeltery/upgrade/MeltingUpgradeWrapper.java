@@ -33,7 +33,9 @@ import slimeknights.mantle.fluid.transfer.IFluidContainerTransfer.TransferDirect
 
 public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgradeWrapper, MeltingUpgradeItem>
         implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade {
-    private final NativeFurnace furnace;
+    @Nullable private final NativeFurnace furnace;
+    // Inactive upgrades expose no fluid capacity and never notify a tank parent.
+    private final SmelteryTank<?> emptyTank = new SmelteryTank<>(null);
     private final PortableMobMelting mobMelting;
     private final ItemStackHandler components;
     private final ItemStackHandler containers;
@@ -49,60 +51,68 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         super(storage, upgrade, save);
         CompoundTag tag = upgrade.getTag();
         CompoundTag state = tag == null ? new CompoundTag() : tag.getCompound(ControllerBinding.STATE);
-        furnace = new NativeFurnace(ControllerBinding.getController(upgrade), state, this::fuelSources, () -> dirty = true);
+        var controller = ControllerBinding.create(ControllerBinding.getController(upgrade));
+        furnace = controller == null ? null : new NativeFurnace(controller, state, this::fuelSources, () -> dirty = true);
         mobMelting = new PortableMobMelting(this, state);
         components = new ItemStackHandler(9) {
-            @Override public boolean isItemValid(int slot, ItemStack stack) { return furnace.acceptsMaterial(stack); }
+            @Override public boolean isItemValid(int slot, ItemStack stack) { return furnace != null && furnace.acceptsMaterial(stack); }
             @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 ItemStack result = super.extractItem(slot, amount, true);
                 if (!result.isEmpty() && !fitsAfterRemoving(result.getCount())) return ItemStack.EMPTY;
                 return super.extractItem(slot, amount, simulate);
             }
             @Override protected void onContentsChanged(int slot) {
-                if (!loading) {
+                if (!loading && furnace != null) {
                     updateCapacity();
+                    furnace.updateHeatComponents(components);
                     persist();
                 }
             }
         };
         containers = new ItemStackHandler(2) {
             @Override public boolean isItemValid(int slot, ItemStack stack) {
-                return slot == 0 && (FluidContainerTransferManager.INSTANCE.mayHaveTransfer(stack)
+                return isOperational() && slot == 0 && (FluidContainerTransferManager.INSTANCE.mayHaveTransfer(stack)
                         || stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent());
             }
             @Override protected void onContentsChanged(int slot) {
                 if (!loading && !transferring) { transferContainer(); persist(); }
             }
         };
-        if (state.contains("components")) components.deserializeNBT(state.getCompound("components"));
-        if (state.contains("containers")) containers.deserializeNBT(state.getCompound("containers"));
+        // Keep unknown item/fluid IDs in their original NBT while the controller is absent.
+        if (furnace != null) {
+            if (state.contains("components")) components.deserializeNBT(state.getCompound("components"));
+            if (state.contains("containers")) containers.deserializeNBT(state.getCompound("containers"));
+        }
         loading = false;
+        if (furnace != null) furnace.updateHeatComponents(components);
     }
 
     public ItemStackHandler getComponents() { return components; }
     public ItemStackHandler getContainers() { return containers; }
-    public NativeFurnace getFurnace() { return furnace; }
+    public boolean isOperational() { return furnace != null; }
+    @Nullable public NativeFurnace getFurnace() { return furnace; }
     public IStorageWrapper getStorage() { return storageWrapper; }
-    public SmelteryTank<?> getTank() { return furnace.controller().getTank(); }
+    public SmelteryTank<?> getTank() { return furnace == null ? emptyTank : furnace.controller().getTank(); }
     @Override public IStorageFluidHandler wrapHandler(@Nullable IStorageFluidHandler handler, ItemStack backpack) {
         return new FurnaceFluidHandler(this, handler, backpack);
     }
     // Keep the wrapper ticking so the explicit heating switch can still cool items.
     @Override public boolean canBeDisabled() { return false; }
-    public boolean isHeating() { return upgrade.getTag() == null || !upgrade.getTag().contains("heating") || upgrade.getTag().getBoolean("heating"); }
+    public boolean isHeating() { return isOperational() && (upgrade.getTag() == null || !upgrade.getTag().contains("heating") || upgrade.getTag().getBoolean("heating")); }
 
-    public void setHeating(boolean value) { upgrade.getOrCreateTag().putBoolean("heating", value); persist(); }
+    public void setHeating(boolean value) { if (!isOperational()) return; upgrade.getOrCreateTag().putBoolean("heating", value); persist(); }
     public TransferDirection getTransferDirection() {
         int mode = upgrade.getOrCreateTag().getInt("bucketMode");
         return switch (mode) { case 1 -> TransferDirection.EMPTY_ITEM; case 2 -> TransferDirection.FILL_ITEM; default -> TransferDirection.AUTO; };
     }
     public void cycleTransferDirection() {
+        if (!isOperational()) return;
         upgrade.getOrCreateTag().putInt("bucketMode", (upgrade.getOrCreateTag().getInt("bucketMode") + 1) % 3);
         transferContainer();
         persist();
     }
     public void transferContainer() {
-        if (!net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer() || loading || transferring || containers.getStackInSlot(0).isEmpty() || !containers.getStackInSlot(1).isEmpty()) return;
+        if (!isOperational() || !net.minecraftforge.fml.util.thread.EffectiveSide.get().isServer() || loading || transferring || containers.getStackInSlot(0).isEmpty() || !containers.getStackInSlot(1).isEmpty()) return;
         transferring = true;
         try {
             ItemStack input = containers.getStackInSlot(0).copy();
@@ -132,15 +142,18 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
             furnace.resize(count, multiplier);
             lastMaterials = count;
             lastCapacityMultiplier = multiplier;
+            furnace.updateHeatComponents(components);
         }
     }
 
     private boolean fitsAfterRemoving(int count) {
+        if (furnace == null) return true;
         int capacity = (int)Math.min(Integer.MAX_VALUE, furnace.calculate(materialCount() - count).capacity() * capacityMultiplier());
         return getTank().getContained() <= capacity;
     }
 
     public int getMeltingSlotCount() {
+        if (furnace == null) return 0;
         long slots = (long)Math.min(Integer.MAX_VALUE, furnace.dimensions().volume() * storageWrapper.getInventoryHandler().getStackSizeMultiplier());
         return (int)Math.min(slots, storageWrapper.getInventoryHandler().getSlots());
     }
@@ -152,7 +165,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     }
 
     @Override public void tick(@Nullable Entity entity, Level level, BlockPos pos) {
-        if (level.isClientSide) return;
+        if (level.isClientSide || furnace == null) return;
         if (furnace.refreshRecipes()) lastMaterials = -1;
         updateCapacity();
         int count = getMeltingSlotCount();
@@ -182,6 +195,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
 
     public List<IFluidHandler> getInternalFuelTanks() {
         List<IFluidHandler> result = new ArrayList<>();
+        if (furnace == null) return result;
         for (int slot = 0; slot < components.getSlots(); slot++) {
             ItemStack stack = components.getStackInSlot(slot);
             if (furnace.isFuelTank(stack)) stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(result::add);
@@ -196,6 +210,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     }
 
     public boolean canRemove() {
+        if (furnace == null) return true;
         if (getTank().getContained() > 0) return false;
         for (int slot = 0; slot < components.getSlots(); slot++) {
             IFluidHandler handler = components.getStackInSlot(slot).getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).orElse(null);
@@ -207,6 +222,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     }
 
     @Override public int getMinimumMultiplierRequired() {
+        if (furnace == null) return 1;
         int volume = getTank().getContained();
         int base = furnace.baseCapacity();
         if (volume <= base) return 1;
@@ -237,7 +253,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     }
 
     public void persist() {
-        if (loading) return;
+        if (loading || furnace == null) return;
         CompoundTag state = furnace.save();
         mobMelting.save(state);
         state.put("components", components.serializeNBT());
