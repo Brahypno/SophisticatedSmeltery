@@ -1,4 +1,10 @@
 {
+  "item.sophisticated_smeltery.spawner_upgrade": "Spawner Upgrade",
+  "item.sophisticated_smeltery.advanced_spawner_upgrade": "Advanced Spawner Upgrade",
+  "item.sophisticated_smeltery.spawner_upgrade.tooltip": "Runs one spawner using its native rules. With a Mob Catcher, spawns prefer backpack storage.",
+  "item.sophisticated_smeltery.advanced_spawner_upgrade.tooltip": "Ignores player distance and natural spawn rules. Space, nearby limits, delay and redstone control still apply.",
+  "gui.sophisticated_smeltery.spawner_slot": "Place one spawner here. The upgrade switch pauses spawning.",
+  "gui.sophisticated_smeltery.spawner": "Spawner",
   "item.sophisticated_smeltery.scorched_alloyer_upgrade": "Scorched Alloyer Upgrade",
   "item.sophisticated_smeltery.scorched_alloyer_upgrade.tooltip": "Alloys fluids independently alongside melting upgrades. Includes an output tank and a 3x3 component grid for eight input tanks and one fuel slot.",
   "error.sophisticated_smeltery.empty_alloyer": "Empty the output, ingredient and fuel tanks before removing this upgrade.",

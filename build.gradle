@@ -96,6 +96,11 @@ minecraft {
         }
 
         client {
+            if (project.hasProperty('spawnerSmoke')) {
+                property 'sophisticatedsmeltery.spawnerSmoke', 'true'
+                workingDirectory project.file('build/spawner-client-run')
+                mods { "${mod_id}" { source sourceSets.test } }
+            }
             if (project.hasProperty('alloyerSmoke')) {
                 property 'sophisticatedsmeltery.alloyerSmoke', 'true'
                 if (project.hasProperty('alloyerLiquidSmoke')) property 'sophisticatedsmeltery.alloyerLiquidSmoke', 'true'
@@ -182,7 +187,7 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
-            workingDirectory project.file(providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)
+            workingDirectory project.file(project.hasProperty('withApotheosis') ? 'build/gametest-apotheosis' : providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)
                     ? 'build/gametest-estinker' : 'build/gametest-base')
             property 'forge.enabledGameTestNamespaces', mod_id
             mods {
@@ -281,6 +286,12 @@ dependencies {
 
     implementation fg.deobf("curse.maven:sophisticated-backpacks-422301:9271152")
     implementation fg.deobf("curse.maven:sophisticated-core-618298:9279280")
+    // Only used by the opt-in compatibility runs; never bundled or required.
+    if (providers.gradleProperty('withApotheosis').map { it.toBoolean() }.getOrElse(false)) {
+        runtimeOnly fg.deobf("curse.maven:apotheosis-313970:6461960")
+        runtimeOnly fg.deobf("curse.maven:placebo-283644:6274231")
+        runtimeOnly fg.deobf("curse.maven:apothic-attributes-898963:5634071")
+    }
 
     runtimeOnly fg.deobf("curse.maven:jade-324717:6855440")
 

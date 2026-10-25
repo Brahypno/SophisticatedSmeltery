@@ -91,3 +91,9 @@ description='''${mod_description}'''
    versionRange="[1.3,)"
    ordering="AFTER"
    side="BOTH"
+[[dependencies."${mod_id}"]]
+   modId="apotheosis"
+   mandatory=false
+   versionRange="[7.4.8,8)"
+   ordering="AFTER"
+   side="BOTH"

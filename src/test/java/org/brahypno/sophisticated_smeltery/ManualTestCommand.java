@@ -35,7 +35,25 @@ public final class ManualTestCommand {
                 .then(Commands.literal("casting").executes(context -> give(context, false, true)))
                 .then(Commands.literal("casting_expansion").executes(ManualTestCommand::giveCastingExpansion))
                 .then(Commands.literal("alloyer").executes(ManualTestCommand::giveAlloyer))
+                .then(Commands.literal("spawner").executes(ManualTestCommand::giveSpawner))
                 .then(Commands.literal("foundry").executes(context -> give(context, true))));
+    }
+
+    private static int giveSpawner(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ItemStack backpack = new ItemStack(ModItems.NETHERITE_BACKPACK.get());
+        var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(SophisticatedSmeltery.ADVANCED_SPAWNER_UPGRADE.get()));
+        storage.getUpgradeHandler().setStackInSlot(1, new ItemStack(ModItems.MOB_CATCHER_UPGRADE.get()));
+        SpawnerUpgradeGameTests.upgrade(storage).setEnabled(false);
+        player.getInventory().selected = 0;
+        player.getInventory().setItem(0, backpack);
+        player.getInventory().setItem(11, SpawnerUpgradeGameTests.spawner(player.blockPosition().above(4), "minecraft:pig", 1));
+        player.getInventory().setItem(12, new ItemStack(SophisticatedSmeltery.SPAWNER_UPGRADE.get()));
+        player.inventoryMenu.broadcastChanges();
+        backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int giveAlloyer(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

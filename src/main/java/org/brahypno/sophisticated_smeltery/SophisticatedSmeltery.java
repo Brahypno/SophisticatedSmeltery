@@ -41,6 +41,9 @@ import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeContainer;
+import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeContainer;
 import org.slf4j.Logger;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
@@ -51,6 +54,8 @@ public class SophisticatedSmeltery {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
     public static final RegistryObject<AlloyerUpgradeItem> ALLOYER_UPGRADE = ITEMS.register("scorched_alloyer_upgrade", AlloyerUpgradeItem::new);
+    public static final RegistryObject<SpawnerUpgradeItem> SPAWNER_UPGRADE = ITEMS.register("spawner_upgrade", () -> new SpawnerUpgradeItem(false));
+    public static final RegistryObject<SpawnerUpgradeItem> ADVANCED_SPAWNER_UPGRADE = ITEMS.register("advanced_spawner_upgrade", () -> new SpawnerUpgradeItem(true));
     public static final RegistryObject<MeltingUpgradeItem> ADVANCED_TRANSMUTE_UPGRADE = ITEMS.register("advanced_transmute_upgrade", () -> new MeltingUpgradeItem(true));
     public static final RegistryObject<CastingUpgradeItem> SEARED_CASTING_UPGRADE = ITEMS.register("seared_casting_upgrade", CastingUpgradeItem::new);
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SEARED_CASTING_UPGRADE = ITEMS.register("advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
@@ -63,6 +68,8 @@ public class SophisticatedSmeltery {
             .displayItems((parameters, output) -> {
                 output.accept(MELTING_UPGRADE.get());
                 output.accept(ALLOYER_UPGRADE.get());
+                output.accept(SPAWNER_UPGRADE.get());
+                output.accept(ADVANCED_SPAWNER_UPGRADE.get());
                 addBoundFurnaces(output::accept);
                 output.accept(SEARED_CASTING_UPGRADE.get());
                 output.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
@@ -86,6 +93,8 @@ public class SophisticatedSmeltery {
             new UpgradeContainerType<>(CastingUpgradeContainer::new);
     public static final UpgradeContainerType<AlloyerUpgradeWrapper, AlloyerUpgradeContainer> ALLOYER_CONTAINER =
             new UpgradeContainerType<>(AlloyerUpgradeContainer::new);
+    public static final UpgradeContainerType<SpawnerUpgradeWrapper, SpawnerUpgradeContainer> SPAWNER_CONTAINER =
+            new UpgradeContainerType<>(SpawnerUpgradeContainer::new);
 
     public SophisticatedSmeltery() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -106,6 +115,8 @@ public class SophisticatedSmeltery {
         event.enqueueWork(() -> {
             UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
             UpgradeContainerRegistry.register(ALLOYER_UPGRADE.getId(), ALLOYER_CONTAINER);
+            UpgradeContainerRegistry.register(SPAWNER_UPGRADE.getId(), SPAWNER_CONTAINER);
+            UpgradeContainerRegistry.register(ADVANCED_SPAWNER_UPGRADE.getId(), SPAWNER_CONTAINER);
             UpgradeContainerRegistry.register(ADVANCED_TRANSMUTE_UPGRADE.getId(), MELTING_CONTAINER);
             UpgradeContainerRegistry.register(SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
             UpgradeContainerRegistry.register(ADVANCED_SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
@@ -118,6 +129,8 @@ public class SophisticatedSmeltery {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MELTING_UPGRADE.get());
             event.accept(ALLOYER_UPGRADE.get());
+            event.accept(SPAWNER_UPGRADE.get());
+            event.accept(ADVANCED_SPAWNER_UPGRADE.get());
             addBoundFurnaces(event::accept);
             event.accept(SEARED_CASTING_UPGRADE.get());
             event.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());

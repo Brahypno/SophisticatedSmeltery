@@ -38,5 +38,14 @@ public final class ControllerIconRegistration {
         var alloyerPlate = event.getModels().get(alloyerId);
         if (alloyerPlate != null && alloyerModel != null)
             event.getModels().put(alloyerId, new CastingIconModel(alloyerPlate, alloyerModel, alloyerState, null));
+        var spawnerState = net.minecraft.world.level.block.Blocks.SPAWNER.defaultBlockState();
+        var spawnerModel = event.getModels().get(BlockModelShaper.stateToModelLocation(spawnerState));
+        for (String item : java.util.List.of("spawner_upgrade", "advanced_spawner_upgrade")) {
+            var id = new ModelResourceLocation(SophisticatedSmeltery.id(item), "inventory");
+            var plate = event.getModels().get(id);
+            if (plate != null && spawnerModel != null)
+                event.getModels().put(id, new CastingIconModel(plate, spawnerModel, spawnerState,
+                        item.startsWith("advanced_") && advanced != null ? advanced.getParticleIcon() : null));
+        }
     }
 }

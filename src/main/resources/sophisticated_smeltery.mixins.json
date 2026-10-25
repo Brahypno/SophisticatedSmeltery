@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "sophisticated_smeltery.refmap.json",
   "mixins": [
+    "SpawnerActivationMixin",
+    "SpawnerRulesMixin",
     "HeatingControllerAccess",
     "MobCatcherStorageAccess",
     "HeatingControllerMixin",

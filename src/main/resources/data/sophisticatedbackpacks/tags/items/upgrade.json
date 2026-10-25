@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
+    "sophisticated_smeltery:spawner_upgrade",
+    "sophisticated_smeltery:advanced_spawner_upgrade",
     "sophisticated_smeltery:melting_upgrade",
     "sophisticated_smeltery:scorched_alloyer_upgrade",
     "sophisticated_smeltery:advanced_transmute_upgrade",
