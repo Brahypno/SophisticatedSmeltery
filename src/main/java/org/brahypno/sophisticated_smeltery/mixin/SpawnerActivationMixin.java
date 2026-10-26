@@ -15,4 +15,10 @@ public abstract class SpawnerActivationMixin {
     private void sophisticatedsmeltery$activateAdvanced(Level level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         if (SpawnerRuntime.ignoresPlayer((BaseSpawner)(Object)this)) cir.setReturnValue(true);
     }
+
+    @Inject(method = "isNearPlayer", at = @At("RETURN"), cancellable = true)
+    private void sophisticatedsmeltery$adjacentSupport(Level level, BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        // When a player already activates a world spawner, its cooldown needs no neighbor lookup.
+        if (!cir.getReturnValue() && SpawnerRuntime.hasAdvancedSupport((BaseSpawner)(Object)this)) cir.setReturnValue(true);
+    }
 }

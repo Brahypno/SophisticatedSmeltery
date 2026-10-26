@@ -129,15 +129,18 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
             if (isCastingEnabled() && isAutomatic() && !casting.isCooling()) {
                 var sources = fluidSources();
                 // Observe full contents: simulated drain can hide changes behind a tank's transfer limit.
-                List<FluidStack> fluids = sources.stream().map(source -> source.handler().getFluidInTank(0).copy()).toList();
-                boolean fluidChanged = fluids.size() != lastFluids.size();
-                for (int i = 0; !fluidChanged && i < fluids.size(); i++)
-                    fluidChanged = !fluids.get(i).isFluidStackIdentical(lastFluids.get(i));
+                boolean fluidChanged = sources.size() != lastFluids.size();
+                for (int i = 0; !fluidChanged && i < sources.size(); i++)
+                    fluidChanged = !sources.get(i).handler().getFluidInTank(0).isFluidStackIdentical(lastFluids.get(i));
+                if (fluidChanged) {
+                    List<FluidStack> fluids = new ArrayList<>(sources.size());
+                    for (FluidSource source : sources) fluids.add(source.handler().getFluidInTank(0).copy());
+                    lastFluids = fluids;
+                }
                 if (pourRequested || fluidChanged) {
                     pour(level, sources);
                     pourRequested = false;
                 }
-                lastFluids = fluids;
             }
             // Cooling and casting intentionally do not depend on the controller heating switch.
             casting.tick(level);

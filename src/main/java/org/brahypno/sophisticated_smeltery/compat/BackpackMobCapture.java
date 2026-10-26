@@ -19,15 +19,18 @@ import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.CapturedMob;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherHandler;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherStorage;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.StorageContainerMenuBase;
-import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeItem;
+import org.brahypno.sophisticated_smeltery.spawner.SpawnerRuntime;
+import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
 
 public final class BackpackMobCapture {
     private BackpackMobCapture() {}
 
     public static boolean hasAdvancedSpawnerSupport(net.minecraft.world.level.block.entity.BlockEntity block) {
-        return block instanceof BackpackBlockEntity backpack
-                && backpack.getBackpackWrapper().getUpgradeHandler().getSlotWrappers().values().stream()
-                .anyMatch(wrapper -> wrapper instanceof SpawnerUpgradeWrapper spawner && spawner.isAdvanced() && spawner.isEnabled());
+        if (!(block instanceof BackpackBlockEntity backpack)) return false;
+        for (var wrapper : backpack.getBackpackWrapper().getUpgradeHandler().getTypeWrappers(SpawnerUpgradeItem.TYPE))
+            if (wrapper.isAdvanced() && wrapper.isEnabled()) return true;
+        return false;
     }
 
     public static boolean captureStorage(net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper storage, Entity entity, ServerLevel level) {
@@ -61,6 +64,12 @@ public final class BackpackMobCapture {
         MobCatcherStorage.addCapturedMob(backpack, new CapturedMob(UUID.randomUUID(), BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()),
                 tag, slot.get(), footprint.width(), footprint.height(), cost, hostile, mob.getName().getString(),
                 (int)Math.ceil(mob.getHealth()), (int)Math.ceil(Math.max(mob.getAttributeValue(Attributes.MAX_HEALTH), Math.max(mob.getMaxHealth(), mob.getHealth())))));
+        if (!SpawnerRuntime.deferCaptureSync(backpack)) syncViewers(level, backpack);
+        return true;
+    }
+
+    public static void syncViewers(ServerLevel level, IStorageWrapper storage) {
+        if (!(storage instanceof IBackpackWrapper backpack)) return;
         for (var player : level.getServer().getPlayerList().getPlayers()) {
             if (player.containerMenu instanceof StorageContainerMenuBase<?> menu
                     && menu.getStorageWrapper() instanceof IBackpackWrapper viewed
@@ -69,6 +78,5 @@ public final class BackpackMobCapture {
                 break;
             }
         }
-        return true;
     }
 }

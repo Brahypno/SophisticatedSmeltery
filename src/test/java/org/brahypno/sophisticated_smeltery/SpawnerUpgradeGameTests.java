@@ -374,6 +374,61 @@ public final class SpawnerUpgradeGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void movingCountdownPersistsEveryTickWithoutRebuildingSpawner(GameTestHelper helper) {
+        var pos = target(helper).below(3);
+        var storage = backpack(true, false);
+        int[] saves = {0};
+        var wrapper = new SpawnerUpgradeWrapper(storage, new ItemStack(SophisticatedSmeltery.ADVANCED_SPAWNER_UPGRADE.get()), ignored -> saves[0]++);
+        ItemStack stack = spawner(target(helper), "minecraft:pig", 1);
+        BlockItem.getBlockEntityData(stack).putShort("Delay", (short)1200);
+        // Payloads and unrelated mod data must survive the incremental countdown path.
+        BlockItem.getBlockEntityData(stack).getCompound("SpawnData").getCompound("entity").putString("payload", "preserve".repeat(1024));
+        wrapper.inventory().setStackInSlot(0, stack);
+        wrapper.tick(null, helper.getLevel(), pos);
+        var nativeSpawner = wrapper.nativeSpawner();
+        int before = saves[0];
+        for (int i = 1; i <= 12; i++) {
+            BlockPos moved = pos.offset(i % 3, 0, i % 2);
+            wrapper.tick(null, helper.getLevel(), moved);
+            helper.assertTrue(wrapper.nativeSpawner() == nativeSpawner && nativeSpawner.getBlockPos().equals(moved),
+                    "Moving a portable spawner retains its native instance and updates its position");
+            var saved = BlockItem.getBlockEntityData(wrapper.inventory().getStackInSlot(0));
+            helper.assertTrue(saved.getShort("Delay") == 1199 - i, "The removable item retains every native countdown tick");
+            var restored = new SpawnerUpgradeWrapper(storage, wrapper.getUpgradeStack().copy(), ignored -> {});
+            helper.assertTrue(saved.equals(BlockItem.getBlockEntityData(restored.inventory().getStackInSlot(0))),
+                    "Copying or reconstructing the upgrade retains all spawner state immediately");
+        }
+        helper.assertTrue(saves[0] == before + 12, "Every changed countdown still notifies the host save handler");
+        var restored = new SpawnerUpgradeWrapper(storage, wrapper.getUpgradeStack().copy(), ignored -> {});
+        restored.tick(null, helper.getLevel(), pos);
+        helper.assertTrue(BlockItem.getBlockEntityData(restored.inventory().getStackInSlot(0)).getShort("Delay") == 1186,
+                "A reconstructed native spawner continues from the exact saved delay");
+        ItemStack removed = wrapper.inventory().extractItem(0, 1, false);
+        var state = BlockItem.getBlockEntityData(removed);
+        helper.assertTrue(state.getString("test_preserved").equals("untouched")
+                && state.getCompound("SpawnData").getCompound("entity").getString("payload").equals("preserve".repeat(1024)),
+                "Extraction retains unknown item data and the complete entity payload");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void inactiveCountdownDoesNotWriteOrLoseState(GameTestHelper helper) {
+        var storage = backpack(false, false);
+        int[] saves = {0};
+        var wrapper = new SpawnerUpgradeWrapper(storage, new ItemStack(SophisticatedSmeltery.SPAWNER_UPGRADE.get()), ignored -> saves[0]++);
+        ItemStack stack = spawner(target(helper), "minecraft:pig", 1);
+        BlockItem.getBlockEntityData(stack).putShort("Delay", (short)1200);
+        wrapper.inventory().setStackInSlot(0, stack);
+        wrapper.tick(null, helper.getLevel(), target(helper));
+        int before = saves[0];
+        CompoundTag snapshot = wrapper.getUpgradeStack().getTag().copy();
+        for (int i = 0; i < 12; i++) wrapper.tick(null, helper.getLevel(), target(helper).east(i));
+        helper.assertTrue(saves[0] == before && wrapper.getUpgradeStack().getTag().equals(snapshot),
+                "A native spawner without activation neither decrements nor resaves its countdown");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void advancedStillChecksCollisionAndNearbyLimits(GameTestHelper helper) {
         var pos = target(helper);
         var wrapper = upgrade(backpack(true, false));

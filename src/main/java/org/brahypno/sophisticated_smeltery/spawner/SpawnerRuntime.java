@@ -1,6 +1,8 @@
 package org.brahypno.sophisticated_smeltery.spawner;
 
 import java.util.Optional;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
 import net.minecraftforge.fml.ModList;
 import org.brahypno.sophisticated_smeltery.compat.BackpackMobCapture;
@@ -22,9 +24,32 @@ import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID)
 public final class SpawnerRuntime {
-    private record Context(BaseSpawner spawner, boolean advanced, @Nullable IStorageWrapper storage) { }
+    private static final class Context {
+        final BaseSpawner spawner;
+        final boolean advanced;
+        @Nullable final IStorageWrapper storage;
+        @Nullable final ServerLevel world;
+        @Nullable final BlockPos pos;
+        @Nullable Boolean adjacentAdvanced;
+        @Nullable Set<IStorageWrapper> captured;
+
+        Context(BaseSpawner spawner, boolean advanced, @Nullable IStorageWrapper storage, @Nullable ServerLevel world, @Nullable BlockPos pos) {
+            this.spawner = spawner;
+            this.advanced = advanced;
+            this.storage = storage;
+            this.world = world;
+            this.pos = pos;
+        }
+
+        boolean isAdvanced() {
+            if (world == null) return advanced;
+            if (adjacentAdvanced == null) adjacentAdvanced = hasAdjacentAdvancedUpgrade(world, pos);
+            return adjacentAdvanced;
+        }
+    }
     private record Origin(BlockPos pos, @Nullable IStorageWrapper storage) { }
     private static final ThreadLocal<Context> ACTIVE = new ThreadLocal<>();
+    private static final Direction[] SIDES = Direction.values();
     // A cancelled spawn may never reach the join event; do not retain its detached entity.
     private static final WeakHashMap<Entity, Origin> SPAWNS = new WeakHashMap<>();
     private static final SpawnData.CustomSpawnRules UNRESTRICTED = new SpawnData.CustomSpawnRules(
@@ -35,25 +60,47 @@ public final class SpawnerRuntime {
         Context active = ACTIVE.get();
         return active != null && active.advanced && active.spawner == spawner;
     }
+    public static boolean hasAdvancedSupport(BaseSpawner spawner) {
+        Context active = ACTIVE.get();
+        return active != null && active.spawner == spawner && active.isAdvanced();
+    }
     public static Optional<SpawnData.CustomSpawnRules> rules(Optional<SpawnData.CustomSpawnRules> original) {
         Context active = ACTIVE.get();
-        return active != null && active.advanced ? Optional.of(UNRESTRICTED) : original;
+        return active != null && active.isAdvanced() ? Optional.of(UNRESTRICTED) : original;
     }
     public static void tick(ServerLevel level, BlockPos pos, BaseSpawner spawner, boolean advanced, @Nullable IStorageWrapper storage) {
+        tick(level, pos, new Context(spawner, advanced, storage, null, null));
+    }
+
+    private static void tick(ServerLevel level, BlockPos pos, Context context) {
         Context previous = ACTIVE.get();
-        ACTIVE.set(new Context(spawner, advanced, storage));
-        try { spawner.serverTick(level, pos); }
-        finally { if (previous == null) ACTIVE.remove(); else ACTIVE.set(previous); }
+        ACTIVE.set(context);
+        try { context.spawner.serverTick(level, pos); }
+        finally {
+            if (previous == null) ACTIVE.remove(); else ACTIVE.set(previous);
+            if (context.captured != null) for (IStorageWrapper storage : context.captured)
+                BackpackMobCapture.syncViewers(level, storage);
+        }
     }
 
     public static void tickWorld(ServerLevel level, BlockPos pos, BaseSpawner spawner) {
         // Keep this a world spawn: the existing event path chooses any eligible adjacent catcher.
-        tick(level, pos, spawner, hasAdjacentAdvancedUpgrade(level, pos), null);
+        if (!ModList.get().isLoaded("sophisticatedbackpacks")) { spawner.serverTick(level, pos); return; }
+        tick(level, pos, new Context(spawner, false, null, level, pos));
+    }
+
+    /** Capture storage is updated immediately; viewers receive one final snapshot per native spawn batch. */
+    public static boolean deferCaptureSync(IStorageWrapper storage) {
+        Context active = ACTIVE.get();
+        if (active == null) return false;
+        if (active.captured == null) active.captured = new LinkedHashSet<>();
+        active.captured.add(storage);
+        return true;
     }
 
     private static boolean hasAdjacentAdvancedUpgrade(ServerLevel level, BlockPos origin) {
         if (!ModList.get().isLoaded("sophisticatedbackpacks")) return false;
-        for (Direction side : Direction.values()) {
+        for (Direction side : SIDES) {
             BlockPos pos = origin.relative(side);
             if (level.hasChunkAt(pos) && BackpackMobCapture.hasAdvancedSpawnerSupport(level.getBlockEntity(pos))) return true;
         }
@@ -81,7 +128,7 @@ public final class SpawnerRuntime {
             if (BackpackMobCapture.captureStorage(origin.storage, event.getEntity(), level)) event.setCanceled(true);
             return;
         }
-        for (Direction side : Direction.values()) {
+        for (Direction side : SIDES) {
             BlockPos pos = origin.pos.relative(side);
             if (level.hasChunkAt(pos) && BackpackMobCapture.captureBlock(level.getBlockEntity(pos), event.getEntity(), level)) {
                 event.setCanceled(true);

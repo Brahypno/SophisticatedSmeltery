@@ -185,7 +185,8 @@ public final class PortableFuelModule extends MultitankFuelModule {
         List<Candidate> available = new ArrayList<>();
         int maximum = 0;
         if (includeCurrent && hasFuel()) {
-            available.add(new Candidate(null, currentBurn(), temperature));
+            // This candidate only participates in temperature selection; snapshot paid fuel only when actually pausing it.
+            available.add(new Candidate(null, null, temperature));
             maximum = temperature;
         }
         for (Burn burn : pausedBurns) {

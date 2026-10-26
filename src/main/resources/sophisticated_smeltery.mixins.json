@@ -6,6 +6,8 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "sophisticated_smeltery.refmap.json",
   "mixins": [
+    "SpawnerDelayAccess",
+    "BlockEntityPositionAccess",
     "SpawnerActivationMixin",
     "SpawnerRulesMixin",
     "WorldSpawnerTickMixin",

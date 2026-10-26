@@ -74,16 +74,18 @@ public final class PortableMobMelting implements MobMelting {
         if (upgrade.isHeating() && upgrade.getMeltingSlotCount() > 0 && level.getGameTime() % 20 == 12
                 && upgrade.getStorage() instanceof IBackpackWrapper backpack) {
             List<CapturedMob> mobs = new ArrayList<>(MobCatcherStorage.getCapturedMobs(backpack));
+            int meltingSlots = upgrade.getMeltingSlotCount();
             boolean mobsChanged = false;
             for (int index = 0; index < mobs.size(); index++) {
                 CapturedMob mob = mobs.get(index);
                 // The anchor is the first occupied slot, so any overlap with the prefix is equivalent.
-                if (!upgrade.isMeltingSlot(mob.slot())) continue;
-                Entity entity = MobCatcherStorage.getEntityType(mob).map(type -> type.create(level)).orElse(null);
+                if (mob.slot() < 0 || mob.slot() >= meltingSlots) continue;
+                var type = MobCatcherStorage.getEntityType(mob).orElse(null);
+                if (type == null || type.is(TinkerTags.EntityTypes.MELTING_BLACKLIST)) continue;
+                Entity entity = type.create(level);
                 if (!(entity instanceof LivingEntity living)) continue;
                 living.load(mob.entityNbt().copy());
-                if (!living.isAlive() || living.getType().is(TinkerTags.EntityTypes.MELTING_BLACKLIST)
-                        || living.hasEffect(MobEffects.FIRE_RESISTANCE)) continue;
+                if (!living.isAlive() || living.hasEffect(MobEffects.FIRE_RESISTANCE)) continue;
                 Vec3 origin = host == null ? Vec3.atCenterOf(pos) : host.position();
                 living.setPos(origin);
                 DamageSource source = TinkerDamageTypes.source(level.registryAccess(), living.fireImmune()
@@ -155,6 +157,7 @@ public final class PortableMobMelting implements MobMelting {
     }
 
     private boolean flushDrops() {
+        if (pendingDrops.isEmpty()) return false;
         boolean changed = false;
         var inventory = upgrade.getStorage().getInventoryHandler();
         int meltingSlots = upgrade.getMeltingSlotCount();
