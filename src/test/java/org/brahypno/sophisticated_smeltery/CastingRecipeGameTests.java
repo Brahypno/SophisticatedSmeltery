@@ -10,13 +10,11 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.ItemStackHandler;
 import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
 
 /** Keep the custom tier-transfer contract; vanilla JSON pattern checks are not duplicated here. */
-@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class CastingRecipeGameTests {
     private static TransientCraftingContainer grid(ItemStack basic) {

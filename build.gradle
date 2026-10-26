@@ -192,6 +192,11 @@ minecraft {
         // By default, the server will crash when no gametests are provided.
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
+            def suite = providers.gradleProperty('gameTestSuite').getOrElse('full')
+            if (!(suite in ['full', 'performance'])) {
+                throw new GradleException("Unknown gameTestSuite '${suite}'; use full or performance")
+            }
+            property 'sophisticatedsmeltery.gameTestSuite', suite
             workingDirectory project.file(project.hasProperty('withApotheosis') ? 'build/gametest-apotheosis' : providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)
                     ? 'build/gametest-estinker' : 'build/gametest-base')
             if (!providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
@@ -233,7 +238,7 @@ sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 // Existing integration tests require backpacks. Keep storage-only runs genuinely independent.
 if (!providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
-    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java'])
+    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java', '**/GameTestRegistration.java'])
 }
 if (!providers.gradleProperty('withStorage').map { it.toBoolean() }.getOrElse(true)) {
     sourceSets.test.java.exclude('**/StorageCompatibilityGameTests.java')

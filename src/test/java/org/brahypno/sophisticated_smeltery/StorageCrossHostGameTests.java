@@ -9,7 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackLinkedStorageEndpointAdapter;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.BackpackLinkedStorageResolver;
@@ -24,7 +23,6 @@ import net.p3pp3rf1y.sophisticatedstorage.block.StorageLinkedStorageEndpointAdap
 import net.p3pp3rf1y.sophisticatedstorage.init.ModBlocks;
 import slimeknights.tconstruct.fluids.TinkerFluids;
 
-@GameTestHolder(SophisticatedSmeltery.MODID)
 @PrefixGameTestTemplate(false)
 public final class StorageCrossHostGameTests {
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)

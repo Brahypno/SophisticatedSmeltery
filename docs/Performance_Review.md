@@ -76,3 +76,8 @@ The optional-dependency runs log external resource errors: Apotheosis references
 an absent `patchouli:guide_book`, and Storage advancements reference absent
 Backpacks items in the Storage-only run. These are outside this mod's generated
 resource namespaces; the required tests and builds pass.
+
+For subsequent tick-path work, the focused matrix in [Testing.md](Testing.md)
+selects 25 tests in each shared-host configuration and 9 in Storage-only mode.
+The original full-suite results above document this optimization's initial
+validation; all 66 tests remain available through the default full entry point.
