@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BFT",
+    "CUC",
+    "FCF"
+  ],
+  "key": {
+    "B": {
+      "item": "tconstruct:scorched_basin"
+    },
+    "F": {
+      "item": "tconstruct:scorched_faucet"
+    },
+    "T": {
+      "item": "tconstruct:scorched_table"
+    },
+    "C": {
+      "item": "tconstruct:scorched_channel"
+    },
+    "U": {
+      "item": "sophisticatedstorage:upgrade_base"
+    }
+  },
+  "result": {
+    "item": "sophisticated_smeltery:storage_scorched_casting_upgrade"
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ]
+}

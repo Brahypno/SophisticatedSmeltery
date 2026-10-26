@@ -1,10 +1,26 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "pattern": ["BBB", "BUB", "BBB"],
+  "pattern": [
+    "BBB",
+    "BUB",
+    "BBB"
+  ],
   "key": {
-    "B": {"item": "tconstruct:seared_brick"},
-    "U": {"item": "sophisticatedbackpacks:upgrade_base"}
+    "B": {
+      "item": "tconstruct:seared_brick"
+    },
+    "U": {
+      "item": "sophisticatedbackpacks:upgrade_base"
+    }
   },
-  "result": {"item": "sophisticated_smeltery:melting_upgrade"}
+  "result": {
+    "item": "sophisticated_smeltery:melting_upgrade"
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ]
 }

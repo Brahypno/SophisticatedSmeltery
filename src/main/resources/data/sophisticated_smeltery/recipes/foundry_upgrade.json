@@ -1,4 +1,11 @@
 {
   "type": "sophisticated_smeltery:controller_binding",
-  "controller": "tconstruct:foundry_controller"
+  "controller": "tconstruct:foundry_controller",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ],
+  "upgrade": "sophisticated_smeltery:melting_upgrade"
 }

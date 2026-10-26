@@ -12,6 +12,9 @@ import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientRegistration {
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
+        if (net.minecraftforge.fml.ModList.get().isLoaded("sophisticatedbackpacks")) {
+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(MobCatcherDisplayRefresh.class);
+        }
         event.enqueueWork(() -> {
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.MELTING_CONTAINER, MeltingUpgradeTab::new);
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.CASTING_CONTAINER, CastingUpgradeTab::new);

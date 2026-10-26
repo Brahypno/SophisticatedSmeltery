@@ -9,7 +9,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
+import org.brahypno.sophisticated_smeltery.compat.StorageCompat;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
@@ -45,7 +45,7 @@ public final class AlloyerUpgradeTab extends UpgradeSettingsTab<AlloyerUpgradeCo
         for (int index = 0; index < Math.min(2, container.getUpgradeWrapper().getBackpackTanks().size()); index++) {
             int tank = index;
             addHideableChild(new TankAction(new Position(x + 5 + index * 24, y + 203),
-                    () -> new ItemStack(ModItems.TANK_UPGRADE.get()), button -> container.transfer(tank, button == 0),
+                    () -> new ItemStack(StorageCompat.preferredItem("tank_upgrade")), button -> container.transfer(tank, button == 0),
                     () -> List.of(text("backpack_tank", tank + 1), text("transfer_hint")), () -> tank + 1));
         }
         openTabDimension = new Dimension(138, container.getUpgradeWrapper().getBackpackTanks().isEmpty() ? 205 : 226);

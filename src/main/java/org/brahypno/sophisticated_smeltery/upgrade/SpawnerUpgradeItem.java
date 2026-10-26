@@ -26,8 +26,8 @@ public final class SpawnerUpgradeItem extends UpgradeItemBase<SpawnerUpgradeWrap
     @Override public int getMaxStackSize(ItemStack stack) { return stack.hasTag() ? 1 : 64; }
     @Override public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.translatable("item.sophisticated_smeltery.spawner_upgrade.tooltip"));
-        if (advanced) tooltip.add(Component.translatable("item.sophisticated_smeltery.advanced_spawner_upgrade.tooltip"));
+        tooltip.add(Component.translatable(getDescriptionId().replace("advanced_", "") + ".tooltip"));
+        if (advanced) tooltip.add(Component.translatable(getDescriptionId() + ".tooltip"));
     }
     @Override public List<IUpgradeItem.UpgradeConflictDefinition> getUpgradeConflicts() {
         return List.of();

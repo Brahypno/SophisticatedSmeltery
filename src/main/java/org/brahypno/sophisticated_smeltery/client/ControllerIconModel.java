@@ -27,7 +27,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.joml.Vector3f;
-import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
 import slimeknights.tconstruct.smeltery.block.controller.ControllerBlock;
 
 /** The controller front is taken from its baked model, so resource packs apply. */
@@ -89,8 +88,7 @@ final class ControllerIconModel implements BakedModel {
                 Direction.SOUTH, BlockModelRotation.X0_Y0, null, false, SophisticatedSmeltery.id("melting_upgrade")));
         quads.add(bakery.bakeQuad(new Vector3f(4, 4, 7.4f), new Vector3f(12, 12, 7.4f), face, sprite,
                 Direction.NORTH, BlockModelRotation.X0_Y0, null, false, SophisticatedSmeltery.id("melting_upgrade")));
-        BakedModel upgradeBase = Minecraft.getInstance().getItemRenderer().getModel(new ItemStack(ModItems.UPGRADE_BASE.get()), null, null, 0);
-        return new ControllerIconModel(upgradeBase, quads);
+        return new ControllerIconModel(base, quads);
     }
 
     @Override public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction face, RandomSource random) {

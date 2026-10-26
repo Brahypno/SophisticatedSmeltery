@@ -1,8 +1,20 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    { "item": "sophisticatedbackpacks:upgrade_base" },
-    { "item": "tconstruct:scorched_alloyer" }
+    {
+      "item": "sophisticatedbackpacks:upgrade_base"
+    },
+    {
+      "item": "tconstruct:scorched_alloyer"
+    }
   ],
-  "result": { "item": "sophisticated_smeltery:scorched_alloyer_upgrade" }
+  "result": {
+    "item": "sophisticated_smeltery:scorched_alloyer_upgrade"
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ]
 }

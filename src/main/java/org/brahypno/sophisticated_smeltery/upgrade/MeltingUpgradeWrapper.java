@@ -13,8 +13,9 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
-import net.p3pp3rf1y.sophisticatedbackpacks.api.IFluidHandlerWrapperUpgrade;
+import org.brahypno.sophisticated_smeltery.compat.StorageCompat;
+import org.brahypno.sophisticated_smeltery.furnace.MobMelting;
+import net.minecraftforge.fml.ModList;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageFluidHandler;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.IStackableContentsUpgrade;
@@ -33,11 +34,11 @@ import slimeknights.mantle.fluid.transfer.FluidContainerTransferManager;
 import slimeknights.mantle.fluid.transfer.IFluidContainerTransfer.TransferDirection;
 
 public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgradeWrapper, MeltingUpgradeItem>
-        implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade, FluidStorageUpgrade {
+        implements ITickableUpgrade, IStackableContentsUpgrade, FluidStorageUpgrade {
     @Nullable private final NativeFurnace furnace;
     // Inactive upgrades expose no fluid capacity and never notify a tank parent.
     private final SmelteryTank<?> emptyTank = new SmelteryTank<>(null);
-    private final PortableMobMelting mobMelting;
+    @Nullable private final MobMelting mobMelting;
     private final ItemStackHandler components;
     private final ItemStackHandler containers;
     private boolean transferring;
@@ -54,7 +55,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         CompoundTag state = tag == null ? new CompoundTag() : tag.getCompound(ControllerBinding.STATE);
         var controller = ControllerBinding.create(ControllerBinding.getController(upgrade));
         furnace = controller == null ? null : new NativeFurnace(controller, state, this::fuelSources, () -> dirty = true);
-        mobMelting = new PortableMobMelting(this, state);
+        mobMelting = ModList.get().isLoaded("sophisticatedbackpacks") ? new PortableMobMelting(this, state) : null;
         components = new ItemStackHandler(9) {
             @Override public boolean isItemValid(int slot, ItemStack stack) { return furnace != null && furnace.acceptsMaterial(stack); }
             @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
@@ -153,7 +154,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         return count;
     }
 
-    private double capacityMultiplier() { return ModItems.TANK_UPGRADE.get().getAdjustedStackMultiplier(storageWrapper); }
+    private double capacityMultiplier() { return StorageCompat.tankMultiplier(storageWrapper); }
 
     private void updateCapacity() {
         int count = materialCount();
@@ -196,7 +197,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         furnace.bindInputs(level, storageWrapper.getInventoryHandler(), inputSlots);
         if ((level.getGameTime() & 3) == 0 || (level.getGameTime() & 3) == 1) furnace.refreshInputs();
         furnace.tick(isHeating() && furnace.dimensions().volume() > 0, level.getGameTime());
-        if (level instanceof net.minecraft.server.level.ServerLevel server) mobMelting.tick(entity, server, pos);
+        if (mobMelting != null && level instanceof net.minecraft.server.level.ServerLevel server) mobMelting.tick(entity, server, pos);
         // Retry a waiting container only when fluid contents/order actually change.
         // Recipe progress and fuel burning must not cause repeated container lookups.
         if (lastContainerFluidRevision != furnace.fluidRevision()) {
@@ -246,7 +247,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         int volume = getTank().getContained();
         int base = furnace.baseCapacity();
         if (volume <= base) return 1;
-        double ratio = ModItems.TANK_UPGRADE.get().getTankUpgradeConfig().stackMultiplierRatio.get();
+        double ratio = StorageCompat.tankRatio(storageWrapper);
         if (base == 0 || ratio == 0) return Integer.MAX_VALUE;
         return (int)Math.min(Integer.MAX_VALUE, Math.ceil(1 + ((double)volume / base - 1) / ratio));
     }
@@ -275,7 +276,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     public void persist() {
         if (loading || furnace == null) return;
         CompoundTag state = furnace.save();
-        mobMelting.save(state);
+        if (mobMelting != null) mobMelting.save(state);
         state.put("components", components.serializeNBT());
         state.put("containers", containers.serializeNBT());
         upgrade.getOrCreateTag().put(ControllerBinding.STATE, state);

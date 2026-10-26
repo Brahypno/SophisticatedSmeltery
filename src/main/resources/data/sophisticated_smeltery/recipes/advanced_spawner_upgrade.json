@@ -1,12 +1,32 @@
 {
   "type": "sophisticated_smeltery:casting_upgrade_tier",
   "category": "misc",
-  "pattern": [" D ", "GUG", "RRR"],
+  "pattern": [
+    " D ",
+    "GUG",
+    "RRR"
+  ],
   "key": {
-    "D": {"tag": "forge:gems/diamond"},
-    "G": {"tag": "forge:ingots/gold"},
-    "U": {"item": "sophisticated_smeltery:spawner_upgrade"},
-    "R": {"tag": "forge:dusts/redstone"}
+    "D": {
+      "tag": "forge:gems/diamond"
+    },
+    "G": {
+      "tag": "forge:ingots/gold"
+    },
+    "U": {
+      "item": "sophisticated_smeltery:spawner_upgrade"
+    },
+    "R": {
+      "tag": "forge:dusts/redstone"
+    }
   },
-  "result": {"item": "sophisticated_smeltery:advanced_spawner_upgrade"}
+  "result": {
+    "item": "sophisticated_smeltery:advanced_spawner_upgrade"
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ]
 }

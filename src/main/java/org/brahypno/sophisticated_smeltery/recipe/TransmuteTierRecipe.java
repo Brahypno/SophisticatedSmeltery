@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 
 /** Keep the complete standard furnace while adding the two native switches. */
 public final class TransmuteTierRecipe extends ShapedRecipe {
@@ -25,8 +26,8 @@ public final class TransmuteTierRecipe extends ShapedRecipe {
         if (!super.matches(grid, level)) return false;
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack input = grid.getItem(slot);
-            if (input.is(SophisticatedSmeltery.MELTING_UPGRADE.get()))
-                return SophisticatedSmeltery.ADVANCED_TRANSMUTE_UPGRADE.get().acceptsController(ControllerBinding.getController(input));
+            if (input.getItem() instanceof MeltingUpgradeItem melting && !melting.isAdvanced())
+                return ((MeltingUpgradeItem)getResultItem(RegistryAccess.EMPTY).getItem()).acceptsController(ControllerBinding.getController(input));
         }
         return false;
     }
@@ -35,7 +36,7 @@ public final class TransmuteTierRecipe extends ShapedRecipe {
         ItemStack result = super.assemble(grid, registries);
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack input = grid.getItem(slot);
-            if (input.is(SophisticatedSmeltery.MELTING_UPGRADE.get())) {
+            if (input.getItem() instanceof MeltingUpgradeItem melting && !melting.isAdvanced()) {
                 result.setTag(input.hasTag() ? input.getTag().copy() : null);
                 break;
             }

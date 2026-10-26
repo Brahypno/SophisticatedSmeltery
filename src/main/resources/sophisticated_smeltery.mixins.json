@@ -2,6 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "org.brahypno.sophisticated_smeltery.mixin",
+  "plugin": "org.brahypno.sophisticated_smeltery.mixin.CompatMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "sophisticated_smeltery.refmap.json",
   "mixins": [
@@ -18,7 +19,11 @@
     "MeltingModuleMixin",
     "MeltingInventoryMixin",
     "CastingUpgradeExtractionMixin",
-    "BackpackFluidSideMixin"
+    "BackpackFluidSideMixin",
+    "BackpackFluidUpgradeMixin",
+    "StorageFluidWrapperMixin",
+    "StorageFluidCapabilityMixin",
+    "StoragePackedFluidMixin"
   ],
   "client": [
     "StorageScreenControlsAccess",

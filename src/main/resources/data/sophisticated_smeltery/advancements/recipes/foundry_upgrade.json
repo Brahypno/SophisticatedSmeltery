@@ -36,5 +36,11 @@
     "recipes": [
       "sophisticated_smeltery:foundry_upgrade"
     ]
-  }
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ]
 }

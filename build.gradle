@@ -96,6 +96,11 @@ minecraft {
         }
 
         client {
+            if (project.hasProperty('storageCompatSmoke')) {
+                property 'sophisticatedsmeltery.storageCompatSmoke', 'true'
+                workingDirectory project.file('build/storage-compat/client')
+                mods { "${mod_id}" { source sourceSets.test } }
+            }
             if (project.hasProperty('spawnerSmoke')) {
                 property 'sophisticatedsmeltery.spawnerSmoke', 'true'
                 workingDirectory project.file('build/spawner-client-run')
@@ -189,6 +194,12 @@ minecraft {
         gameTestServer {
             workingDirectory project.file(project.hasProperty('withApotheosis') ? 'build/gametest-apotheosis' : providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)
                     ? 'build/gametest-estinker' : 'build/gametest-base')
+            if (!providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
+                workingDirectory project.file('build/storage-compat/gametest-storage-only')
+            } else if (!project.hasProperty('withApotheosis') && !providers.gradleProperty('withEstinker').map { it.toBoolean() }.getOrElse(false)) {
+                workingDirectory project.file(providers.gradleProperty('withStorage').map { it.toBoolean() }.getOrElse(true)
+                        ? 'build/storage-compat/gametest-both' : 'build/storage-compat/gametest-backpacks-only')
+            }
             property 'forge.enabledGameTestNamespaces', mod_id
             mods {
                 "${mod_id}" {
@@ -217,6 +228,14 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
+// Existing integration tests require backpacks. Keep storage-only runs genuinely independent.
+if (!providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
+    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java'])
+}
+if (!providers.gradleProperty('withStorage').map { it.toBoolean() }.getOrElse(true)) {
+    sourceSets.test.java.exclude('**/StorageCompatibilityGameTests.java')
+    sourceSets.test.java.exclude('**/StorageCrossHostGameTests.java')
+}
 
 repositories {
     // Put repositories for dependencies here
@@ -284,7 +303,14 @@ dependencies {
     // at runtime, use the full JEI jar
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
 
-    implementation fg.deobf("curse.maven:sophisticated-backpacks-422301:9271152")
+    compileOnly fg.deobf("curse.maven:sophisticated-backpacks-422301:9271152")
+    compileOnly fg.deobf("curse.maven:sophisticated-storage-619320:9296118")
+    if (providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
+        runtimeOnly fg.deobf("curse.maven:sophisticated-backpacks-422301:9271152")
+    }
+    if (providers.gradleProperty('withStorage').map { it.toBoolean() }.getOrElse(true)) {
+        runtimeOnly fg.deobf("curse.maven:sophisticated-storage-619320:9296118")
+    }
     implementation fg.deobf("curse.maven:sophisticated-core-618298:9279280")
     // Only used by the opt-in compatibility runs; never bundled or required.
     if (providers.gradleProperty('withApotheosis').map { it.toBoolean() }.getOrElse(false)) {
@@ -305,6 +331,7 @@ tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
                              forge_version       : forge_version, forge_version_range: forge_version_range,
                              loader_version_range: loader_version_range,
+                             tcon_range          : tcon_range,
                              mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
                              mod_authors         : mod_authors, mod_description: mod_description,]
 

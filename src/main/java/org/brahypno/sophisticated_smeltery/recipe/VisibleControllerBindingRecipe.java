@@ -20,13 +20,15 @@ import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 /** A normal crafting recipe for recipe-book/JEI discovery, with exact rebinding remainders. */
 public final class VisibleControllerBindingRecipe extends ShapelessRecipe {
     private final ItemStack controller;
+    private final ItemStack upgrade;
     private final ControllerBindingRecipe binding;
 
-    public VisibleControllerBindingRecipe(ResourceLocation id, ItemStack controller) {
+    public VisibleControllerBindingRecipe(ResourceLocation id, ItemStack controller, ItemStack upgrade) {
         super(id, SophisticatedSmeltery.id("controller_binding").toString(), CraftingBookCategory.MISC,
-                ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), controller),
-                NonNullList.of(Ingredient.EMPTY, Ingredient.of(SophisticatedSmeltery.MELTING_UPGRADE.get()), Ingredient.of(controller)));
+                ControllerBinding.bind(upgrade, controller),
+                NonNullList.of(Ingredient.EMPTY, Ingredient.of(upgrade), Ingredient.of(controller)));
         this.controller = controller;
+        this.upgrade = upgrade;
         binding = new ControllerBindingRecipe(id, CraftingBookCategory.MISC);
     }
 
@@ -41,11 +43,17 @@ public final class VisibleControllerBindingRecipe extends ShapelessRecipe {
         @Override public VisibleControllerBindingRecipe fromJson(ResourceLocation id, JsonObject json) {
             ResourceLocation item = new ResourceLocation(GsonHelper.getAsString(json, "controller"));
             if (!ForgeRegistries.ITEMS.containsKey(item)) throw new IllegalArgumentException("Unknown controller " + item);
-            return new VisibleControllerBindingRecipe(id, new ItemStack(ForgeRegistries.ITEMS.getValue(item)));
+            ResourceLocation upgrade = new ResourceLocation(GsonHelper.getAsString(json, "upgrade"));
+            if (!ForgeRegistries.ITEMS.containsKey(upgrade)) throw new IllegalArgumentException("Unknown upgrade " + upgrade);
+            return new VisibleControllerBindingRecipe(id, new ItemStack(ForgeRegistries.ITEMS.getValue(item)),
+                    new ItemStack(ForgeRegistries.ITEMS.getValue(upgrade)));
         }
         @Override public VisibleControllerBindingRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new VisibleControllerBindingRecipe(id, buffer.readItem());
+            return new VisibleControllerBindingRecipe(id, buffer.readItem(), buffer.readItem());
         }
-        @Override public void toNetwork(FriendlyByteBuf buffer, VisibleControllerBindingRecipe recipe) { buffer.writeItem(recipe.controller); }
+        @Override public void toNetwork(FriendlyByteBuf buffer, VisibleControllerBindingRecipe recipe) {
+            buffer.writeItem(recipe.controller);
+            buffer.writeItem(recipe.upgrade);
+        }
     }
 }

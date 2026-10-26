@@ -1,6 +1,40 @@
 {
   "parent": "minecraft:recipes/root",
-  "criteria": {"has_bars": {"trigger": "minecraft:inventory_changed", "conditions": {"items": [{"items": ["minecraft:iron_bars"]}]}}, "has_the_recipe": {"trigger": "minecraft:recipe_unlocked", "conditions": {"recipe": "sophisticated_smeltery:spawner_upgrade"}}},
-  "requirements": [["has_bars", "has_the_recipe"]],
-  "rewards": {"recipes": ["sophisticated_smeltery:spawner_upgrade"]}
+  "criteria": {
+    "has_bars": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:iron_bars"
+            ]
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "sophisticated_smeltery:spawner_upgrade"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_bars",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "sophisticated_smeltery:spawner_upgrade"
+    ]
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ]
 }

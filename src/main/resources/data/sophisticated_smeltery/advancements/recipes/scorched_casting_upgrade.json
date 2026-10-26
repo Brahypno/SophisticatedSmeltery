@@ -1,9 +1,40 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_upgrade_base": {"trigger": "minecraft:inventory_changed", "conditions": {"items": [{"items": ["sophisticatedbackpacks:upgrade_base"]}]}},
-    "has_the_recipe": {"trigger": "minecraft:recipe_unlocked", "conditions": {"recipe": "sophisticated_smeltery:scorched_casting_upgrade"}}
+    "has_upgrade_base": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "sophisticatedbackpacks:upgrade_base"
+            ]
+          }
+        ]
+      }
+    },
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "sophisticated_smeltery:scorched_casting_upgrade"
+      }
+    }
   },
-  "requirements": [["has_upgrade_base", "has_the_recipe"]],
-  "rewards": {"recipes": ["sophisticated_smeltery:scorched_casting_upgrade"]}
+  "requirements": [
+    [
+      "has_upgrade_base",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "sophisticated_smeltery:scorched_casting_upgrade"
+    ]
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ]
 }

@@ -2,6 +2,9 @@ package org.brahypno.sophisticated_smeltery;
 
 import com.mojang.logging.LogUtils;
 import java.util.function.Consumer;
+import java.util.List;
+import java.util.stream.Stream;
+import net.minecraftforge.fml.ModList;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
@@ -32,6 +35,7 @@ import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.furnace.PortableAlloyer;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
+import org.brahypno.sophisticated_smeltery.compat.StorageCompat;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
@@ -56,26 +60,26 @@ public class SophisticatedSmeltery {
     public static final RegistryObject<AlloyerUpgradeItem> ALLOYER_UPGRADE = ITEMS.register("scorched_alloyer_upgrade", AlloyerUpgradeItem::new);
     public static final RegistryObject<SpawnerUpgradeItem> SPAWNER_UPGRADE = ITEMS.register("spawner_upgrade", () -> new SpawnerUpgradeItem(false));
     public static final RegistryObject<SpawnerUpgradeItem> ADVANCED_SPAWNER_UPGRADE = ITEMS.register("advanced_spawner_upgrade", () -> new SpawnerUpgradeItem(true));
-    public static final RegistryObject<MeltingUpgradeItem> ADVANCED_TRANSMUTE_UPGRADE = ITEMS.register("advanced_transmute_upgrade", () -> new MeltingUpgradeItem(true));
+    public static final RegistryObject<MeltingUpgradeItem> ADVANCED_TRANSMUTE_UPGRADE = registerTransmute(ITEMS, "advanced_transmute_upgrade");
     public static final RegistryObject<CastingUpgradeItem> SEARED_CASTING_UPGRADE = ITEMS.register("seared_casting_upgrade", CastingUpgradeItem::new);
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SEARED_CASTING_UPGRADE = ITEMS.register("advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
     public static final RegistryObject<CastingUpgradeItem> SCORCHED_CASTING_UPGRADE = ITEMS.register("scorched_casting_upgrade", () -> new CastingUpgradeItem(false, true));
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SCORCHED_CASTING_UPGRADE = ITEMS.register("advanced_scorched_casting_upgrade", () -> new CastingUpgradeItem(true, true));
+    public static final DeferredRegister<Item> STORAGE_ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    public static final RegistryObject<MeltingUpgradeItem> STORAGE_MELTING_UPGRADE = STORAGE_ITEMS.register("storage_melting_upgrade", MeltingUpgradeItem::new);
+    public static final RegistryObject<AlloyerUpgradeItem> STORAGE_ALLOYER_UPGRADE = STORAGE_ITEMS.register("storage_scorched_alloyer_upgrade", AlloyerUpgradeItem::new);
+    public static final RegistryObject<SpawnerUpgradeItem> STORAGE_SPAWNER_UPGRADE = STORAGE_ITEMS.register("storage_spawner_upgrade", () -> new SpawnerUpgradeItem(false));
+    public static final RegistryObject<SpawnerUpgradeItem> STORAGE_ADVANCED_SPAWNER_UPGRADE = STORAGE_ITEMS.register("storage_advanced_spawner_upgrade", () -> new SpawnerUpgradeItem(true));
+    public static final RegistryObject<MeltingUpgradeItem> STORAGE_ADVANCED_TRANSMUTE_UPGRADE = registerTransmute(STORAGE_ITEMS, "storage_advanced_transmute_upgrade");
+    public static final RegistryObject<CastingUpgradeItem> STORAGE_SEARED_CASTING_UPGRADE = STORAGE_ITEMS.register("storage_seared_casting_upgrade", CastingUpgradeItem::new);
+    public static final RegistryObject<CastingUpgradeItem> STORAGE_ADVANCED_SEARED_CASTING_UPGRADE = STORAGE_ITEMS.register("storage_advanced_seared_casting_upgrade", () -> new CastingUpgradeItem(true));
+    public static final RegistryObject<CastingUpgradeItem> STORAGE_SCORCHED_CASTING_UPGRADE = STORAGE_ITEMS.register("storage_scorched_casting_upgrade", () -> new CastingUpgradeItem(false, true));
+    public static final RegistryObject<CastingUpgradeItem> STORAGE_ADVANCED_SCORCHED_CASTING_UPGRADE = STORAGE_ITEMS.register("storage_advanced_scorched_casting_upgrade", () -> new CastingUpgradeItem(true, true));
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
     public static final RegistryObject<CreativeModeTab> CREATIVE_TAB = CREATIVE_TABS.register(MODID, () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.sophisticated_smeltery"))
-            .icon(() -> MELTING_UPGRADE.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.accept(MELTING_UPGRADE.get());
-                output.accept(ALLOYER_UPGRADE.get());
-                output.accept(SPAWNER_UPGRADE.get());
-                output.accept(ADVANCED_SPAWNER_UPGRADE.get());
-                addBoundFurnaces(output::accept);
-                output.accept(SEARED_CASTING_UPGRADE.get());
-                output.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
-                output.accept(SCORCHED_CASTING_UPGRADE.get());
-                output.accept(ADVANCED_SCORCHED_CASTING_UPGRADE.get());
-            }).build());
+            .icon(StorageCompat::creativeTabIcon)
+            .displayItems((parameters, output) -> addCreativeUpgrades(output::accept)).build());
     public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MODID);
     public static final RegistryObject<RecipeSerializer<ControllerBindingRecipe>> BIND_CONTROLLER = RECIPES.register(
             "bind_controller", () -> new SimpleCraftingRecipeSerializer<>(ControllerBindingRecipe::new));
@@ -98,9 +102,14 @@ public class SophisticatedSmeltery {
 
     public SophisticatedSmeltery() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-        ITEMS.register(bus);
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) ITEMS.register(bus);
+        if (ModList.get().isLoaded("sophisticatedstorage")) STORAGE_ITEMS.register(bus);
         CREATIVE_TABS.register(bus);
         RECIPES.register(bus);
+        if (net.minecraftforge.fml.ModList.get().isLoaded("sophisticatedbackpacks")) {
+            MinecraftForge.EVENT_BUS.register(org.brahypno.sophisticated_smeltery.furnace.BackpackFluidInteraction.class);
+            MinecraftForge.EVENT_BUS.register(org.brahypno.sophisticated_smeltery.furnace.PortableMobMelting.class);
+        }
         bus.addListener(this::setup);
         bus.addListener(this::creativeItems);
         MinecraftForge.EVENT_BUS.addListener((AddReloadListenerEvent event) ->
@@ -113,41 +122,46 @@ public class SophisticatedSmeltery {
 
     private void setup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            UpgradeContainerRegistry.register(MELTING_UPGRADE.getId(), MELTING_CONTAINER);
-            UpgradeContainerRegistry.register(ALLOYER_UPGRADE.getId(), ALLOYER_CONTAINER);
-            UpgradeContainerRegistry.register(SPAWNER_UPGRADE.getId(), SPAWNER_CONTAINER);
-            UpgradeContainerRegistry.register(ADVANCED_SPAWNER_UPGRADE.getId(), SPAWNER_CONTAINER);
-            UpgradeContainerRegistry.register(ADVANCED_TRANSMUTE_UPGRADE.getId(), MELTING_CONTAINER);
-            UpgradeContainerRegistry.register(SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
-            UpgradeContainerRegistry.register(ADVANCED_SEARED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
-            UpgradeContainerRegistry.register(SCORCHED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
-            UpgradeContainerRegistry.register(ADVANCED_SCORCHED_CASTING_UPGRADE.getId(), CASTING_CONTAINER);
+            Stream.concat(ITEMS.getEntries().stream(), STORAGE_ITEMS.getEntries().stream())
+                    .filter(RegistryObject::isPresent).forEach(item -> {
+                        if (item.get() instanceof MeltingUpgradeItem) UpgradeContainerRegistry.register(item.getId(), MELTING_CONTAINER);
+                        else if (item.get() instanceof AlloyerUpgradeItem) UpgradeContainerRegistry.register(item.getId(), ALLOYER_CONTAINER);
+                        else if (item.get() instanceof CastingUpgradeItem) UpgradeContainerRegistry.register(item.getId(), CASTING_CONTAINER);
+                        else if (item.get() instanceof SpawnerUpgradeItem) UpgradeContainerRegistry.register(item.getId(), SPAWNER_CONTAINER);
+                    });
         });
     }
 
     private void creativeItems(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(MELTING_UPGRADE.get());
-            event.accept(ALLOYER_UPGRADE.get());
-            event.accept(SPAWNER_UPGRADE.get());
-            event.accept(ADVANCED_SPAWNER_UPGRADE.get());
-            addBoundFurnaces(event::accept);
-            event.accept(SEARED_CASTING_UPGRADE.get());
-            event.accept(ADVANCED_SEARED_CASTING_UPGRADE.get());
-            event.accept(SCORCHED_CASTING_UPGRADE.get());
-            event.accept(ADVANCED_SCORCHED_CASTING_UPGRADE.get());
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) addCreativeUpgrades(event::accept);
+    }
+
+    private static void addCreativeUpgrades(Consumer<ItemStack> output) {
+        for (String prefix : List.of("", "storage_")) {
+            var melting = prefix.isEmpty() ? MELTING_UPGRADE : STORAGE_MELTING_UPGRADE;
+            if (!melting.isPresent()) continue;
+            for (String name : List.of("melting_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade"))
+                output.accept(new ItemStack(ForgeRegistries.ITEMS.getValue(id(prefix + name))));
+            addBoundFurnaces(output, melting.get(), prefix.isEmpty() ? ADVANCED_TRANSMUTE_UPGRADE : STORAGE_ADVANCED_TRANSMUTE_UPGRADE);
+            for (String name : List.of("seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade"))
+                output.accept(new ItemStack(ForgeRegistries.ITEMS.getValue(id(prefix + name))));
         }
     }
 
-    private static void addBoundFurnaces(Consumer<ItemStack> output) {
-        ItemStack upgrade = new ItemStack(MELTING_UPGRADE.get());
+    private static void addBoundFurnaces(Consumer<ItemStack> output, MeltingUpgradeItem melting, RegistryObject<MeltingUpgradeItem> advanced) {
+        ItemStack upgrade = new ItemStack(melting);
         output.accept(ControllerBinding.bind(upgrade, new ItemStack(TinkerSmeltery.smelteryController)));
         output.accept(ControllerBinding.bind(upgrade, new ItemStack(TinkerSmeltery.foundryController)));
         ResourceLocation transmuteController = new ResourceLocation("esotericism_tinker", "transmute_controller");
         if (ForgeRegistries.ITEMS.containsKey(transmuteController)) {
             output.accept(ControllerBinding.bind(upgrade, new ItemStack(ForgeRegistries.ITEMS.getValue(transmuteController))));
-            output.accept(ControllerBinding.bind(new ItemStack(ADVANCED_TRANSMUTE_UPGRADE.get()), new ItemStack(ForgeRegistries.ITEMS.getValue(transmuteController))));
+            output.accept(ControllerBinding.bind(new ItemStack(advanced.get()), new ItemStack(ForgeRegistries.ITEMS.getValue(transmuteController))));
         }
+    }
+
+    private static RegistryObject<MeltingUpgradeItem> registerTransmute(DeferredRegister<Item> items, String path) {
+        return ModList.get().isLoaded("esotericism_tinker") ? items.register(path, () -> new MeltingUpgradeItem(true))
+                : RegistryObject.createOptional(id(path), Registries.ITEM, MODID);
     }
 
     public static ResourceLocation id(String path) { return new ResourceLocation(MODID, path); }

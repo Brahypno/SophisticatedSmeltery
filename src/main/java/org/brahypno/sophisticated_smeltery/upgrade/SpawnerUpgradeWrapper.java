@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
 import net.minecraftforge.items.ItemStackHandler;
-import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.IBackpackWrapper;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.ITickableUpgrade;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeWrapperBase;
@@ -60,7 +59,7 @@ public final class SpawnerUpgradeWrapper extends UpgradeWrapperBase<SpawnerUpgra
         ticking = true;
         try {
             SpawnerRuntime.tick(server, pos, spawner.getSpawner(), isAdvanced(),
-                    storageWrapper instanceof IBackpackWrapper backpack ? backpack : null);
+                    storageWrapper);
             ItemStack stack = inventory.getStackInSlot(0);
             CompoundTag old = BlockItem.getBlockEntityData(stack);
             CompoundTag state = old == null ? new CompoundTag() : old.copy();

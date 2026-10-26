@@ -35,7 +35,7 @@ public final class MeltingUpgradeItem extends UpgradeItemBase<MeltingUpgradeWrap
     @Override public Component getName(ItemStack stack) {
         ItemStack controller = ControllerBinding.getController(stack);
         if (!ControllerBinding.supports(controller)) return super.getName(stack);
-        return Component.translatable("item.sophisticated_smeltery." + (advanced ? "advanced_transmute_upgrade.bound" : "melting_upgrade.bound"), ControllerBinding.getControllerName(controller));
+        return Component.translatable(getDescriptionId() + ".bound", ControllerBinding.getControllerName(controller));
     }
 
     @Override public List<IUpgradeItem.UpgradeConflictDefinition> getUpgradeConflicts() {

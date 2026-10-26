@@ -15,8 +15,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.EmptyFluidHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.p3pp3rf1y.sophisticatedbackpacks.api.IFluidHandlerWrapperUpgrade;
-import net.p3pp3rf1y.sophisticatedbackpacks.init.ModItems;
+import org.brahypno.sophisticated_smeltery.compat.StorageCompat;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageFluidHandler;
 import net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.IStackableContentsUpgrade;
@@ -34,7 +33,7 @@ import slimeknights.tconstruct.library.fluid.FluidTankAnimated;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
 public final class AlloyerUpgradeWrapper extends UpgradeWrapperBase<AlloyerUpgradeWrapper, AlloyerUpgradeItem>
-        implements ITickableUpgrade, IStackableContentsUpgrade, IFluidHandlerWrapperUpgrade, FluidStorageUpgrade {
+        implements ITickableUpgrade, IStackableContentsUpgrade, FluidStorageUpgrade {
     public static final String STATE = "alloyer";
     private final PortableAlloyer alloyer;
     private final ItemStackHandler components;
@@ -142,7 +141,7 @@ public final class AlloyerUpgradeWrapper extends UpgradeWrapperBase<AlloyerUpgra
         if (filled < drained.getAmount()) source.fill(new FluidStack(drained, drained.getAmount() - filled), IFluidHandler.FluidAction.EXECUTE);
         persist();
     }
-    private void updateCapacity() { alloyer.resize(ModItems.TANK_UPGRADE.get().getAdjustedStackMultiplier(storageWrapper)); }
+    private void updateCapacity() { alloyer.resize(StorageCompat.tankMultiplier(storageWrapper)); }
     public boolean canRemove() {
         if (!getTank().isEmpty()) return false;
         for (int slot = 0; slot < components.getSlots(); slot++) {
@@ -153,7 +152,7 @@ public final class AlloyerUpgradeWrapper extends UpgradeWrapperBase<AlloyerUpgra
     }
     @Override public int getMinimumMultiplierRequired() {
         if (getTank().getFluidAmount() <= alloyer.baseCapacity()) return 1;
-        double ratio = ModItems.TANK_UPGRADE.get().getTankUpgradeConfig().stackMultiplierRatio.get();
+        double ratio = StorageCompat.tankRatio(storageWrapper);
         return ratio == 0 ? Integer.MAX_VALUE : (int)Math.min(Integer.MAX_VALUE,
                 Math.ceil(1 + ((double)getTank().getFluidAmount() / alloyer.baseCapacity() - 1) / ratio));
     }

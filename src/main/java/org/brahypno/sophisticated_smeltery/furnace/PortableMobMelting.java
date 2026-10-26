@@ -21,13 +21,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.wrapper.IBackpackWrapper;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.CapturedMob;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherHandler;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherStorage;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.StorageContainerMenuBase;
-import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.compat.TransmuteMobMelting;
 import org.brahypno.sophisticated_smeltery.mixin.MobCatcherStorageAccess;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
@@ -37,8 +35,7 @@ import slimeknights.tconstruct.library.recipe.entitymelting.EntityMeltingRecipeC
 import slimeknights.tconstruct.smeltery.block.entity.module.EntityMeltingModule;
 
 /** Captured entities stay in catcher storage; only a detached damage/loot instance is created. */
-@Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID)
-public final class PortableMobMelting {
+public final class PortableMobMelting implements MobMelting {
     public static final String DROPS = "mobDrops";
     public record Melt(int damage, List<FluidStack> fluids) {}
     private record Capture(LivingEntity entity, List<ItemStack> drops) {}
