@@ -154,7 +154,8 @@ public final class AlloyerUpgradeTab extends UpgradeSettingsTab<AlloyerUpgradeCo
             super(position, new Dimension(18, 18)); this.icon = icon; this.action = action; this.tooltip = tooltip; this.number = number;
         }
         @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
-            graphics.blit(HeatingStructureScreen.BACKGROUND, x, y, 124, isHovered ? 69 : 45, 18, 18);
+            graphics.blit(HeatingStructureScreen.BACKGROUND, x, y, 124, 69, 18, 18);
+            if (isHovered) graphics.blit(HeatingStructureScreen.BACKGROUND, x, y, 176, 202, 18, 18);
         }
         @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
             graphics.renderItem(icon.get(), x + 1, y + 1);
