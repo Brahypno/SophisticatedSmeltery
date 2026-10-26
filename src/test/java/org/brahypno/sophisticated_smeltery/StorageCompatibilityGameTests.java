@@ -291,6 +291,63 @@ public final class StorageCompatibilityGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void hostConversionRecipesPreserveUpgradeState(GameTestHelper helper) {
+        var menu = new net.minecraft.world.inventory.AbstractContainerMenu(null, -1) {
+            @Override public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int index) { return ItemStack.EMPTY; }
+            @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
+        };
+        var grid = new net.minecraft.world.inventory.TransientCraftingContainer(menu, 3, 3);
+        for (String name : List.of("melting_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+                "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade")) {
+            boolean expected = ModList.get().isLoaded("sophisticatedbackpacks") && ModList.get().isLoaded("sophisticatedstorage")
+                    && (!name.contains("transmute") || ModList.get().isLoaded("esotericism_tinker"));
+            for (boolean toStorage : List.of(true, false)) {
+                String recipeName = toStorage ? "storage_" + name + "_from_backpack_" + name : "backpack_" + name + "_from_storage_" + name;
+                var id = SophisticatedSmeltery.id(recipeName);
+                var loaded = helper.getLevel().getRecipeManager().byKey(id);
+                helper.assertTrue(loaded.isPresent() == expected, "Conversion requires both hosts and its optional integration: " + id);
+                helper.assertTrue((helper.getLevel().getServer().getAdvancements().getAdvancement(SophisticatedSmeltery.id("recipes/misc/" + recipeName)) != null) == expected,
+                        "Conversion unlock uses the same conditions: " + id);
+                if (!expected) continue;
+                var source = ForgeRegistries.ITEMS.getValue(SophisticatedSmeltery.id((toStorage ? "" : "storage_") + name));
+                var target = ForgeRegistries.ITEMS.getValue(SophisticatedSmeltery.id((toStorage ? "storage_" : "") + name));
+                ItemStack input = new ItemStack(source);
+                input.setHoverName(net.minecraft.network.chat.Component.literal("Configured upgrade"));
+                // Real serialized controller and inventory data must survive changing the upgrade plate.
+                if (name.equals("melting_upgrade")) input = ControllerBinding.bind(input, new ItemStack(TinkerSmeltery.foundryController));
+                var state = new CompoundTag();
+                state.put("storedItem", new ItemStack(Items.DIAMOND, 7).save(new CompoundTag()));
+                input.getOrCreateTag().put("conversionState", state);
+                var original = input.copy();
+                grid.clearContent();
+                grid.setItem(1, input);
+                for (int slot : List.of(0, 2, 6, 8)) grid.setItem(slot, new ItemStack(toStorage ? Items.OAK_PLANKS : Items.STRING));
+                grid.setItem(4, new ItemStack(toStorage ? Items.OAK_PLANKS : Items.LEATHER));
+                var recipe = helper.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, helper.getLevel()).orElseThrow();
+                helper.assertTrue(recipe.getId().equals(id), "Native conversion layout resolves the intended recipe: " + id);
+                var result = recipe.assemble(grid, helper.getLevel().registryAccess());
+                helper.assertTrue(result.is(target) && result.getCount() == 1 && original.getTag().equals(result.getTag()),
+                        "Conversion preserves tier, controller, inventory and settings: " + id);
+                helper.assertTrue(ItemStack.matches(input, original), "Crafting preview leaves the source untouched");
+                result.getTag().getCompound("conversionState").putInt("changed", 1);
+                helper.assertTrue(ItemStack.matches(input, original), "Converted state is an independent copy");
+                for (var remaining : recipe.getRemainingItems(grid)) helper.assertTrue(remaining.isEmpty(), "Conversion does not duplicate stored items or controllers");
+                var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+                try {
+                    var serializer = new org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe.Serializer();
+                    serializer.toNetwork(buffer, (org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe)recipe);
+                    var synced = serializer.fromNetwork(id, buffer);
+                    helper.assertTrue(synced.matches(grid, helper.getLevel()) && synced.assemble(grid, helper.getLevel().registryAccess()).is(target),
+                            "Client recipe synchronization retains conversion inputs and output");
+                } finally { buffer.release(); }
+                grid.setItem(4, new ItemStack(Items.DIRT));
+                helper.assertTrue(!recipe.matches(grid, helper.getLevel()), "Conversion requires the native materials");
+            }
+        }
+        helper.succeed();
+    }
+
     private static void verifyRecipe(GameTestHelper helper, net.minecraft.world.item.crafting.Recipe<?> recipe, String prefix) {
         var menu = new net.minecraft.world.inventory.AbstractContainerMenu(null, -1) {
             @Override public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int index) { return ItemStack.EMPTY; }
