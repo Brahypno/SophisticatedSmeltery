@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "esotericism_tinker"
+    }
+  ],
+  "criteria": {
+    "has_upgrade_base": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "sophisticatedstorage:upgrade_base"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "rewards": {
+    "recipes": [
+      "sophisticated_smeltery:storage_transmute_upgrade"
+    ]
+  }
+}

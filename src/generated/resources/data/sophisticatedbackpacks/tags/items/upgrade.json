@@ -1,0 +1,41 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "sophisticated_smeltery:melting_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:scorched_alloyer_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:spawner_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:advanced_spawner_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:advanced_transmute_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:seared_casting_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:advanced_seared_casting_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:scorched_casting_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:advanced_scorched_casting_upgrade",
+      "required": false
+    }
+  ]
+}

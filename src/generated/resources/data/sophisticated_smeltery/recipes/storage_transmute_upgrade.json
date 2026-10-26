@@ -1,0 +1,15 @@
+{
+  "type": "sophisticated_smeltery:controller_binding",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "esotericism_tinker"
+    }
+  ],
+  "controller": "esotericism_tinker:transmute_controller",
+  "upgrade": "sophisticated_smeltery:storage_melting_upgrade"
+}

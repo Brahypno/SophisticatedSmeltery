@@ -1,0 +1,43 @@
+{
+  "type": "sophisticated_smeltery:transmute_upgrade_tier",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "esotericism_tinker"
+    }
+  ],
+  "key": {
+    "A": {
+      "item": "esotericism_tinker:ashen_alloy_switch"
+    },
+    "D": {
+      "tag": "forge:gems/diamond"
+    },
+    "G": {
+      "tag": "forge:ingots/gold"
+    },
+    "M": {
+      "item": "esotericism_tinker:ashen_melt_switch"
+    },
+    "R": {
+      "tag": "forge:dusts/redstone"
+    },
+    "U": {
+      "type": "forge:partial_nbt",
+      "item": "sophisticated_smeltery:storage_melting_upgrade",
+      "nbt": "{controller:{id:\"esotericism_tinker:transmute_controller\",Count:1b}}"
+    }
+  },
+  "pattern": [
+    "ADM",
+    "GUG",
+    "RRR"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_advanced_transmute_upgrade"
+  }
+}

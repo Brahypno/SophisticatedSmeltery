@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:iron_bars"
+    },
+    "U": {
+      "item": "sophisticatedstorage:upgrade_base"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "BUB",
+    "BBB"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_spawner_upgrade"
+  }
+}

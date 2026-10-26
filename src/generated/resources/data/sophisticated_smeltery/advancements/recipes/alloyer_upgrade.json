@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:recipes/root",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ],
+  "criteria": {
+    "has_controller": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "tconstruct:scorched_alloyer"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_controller"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "sophisticated_smeltery:alloyer_upgrade"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "parent": "minecraft:recipes/root",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "esotericism_tinker"
+    }
+  ],
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "sophisticated_smeltery:advanced_transmute_upgrade"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_transmute_upgrade": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "sophisticated_smeltery:melting_upgrade"
+            ],
+            "nbt": "{controller:{id:\"esotericism_tinker:transmute_controller\"}}"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_transmute_upgrade",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "sophisticated_smeltery:advanced_transmute_upgrade"
+    ]
+  }
+}

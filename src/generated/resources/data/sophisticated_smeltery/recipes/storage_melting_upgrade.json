@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "key": {
+    "B": {
+      "item": "tconstruct:seared_brick"
+    },
+    "U": {
+      "item": "sophisticatedstorage:upgrade_base"
+    }
+  },
+  "pattern": [
+    "BBB",
+    "BUB",
+    "BBB"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_melting_upgrade"
+  }
+}

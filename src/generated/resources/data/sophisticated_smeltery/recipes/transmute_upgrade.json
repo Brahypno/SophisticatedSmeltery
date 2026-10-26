@@ -1,0 +1,15 @@
+{
+  "type": "sophisticated_smeltery:controller_binding",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "esotericism_tinker"
+    }
+  ],
+  "controller": "esotericism_tinker:transmute_controller",
+  "upgrade": "sophisticated_smeltery:melting_upgrade"
+}

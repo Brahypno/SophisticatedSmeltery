@@ -1,0 +1,33 @@
+{
+  "type": "sophisticated_smeltery:casting_upgrade_tier",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "key": {
+    "L": {
+      "tag": "forge:leather"
+    },
+    "T": {
+      "tag": "forge:string"
+    },
+    "U": {
+      "item": "sophisticated_smeltery:storage_melting_upgrade"
+    }
+  },
+  "pattern": [
+    "TUT",
+    " L ",
+    "T T"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:melting_upgrade"
+  }
+}

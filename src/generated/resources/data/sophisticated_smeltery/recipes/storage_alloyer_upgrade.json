@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "ingredients": [
+    {
+      "item": "sophisticatedstorage:upgrade_base"
+    },
+    {
+      "item": "tconstruct:scorched_alloyer"
+    }
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_scorched_alloyer_upgrade"
+  }
+}

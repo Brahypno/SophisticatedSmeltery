@@ -19,3 +19,7 @@ hs_err_pid*
 
 # Common working directory
 run
+
+# Data generator working files and content hashes
+run-data/
+src/generated/resources/.cache/

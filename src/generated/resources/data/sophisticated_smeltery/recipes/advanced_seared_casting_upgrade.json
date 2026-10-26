@@ -1,0 +1,32 @@
+{
+  "type": "sophisticated_smeltery:casting_upgrade_tier",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ],
+  "key": {
+    "D": {
+      "tag": "forge:gems/diamond"
+    },
+    "G": {
+      "tag": "forge:ingots/gold"
+    },
+    "R": {
+      "tag": "forge:dusts/redstone"
+    },
+    "U": {
+      "item": "sophisticated_smeltery:seared_casting_upgrade"
+    }
+  },
+  "pattern": [
+    " D ",
+    "GUG",
+    "RRR"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:advanced_seared_casting_upgrade"
+  }
+}
