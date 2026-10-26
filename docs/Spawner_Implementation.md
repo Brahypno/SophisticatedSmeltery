@@ -7,6 +7,7 @@
 - 每个升级只有一个刷怪笼槽位，只接受一个 `minecraft:spawner`。使用精妙背包原生模块开关暂停/恢复，不增加第二个开关。
 - 普通版遵循所放刷怪笼的原生条件。高级版忽略玩家距离和自然生成规则（包括光照、群系、动物地面等），仍保留碰撞空间、附近同类数量、生成间隔、和平难度限制及神化红石控制。
 - 支持携带和放置背包。关闭后计时暂停；取出刷怪笼、移动背包和保存恢复保留当前计时与刷怪笼参数。升级可带着内部刷怪笼取下。
+- 放置背包中的高级升级开启时，也为六面紧邻的世界刷怪笼提供同样的条件豁免，内部刷怪笼槽为空仍生效，不要求安装捕捉升级。普通升级、斜角和隔一格均不提供豁免。关闭、拆下高级升级或移走背包后，下次刷怪笼 Tick 立即恢复其自身条件；不停止本来就满足条件的世界刷怪笼。
 
 ## 生物捕捉联动
 
@@ -20,7 +21,9 @@
 
 通过 `BlockEntityType.MOB_SPAWNER.create()` 创建未放入世界的实际实体，直接调用其 `BaseSpawner.serverTick()`。神化替换注册表工厂后，自动使用其 `ApothSpawnerTile` 和 `SpawnerLogicExt`，不另抄一套刷怪逻辑。原物品及未知 NBT 保留；每次运行把原生状态合并回槽内物品的 `BlockEntityTag`。
 
-新增的两个 Mixin 仅用于高级便携升级：`BaseSpawner.isNearPlayer()` 的玩家距离豁免，以及 `SpawnData.getCustomSpawnRules()` 返回临时的全光照范围规则。作用域包围当前原生调用并在 `finally` 中恢复；不开启上下文时保持原规则，不向物品写入高级豁免。生成出口无 Mixin，也没有针对神化类的 Mixin。
+`BaseSpawner.isNearPlayer()` 的玩家距离豁免，以及 `SpawnData.getCustomSpawnRules()` 的临时全光照范围规则，共用高级运行上下文。`WorldSpawnerTickMixin` 仅包住 `SpawnerBlockEntity.serverTick()` 对原生 `BaseSpawner.serverTick()` 的调用：先检查六面紧邻的放置背包，再调用原版或神化自己的刷怪逻辑。作用域在 `finally` 中恢复，不改写世界刷怪笼或物品中的权限 NBT。生成出口仍使用事件，没有针对神化类的 Mixin。
+
+世界刷怪笼的条件豁免与捕捉来源独立：一个背包提供高级条件豁免，另一个紧邻背包提供捕捉也可生效。全部紧邻捕捉背包均无法接收时，继续原生世界生成。
 
 神化是可选依赖，验证版本为 1.20.1 的 Apotheosis 7.4.8。正式 JAR 不包含神化、Placebo、AttributesLib 或测试类。
 

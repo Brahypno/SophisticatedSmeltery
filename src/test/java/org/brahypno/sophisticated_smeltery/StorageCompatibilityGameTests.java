@@ -257,6 +257,16 @@ public final class StorageCompatibilityGameTests {
             helper.assertTrue(storage.getInventoryHandler().getStackInSlot(slot).isEmpty(), "World births are not stored in container inventory");
         advanced.setEnabled(false);
         spawned.forEach(net.minecraft.world.entity.Entity::discard);
+        if (!ModList.get().isLoaded("sophisticatedbackpacks")) {
+            var worldPos = target.below(2);
+            helper.getLevel().setBlockAndUpdate(worldPos, net.minecraft.world.level.block.Blocks.SPAWNER.defaultBlockState());
+            var tile = (net.minecraft.world.level.block.entity.SpawnerBlockEntity)helper.getLevel().getBlockEntity(worldPos);
+            tile.load(state);
+            net.minecraft.world.level.block.entity.SpawnerBlockEntity.serverTick(helper.getLevel(), worldPos, tile.getBlockState(), tile);
+            helper.assertTrue(tile.saveWithoutMetadata().getShort("Delay") == 0,
+                    "World spawner entry keeps native gating and never loads optional backpack classes when backpacks is absent");
+            helper.getLevel().removeBlock(worldPos, false);
+        }
         helper.succeed();
     }
 

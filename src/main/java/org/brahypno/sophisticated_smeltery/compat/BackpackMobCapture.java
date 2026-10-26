@@ -19,9 +19,16 @@ import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.CapturedMob;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherHandler;
 import net.p3pp3rf1y.sophisticatedbackpacks.upgrades.mobcatcher.MobCatcherStorage;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.StorageContainerMenuBase;
+import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeWrapper;
 
 public final class BackpackMobCapture {
     private BackpackMobCapture() {}
+
+    public static boolean hasAdvancedSpawnerSupport(net.minecraft.world.level.block.entity.BlockEntity block) {
+        return block instanceof BackpackBlockEntity backpack
+                && backpack.getBackpackWrapper().getUpgradeHandler().getSlotWrappers().values().stream()
+                .anyMatch(wrapper -> wrapper instanceof SpawnerUpgradeWrapper spawner && spawner.isAdvanced() && spawner.isEnabled());
+    }
 
     public static boolean captureStorage(net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper storage, Entity entity, ServerLevel level) {
         return storage instanceof IBackpackWrapper backpack && capture(backpack, entity, level);

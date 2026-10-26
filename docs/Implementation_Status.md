@@ -6,6 +6,16 @@
 
 设计约束与用户决定见 [Integration_Questions_and_Decisions.md](Integration_Questions_and_Decisions.md)。
 
+## 高级刷怪笼：紧邻世界刷怪笼条件豁免（2026-10-26）
+
+放置背包中已开启的高级刷怪笼升级，现为六面紧邻的世界刷怪笼提供与内部相同的玩家距离和自然生成规则豁免；内部刷怪笼槽为空也生效，不要求捕捉升级。关闭、拆下升级或移走背包后，下个原生 Tick 即恢复世界刷怪笼自身条件，不禁止其原本满足条件时的正常生成。普通升级、斜角和隔格不生效。
+
+新增一个 `WorldSpawnerTickMixin`，只包住世界刷怪笼对实际原生逻辑的调用，共用既有高级上下文并在 `finally` 中恢复，不写入世界刷怪笼权限 NBT。捕捉继续走事件；辅助升级和捕捉升级可在不同紧邻背包里，满包仍回退世界生成。保留碰撞、附近同类数量、原生间隔、和平难度限制和神化红石控制。中英文 tooltip 与 [Spawner_Implementation.md](Spawner_Implementation.md) 已同步。
+
+无神化 **64 项 GameTest 与构建通过**，日志 `build/adjacent-spawner-base.log`；神化 7.4.8 与 estinker 同时加载的 **64 项 GameTest 与构建通过**，日志 `build/adjacent-spawner-apotheosis.log`。新增两个组合测试验证六面、空槽、开关与移除即时生效、普通/斜角无效、原生条件恢复、NBT 不残留豁免、独立捕捉来源、完整批次、满包回退、碰撞/附近数量，以及实际神化世界刷怪笼的红石与生物参数。
+
+未安装背包模组的精妙存储环境 **9 项 GameTest 与构建通过**，日志 `build/adjacent-spawner-storage-only.log`；既有存储刷怪测试追加了真实世界刷怪笼入口调用，确认可选背包类缺失时仍保持原生玩家门控。测试启动时的精妙核心配置读写冲突已通过预先补齐本地测试配置的启用项目解决，未修改模组生产配置。
+
 ## 功能状态与验收（2026-10-25）
 
 ### 普通/高级刷怪笼升级

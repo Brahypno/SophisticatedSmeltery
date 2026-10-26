@@ -2,7 +2,7 @@
   "item.sophisticated_smeltery.spawner_upgrade": "刷怪笼升级",
   "item.sophisticated_smeltery.advanced_spawner_upgrade": "高级刷怪笼升级",
   "item.sophisticated_smeltery.spawner_upgrade.tooltip": "按原生条件运行一个刷怪笼。安装生物捕捉升级时，优先生成到背包内。",
-  "item.sophisticated_smeltery.advanced_spawner_upgrade.tooltip": "忽略玩家距离和自然生成规则，保留空间、附近数量、刷怪间隔及红石控制。",
+  "item.sophisticated_smeltery.advanced_spawner_upgrade.tooltip": "忽略内部及放置背包六面紧邻刷怪笼的玩家距离和自然生成规则，内部刷怪笼槽为空时也生效。保留空间、附近数量、刷怪间隔及红石控制。",
   "gui.sophisticated_smeltery.spawner_slot": "放入一个刷怪笼；升级模块开关控制刷怪。",
   "gui.sophisticated_smeltery.spawner": "刷怪笼",
   "itemGroup.sophisticated_smeltery": "精妙匠魂",

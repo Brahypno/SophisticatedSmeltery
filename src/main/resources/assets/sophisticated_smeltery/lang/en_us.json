@@ -2,7 +2,7 @@
   "item.sophisticated_smeltery.spawner_upgrade": "Spawner Upgrade",
   "item.sophisticated_smeltery.advanced_spawner_upgrade": "Advanced Spawner Upgrade",
   "item.sophisticated_smeltery.spawner_upgrade.tooltip": "Runs one spawner using its native rules. With a Mob Catcher, spawns prefer backpack storage.",
-  "item.sophisticated_smeltery.advanced_spawner_upgrade.tooltip": "Ignores player distance and natural spawn rules. Space, nearby limits, delay and redstone control still apply.",
+  "item.sophisticated_smeltery.advanced_spawner_upgrade.tooltip": "Ignores player distance and natural spawn rules for the internal spawner and spawners directly beside a placed backpack, even when no spawner is installed inside. Space, nearby limits, delay and redstone control still apply.",
   "gui.sophisticated_smeltery.spawner_slot": "Place one spawner here. The upgrade switch pauses spawning.",
   "gui.sophisticated_smeltery.spawner": "Spawner",
   "item.sophisticated_smeltery.scorched_alloyer_upgrade": "Scorched Alloyer Upgrade",

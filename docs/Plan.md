@@ -4,6 +4,8 @@
 
 普通/高级两级、原生模块开关、便携原生刷怪笼、捕捉优先入包及六面相邻世界刷怪笼联动已实现。神化 7.4.8 可选兼容已通过实际服务端与客户端验证。高级版按用户确认忽略玩家距离及自然生成规则，保留空间、附近数量、间隔与神化红石控制。实现边界及验证入口见 [Spawner_Implementation.md](Spawner_Implementation.md)；验收状态见 [Implementation_Status.md](Implementation_Status.md)。
 
+2026-10-26 扩展：放置背包中已开启的高级升级也为六面紧邻世界刷怪笼提供条件豁免，内部刷怪笼槽为空仍生效。关闭、拆下升级或移走背包后立即恢复原条件；捕捉仍由独立的相邻捕捉升级决定。
+
 ## 嬗变炉可选联动（2026-10-25：开始建立基线）
 
 已接入本地 Maven 的 `org.brahypno:esotericism_tinker:1.6.2fix`。游戏依赖声明为 `mandatory=false`，正式 JAR 不打包 estinker；开发编译使用 `compileOnly`，运行时通过 `-PwithEstinker=true` 显式加载。版本由 `gradle.properties` 的 `estinker_version` 管理。

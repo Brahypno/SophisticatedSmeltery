@@ -46,6 +46,20 @@ public final class SpawnerRuntime {
         finally { if (previous == null) ACTIVE.remove(); else ACTIVE.set(previous); }
     }
 
+    public static void tickWorld(ServerLevel level, BlockPos pos, BaseSpawner spawner) {
+        // Keep this a world spawn: the existing event path chooses any eligible adjacent catcher.
+        tick(level, pos, spawner, hasAdjacentAdvancedUpgrade(level, pos), null);
+    }
+
+    private static boolean hasAdjacentAdvancedUpgrade(ServerLevel level, BlockPos origin) {
+        if (!ModList.get().isLoaded("sophisticatedbackpacks")) return false;
+        for (Direction side : Direction.values()) {
+            BlockPos pos = origin.relative(side);
+            if (level.hasChunkAt(pos) && BackpackMobCapture.hasAdvancedSpawnerSupport(level.getBlockEntity(pos))) return true;
+        }
+        return false;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void prepare(MobSpawnEvent.FinalizeSpawn event) {
         if (!ModList.get().isLoaded("sophisticatedbackpacks") || event.getSpawner() == null || event.isSpawnCancelled()) return;

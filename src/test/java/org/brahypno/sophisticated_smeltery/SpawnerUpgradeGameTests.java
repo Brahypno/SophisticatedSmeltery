@@ -2,6 +2,7 @@ package org.brahypno.sophisticated_smeltery;
 
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -220,6 +221,155 @@ public final class SpawnerUpgradeGameTests {
         helper.assertTrue(helper.getLevel().addFreshEntity(pig) && !pig.isRemoved(), "Ordinary entity additions are untouched");
         pig.discard();
         helper.getLevel().removeBlock(pos, false); helper.getLevel().removeBlock(pos.east(), false);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void adjacentAdvancedUpgradeAppliesOnSixFacesAndWithdrawsImmediately(GameTestHelper helper) {
+        var pos = target(helper).below(3);
+        var birth = pos.above(3);
+        helper.getLevel().setBlockAndUpdate(pos, Blocks.SPAWNER.defaultBlockState());
+        var tile = (SpawnerBlockEntity)helper.getLevel().getBlockEntity(pos);
+        var data = BlockItem.getBlockEntityData(spawner(birth, "minecraft:pig", 1)).copy();
+        tile.load(data);
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(pigs(helper, birth).isEmpty(), "Unaided world spawner keeps its native player requirement");
+
+        for (Direction side : Direction.values()) {
+            var adjacent = pos.relative(side);
+            helper.getLevel().setBlockAndUpdate(adjacent, ModBlocks.NETHERITE_BACKPACK.get().defaultBlockState());
+            var block = (BackpackBlockEntity)helper.getLevel().getBlockEntity(adjacent);
+            block.setBackpack(backpack(true, false).getBackpack());
+            var upgrade = upgrade(block.getBackpackWrapper());
+            helper.assertTrue(upgrade.inventory().getStackInSlot(0).isEmpty(), "Support does not require an internal spawner");
+            tile.load(data);
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            helper.assertTrue(pigs(helper, birth).size() == 1, "Empty advanced upgrade supports face " + side);
+            pigs(helper, birth).forEach(Pig::discard);
+            var saved = tile.saveWithoutMetadata();
+            helper.assertTrue(saved.getShort("Delay") == 40 && !saved.getBoolean("ignore_players")
+                    && !saved.getBoolean("ignore_conditions") && !saved.getCompound("SpawnData").contains("custom_spawn_rules"),
+                    "World spawner keeps its native delay and never saves the temporary permissions");
+
+            upgrade.setEnabled(false);
+            tile.load(data);
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            helper.assertTrue(pigs(helper, birth).isEmpty() && tile.saveWithoutMetadata().getShort("Delay") == 0,
+                    "Disabling the adjacent upgrade immediately restores player gating");
+            upgrade.setEnabled(true);
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            helper.assertTrue(pigs(helper, birth).size() == 1, "Re-enabling immediately restores support");
+            pigs(helper, birth).forEach(Pig::discard);
+
+            block.getBackpackWrapper().getUpgradeHandler().setStackInSlot(0, ItemStack.EMPTY);
+            tile.load(data);
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            helper.assertTrue(pigs(helper, birth).isEmpty(), "Removing the upgrade immediately withdraws support");
+            block.setBackpack(backpack(true, false).getBackpack());
+            helper.getLevel().removeBlock(adjacent, false);
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            helper.assertTrue(pigs(helper, birth).isEmpty(), "Removing the backpack immediately withdraws support");
+        }
+
+        helper.getLevel().setBlockAndUpdate(pos.east(), ModBlocks.NETHERITE_BACKPACK.get().defaultBlockState());
+        ((BackpackBlockEntity)helper.getLevel().getBlockEntity(pos.east())).setBackpack(backpack(false, false).getBackpack());
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(pigs(helper, birth).isEmpty(), "A basic upgrade does not grant adjacent exemptions");
+        helper.getLevel().removeBlock(pos.east(), false);
+        var diagonal = pos.east().north();
+        helper.getLevel().setBlockAndUpdate(diagonal, ModBlocks.NETHERITE_BACKPACK.get().defaultBlockState());
+        ((BackpackBlockEntity)helper.getLevel().getBlockEntity(diagonal)).setBackpack(backpack(true, false).getBackpack());
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(pigs(helper, birth).isEmpty(), "Diagonal backpacks do not grant exemptions");
+        helper.getLevel().removeBlock(diagonal, false);
+
+        // Withdrawal restores normal operation; it does not disable the external spawner.
+        var nativeData = data.copy();
+        nativeData.putShort("RequiredPlayerRange", (short)16);
+        CompoundTag light = new CompoundTag();
+        CompoundTag range = new CompoundTag(); range.putInt("min_inclusive", 0); range.putInt("max_inclusive", 15);
+        light.put("block_light_limit", range.copy()); light.put("sky_light_limit", range.copy());
+        nativeData.getCompound("SpawnData").put("custom_spawn_rules", light);
+        tile.load(nativeData);
+        var player = net.minecraftforge.common.util.FakePlayerFactory.get(helper.getLevel(),
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "adjacent-spawner"));
+        player.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
+        helper.getLevel().players().add(player);
+        try { SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile); }
+        finally { helper.getLevel().players().remove(player); }
+        helper.assertTrue(pigs(helper, birth).size() == 1, "External spawner still runs when its own conditions are met");
+        pigs(helper, birth).forEach(Pig::discard);
+        helper.getLevel().removeBlock(pos, false);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void adjacentSupportKeepsCaptureLimitsAndApotheosisModifiers(GameTestHelper helper) {
+        var pos = target(helper).below(3);
+        var birth = pos.above(3);
+        helper.getLevel().setBlockAndUpdate(pos, Blocks.SPAWNER.defaultBlockState());
+        var tile = (SpawnerBlockEntity)helper.getLevel().getBlockEntity(pos);
+        helper.getLevel().setBlockAndUpdate(pos.north(), ModBlocks.NETHERITE_BACKPACK.get().defaultBlockState());
+        var support = (BackpackBlockEntity)helper.getLevel().getBlockEntity(pos.north());
+        support.setBackpack(backpack(true, false).getBackpack());
+        helper.getLevel().setBlockAndUpdate(pos.south(), ModBlocks.NETHERITE_BACKPACK.get().defaultBlockState());
+        var catcher = (BackpackBlockEntity)helper.getLevel().getBlockEntity(pos.south());
+        var storage = new BackpackWrapper(new ItemStack(ModItems.NETHERITE_BACKPACK.get()));
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(ModItems.MOB_CATCHER_UPGRADE.get()));
+        catcher.setBackpack(storage.getBackpack());
+        var actual = catcher.getBackpackWrapper();
+        var data = BlockItem.getBlockEntityData(spawner(birth, "minecraft:pig", 2)).copy();
+        tile.load(data);
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(MobCatcherStorage.getCapturedMobs(actual).size() == 2 && pigs(helper, birth).isEmpty(),
+                "Advanced support and capture can come from different adjacent backpacks, preserving the full batch");
+        helper.assertTrue(tile.saveWithoutMetadata().getShort("Delay") == 40, "Capture keeps native cooldown");
+
+        tile.load(data);
+        helper.getLevel().setBlockAndUpdate(birth, Blocks.STONE.defaultBlockState());
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(MobCatcherStorage.getCapturedMobs(actual).size() == 2, "Adjacent support still checks collision");
+        helper.getLevel().removeBlock(birth, false);
+        var limited = data.copy(); limited.putShort("MaxNearbyEntities", (short)0);
+        tile.load(limited);
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(MobCatcherStorage.getCapturedMobs(actual).size() == 2, "Adjacent support still checks nearby limits");
+
+        var full = new BackpackWrapper(new ItemStack(ModItems.NETHERITE_BACKPACK.get()));
+        full.getInventoryHandler();
+        full.getUpgradeHandler().setStackInSlot(0, new ItemStack(ModItems.MOB_CATCHER_UPGRADE.get()));
+        for (int i = 0; i < full.getInventoryHandler().getSlots(); i++) full.getInventoryHandler().setStackInSlot(i, new ItemStack(Items.STONE, 64));
+        catcher.setBackpack(full.getBackpack());
+        var single = BlockItem.getBlockEntityData(spawner(birth, "minecraft:pig", 1)).copy();
+        tile.load(single);
+        SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+        helper.assertTrue(pigs(helper, birth).size() == 1 && MobCatcherStorage.getCapturedMobs(catcher.getBackpackWrapper()).isEmpty(),
+                "A full catcher falls back to world spawning while adjacent exemptions remain active");
+        pigs(helper, birth).forEach(Pig::discard);
+
+        if (ModList.get().isLoaded("apotheosis")) {
+            catcher.setBackpack(storage.getBackpack());
+            int before = MobCatcherStorage.getCapturedMobs(catcher.getBackpackWrapper()).size();
+            var modified = single.copy();
+            modified.putBoolean("redstone_control", true);
+            modified.putBoolean("no_ai", true); modified.putBoolean("silent", true); modified.putBoolean("baby", true);
+            tile.load(modified);
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            helper.assertTrue(MobCatcherStorage.getCapturedMobs(catcher.getBackpackWrapper()).size() == before,
+                    "Adjacent upgrade preserves Apotheosis redstone gating");
+            helper.getLevel().setBlockAndUpdate(pos.west(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+            SpawnerBlockEntity.serverTick(helper.getLevel(), pos, tile.getBlockState(), tile);
+            var mobs = MobCatcherStorage.getCapturedMobs(catcher.getBackpackWrapper());
+            helper.assertTrue(mobs.size() == before + 1, "Real Apotheosis world spawner captures once powered");
+            var mob = mobs.get(mobs.size() - 1).entityNbt();
+            helper.assertTrue(mob.getBoolean("NoAI") && mob.getBoolean("Silent") && mob.getInt("Age") < 0,
+                    "Adjacent support retains native Apotheosis entity modifiers");
+            helper.getLevel().removeBlock(pos.west(), false);
+        }
+        helper.getLevel().removeBlock(pos.north(), false);
+        helper.getLevel().removeBlock(pos.south(), false);
+        helper.getLevel().removeBlock(pos, false);
         helper.succeed();
     }
 
