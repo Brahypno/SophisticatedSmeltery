@@ -18,6 +18,7 @@ import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeWrapperBase;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.tank.TankUpgradeItem;
 import org.brahypno.sophisticated_smeltery.casting.PortableCasting;
 import org.brahypno.sophisticated_smeltery.furnace.UpgradeTankHandler;
+import org.brahypno.sophisticated_smeltery.furnace.StorageSlotTransfer;
 
 public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgradeWrapper, CastingUpgradeItem> implements ITickableUpgrade {
     public static final String STATE = "casting";
@@ -153,12 +154,8 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
         if (casting.hasFluid() || !casting.inventory().getStackInSlot(0).isEmpty()) return;
         ItemStack target = casting.lockedCast();
         if (target.isEmpty()) return;
-        var inventory = storageWrapper.getInventoryHandler();
-        for (int slot = 0; slot < inventory.getSlots(); slot++) {
-            if (!ItemStack.isSameItemSameTags(target, inventory.getStackInSlot(slot))) continue;
-            ItemStack taken = inventory.extractItem(slot, 1, false);
-            if (!taken.isEmpty()) { casting.inventory().setStackInSlot(0, taken); return; }
-        }
+        ItemStack taken = StorageSlotTransfer.extractOne(storageWrapper.getInventoryHandler(), target);
+        if (!taken.isEmpty()) casting.inventory().setStackInSlot(0, taken);
     }
 
     private void exportOutput() {
@@ -170,16 +167,8 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
     private void exportSlot(int outputSlot) {
         ItemStack original = casting.inventory().getStackInSlot(outputSlot);
         if (original.isEmpty()) return;
-        ItemStack remaining = original.copy();
-        var inventory = storageWrapper.getInventoryHandler();
         int meltingSlots = controller().map(MeltingUpgradeWrapper::getMeltingSlotCount).orElse(0);
-        // Try every ordinary slot (including empty ones) before any melting slot.
-        for (int pass = 0; pass < 2; pass++) {
-            int start = pass == 0 ? meltingSlots : 0;
-            int end = pass == 0 ? inventory.getSlots() : meltingSlots;
-            for (int slot = start; slot < end && !remaining.isEmpty(); slot++)
-                remaining = inventory.insertItemOnlyToSlot(slot, remaining, false);
-        }
+        ItemStack remaining = StorageSlotTransfer.insert(storageWrapper, original.copy(), meltingSlots);
         if (remaining.getCount() != original.getCount()) casting.setOutputRemainder(outputSlot, remaining);
     }
 

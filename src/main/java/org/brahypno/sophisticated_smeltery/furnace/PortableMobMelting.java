@@ -159,17 +159,10 @@ public final class PortableMobMelting implements MobMelting {
     private boolean flushDrops() {
         if (pendingDrops.isEmpty()) return false;
         boolean changed = false;
-        var inventory = upgrade.getStorage().getInventoryHandler();
         int meltingSlots = upgrade.getMeltingSlotCount();
         for (var iterator = pendingDrops.listIterator(); iterator.hasNext();) {
             ItemStack original = iterator.next();
-            ItemStack remaining = original;
-            for (int pass = 0; pass < 2; pass++) {
-                int start = pass == 0 ? meltingSlots : 0;
-                int end = pass == 0 ? inventory.getSlots() : meltingSlots;
-                for (int slot = start; slot < end && !remaining.isEmpty(); slot++)
-                    remaining = inventory.insertItemOnlyToSlot(slot, remaining, false);
-            }
+            ItemStack remaining = StorageSlotTransfer.insert(upgrade.getStorage(), original, meltingSlots);
             if (remaining.getCount() != original.getCount()) changed = true;
             if (remaining.isEmpty()) iterator.remove();
             else iterator.set(remaining);

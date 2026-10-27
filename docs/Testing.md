@@ -1,7 +1,11 @@
 # GameTest suites
 
-The default `runGameTestServer` command retains the full 66-test suite. Use it
-for release validation or changes outside the focused coverage below.
+The default `runGameTestServer` command runs the full 69-test suite. Use it
+for release validation or changes outside the focused coverage below. This
+includes three slot-transfer algorithm tests: 128 seeded differential layouts,
+blocked-path operation counts and immediate recovery, and native void callbacks.
+Slot-transfer changes require the full suite because the focused suite does not
+select these tests or `CastingExpansionGameTests`.
 
 For tick-path performance changes, use the focused suite:
 

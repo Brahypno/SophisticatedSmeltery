@@ -21,6 +21,7 @@
     "MantleBlockEntityMixin",
     "MeltingModuleMixin",
     "MeltingInventoryMixin",
+    "InventorySlotTrackerAccess",
     "CastingUpgradeExtractionMixin",
     "BackpackFluidSideMixin",
     "BackpackFluidUpgradeMixin",

@@ -29,6 +29,7 @@ import net.p3pp3rf1y.sophisticatedstorage.block.WoodStorageBlockEntity;
 import net.p3pp3rf1y.sophisticatedstorage.init.ModBlocks;
 import org.brahypno.sophisticated_smeltery.compat.StorageCompat;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.furnace.StorageSlotTransfer;
 import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
@@ -95,6 +96,9 @@ public final class StorageCompatibilityGameTests {
             helper.assertTrue(handler.drain(iron(300), FluidAction.EXECUTE).getAmount() == 300, "Pipe output on " + blocks.get(index));
             var reload = new MeltingUpgradeWrapper(block.getStorageWrapper(), furnace.getUpgradeStack().copy(), ignored -> {});
             helper.assertTrue(reload.getTank().getContained() == 700, "Pipe transfers persist immediately on " + blocks.get(index));
+            helper.assertTrue(StorageSlotTransfer.insert(block.getStorageWrapper(), new ItemStack(Items.IRON_INGOT, 64), 0).isEmpty()
+                            && block.getStorageWrapper().getInventoryHandler().getStackInSlot(0).getCount() == 64,
+                    "Indexed item delivery respects the native partition on " + blocks.get(index));
         }
         helper.succeed();
     }
@@ -209,6 +213,14 @@ public final class StorageCompatibilityGameTests {
         int timer = casting.casting().timer();
         for (int tick = 0; tick < 10; tick++) StorageBlockEntity.serverTick(helper.getLevel(), link.secondary.getBlockPos(), link.secondary);
         helper.assertTrue(casting.casting().timer() == timer, "Additional endpoints cannot accelerate cooling");
+        casting.setCastingEnabled(false);
+        casting.setOutputToStorage(true);
+        int ordinarySlot = furnace(storage).getMeltingSlotCount();
+        for (int tick = 0; tick < 60; tick++) StorageBlockEntity.serverTick(helper.getLevel(), link.primary.getBlockPos(), link.primary);
+        helper.assertTrue(storage.getInventoryHandler().getStackInSlot(ordinarySlot).is(Items.IRON_INGOT)
+                        && storage.getInventoryHandler().getStackInSlot(ordinarySlot).getCount() == 1
+                        && casting.casting().inventory().getStackInSlot(1).isEmpty(),
+                "Indexed output reaches the canonical inventory exactly once and prefers ordinary slots");
         helper.succeed();
     }
 

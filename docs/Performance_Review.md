@@ -46,6 +46,51 @@ and spawn events remain in control.
   and immediately skips empty pending-drop queues. Live damage, loot generation
   and entity state updates still use native entity behavior.
 
+## Indexed casting and mob-drop transfers
+
+Casting output and pending mob drops now use the host's existing slot indexes
+instead of trying every occupied slot. Empty slots are read from Core's ordered
+index; same-item candidates are ordered by slot number with a temporary bit set.
+Ordinary slots still precede melting slots, including empty ordinary slots before
+matching melting stacks. Locked-cast refill uses the same item index and still
+checks exact item NBT before extracting one item.
+
+Acceptance is never cached. Each candidate is passed to the original native
+insertion/extraction method, so current filters, partitions, capacity and captured
+mob occupancy remain authoritative. Full stacks are retained as candidates when
+overflow upgrades are present. Hosts with `IInsertResponseUpgrade` keep the old
+per-slot traversal because their callbacks can consume or transform input even
+when an occupied slot contains another item.
+
+For a full inventory with no acceptable stacks and no insertion callbacks, each
+pending stack avoids the old O(slot count) native insertion calls. An absent
+locked-cast item also requires no slot reads once the native index is initialized.
+Same-item candidates, including their NBT variants, still require inspection;
+this is not a constant-time guarantee for all inventories. No second persistent
+inventory index or cross-tick failed-transfer cache is introduced.
+
+Three integration tests compare indexed transfers against the original ordered
+algorithm across 128 seeded 144-slot layouts, prefixes from zero to all slots,
+different NBT, full/partial stacks and blocked slots. They also count native calls
+for 100 blocked deliveries (14,400 before, zero after), check full matching stacks,
+verify immediate recovery when space/templates appear, and compare native void
+and slot-overflow results and callback counts. These are algorithm work counts,
+not measured whole-server TPS improvements.
+
+The standalone alloyer also records its last capacity multiplier and calls
+`setCapacity` only when that multiplier changes, including initial construction.
+It still reads the current multiplier each tick so stack upgrades and config
+changes take effect.
+
+Final validation for this round passed `runGameTestServer build --offline`
+(69 required tests), the same command with
+`-PwithApotheosis=true -PwithEstinker=true` (69), and the same command with
+`-PwithBackpacks=false` (9). The Storage tests additionally exercise indexed
+delivery on all seven supported container variants and exactly-once delivery to
+linked canonical storage. All three builds passed. Logs are in
+`build/performance-verification.log`, `build/performance-optional-verification.log`
+and `build/performance-storage-verification.log`.
+
 ## Other reviewed paths
 
 Melting inputs already rebind only when inventory or slot layout changes.

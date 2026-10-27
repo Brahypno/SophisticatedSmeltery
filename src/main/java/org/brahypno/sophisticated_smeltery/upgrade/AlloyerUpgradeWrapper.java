@@ -42,6 +42,7 @@ public final class AlloyerUpgradeWrapper extends UpgradeWrapperBase<AlloyerUpgra
     private boolean transferring;
     private boolean dirty;
     private int lastFluidRevision = -1;
+    private double lastCapacityMultiplier = -1;
 
     public AlloyerUpgradeWrapper(IStorageWrapper storage, ItemStack upgrade, Consumer<ItemStack> save) {
         super(storage, upgrade, save);
@@ -141,7 +142,13 @@ public final class AlloyerUpgradeWrapper extends UpgradeWrapperBase<AlloyerUpgra
         if (filled < drained.getAmount()) source.fill(new FluidStack(drained, drained.getAmount() - filled), IFluidHandler.FluidAction.EXECUTE);
         persist();
     }
-    private void updateCapacity() { alloyer.resize(StorageCompat.tankMultiplier(storageWrapper)); }
+    private void updateCapacity() {
+        double multiplier = StorageCompat.tankMultiplier(storageWrapper);
+        if (multiplier != lastCapacityMultiplier) {
+            alloyer.resize(multiplier);
+            lastCapacityMultiplier = multiplier;
+        }
+    }
     public boolean canRemove() {
         if (!getTank().isEmpty()) return false;
         for (int slot = 0; slot < components.getSlots(); slot++) {
