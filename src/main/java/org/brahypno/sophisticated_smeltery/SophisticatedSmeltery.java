@@ -48,6 +48,9 @@ import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.SpawnerUpgradeContainer;
+import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeContainer;
 import org.slf4j.Logger;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
 
@@ -57,6 +60,7 @@ public class SophisticatedSmeltery {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> MELTING_UPGRADE = ITEMS.register("melting_upgrade", MeltingUpgradeItem::new);
+    public static final RegistryObject<PartBuilderUpgradeItem> PART_BUILDER_UPGRADE = ITEMS.register("part_builder_upgrade", PartBuilderUpgradeItem::new);
     public static final RegistryObject<AlloyerUpgradeItem> ALLOYER_UPGRADE = ITEMS.register("scorched_alloyer_upgrade", AlloyerUpgradeItem::new);
     public static final RegistryObject<SpawnerUpgradeItem> SPAWNER_UPGRADE = ITEMS.register("spawner_upgrade", () -> new SpawnerUpgradeItem(false));
     public static final RegistryObject<SpawnerUpgradeItem> ADVANCED_SPAWNER_UPGRADE = ITEMS.register("advanced_spawner_upgrade", () -> new SpawnerUpgradeItem(true));
@@ -67,6 +71,7 @@ public class SophisticatedSmeltery {
     public static final RegistryObject<CastingUpgradeItem> ADVANCED_SCORCHED_CASTING_UPGRADE = ITEMS.register("advanced_scorched_casting_upgrade", () -> new CastingUpgradeItem(true, true));
     public static final DeferredRegister<Item> STORAGE_ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<MeltingUpgradeItem> STORAGE_MELTING_UPGRADE = STORAGE_ITEMS.register("storage_melting_upgrade", MeltingUpgradeItem::new);
+    public static final RegistryObject<PartBuilderUpgradeItem> STORAGE_PART_BUILDER_UPGRADE = STORAGE_ITEMS.register("storage_part_builder_upgrade", PartBuilderUpgradeItem::new);
     public static final RegistryObject<AlloyerUpgradeItem> STORAGE_ALLOYER_UPGRADE = STORAGE_ITEMS.register("storage_scorched_alloyer_upgrade", AlloyerUpgradeItem::new);
     public static final RegistryObject<SpawnerUpgradeItem> STORAGE_SPAWNER_UPGRADE = STORAGE_ITEMS.register("storage_spawner_upgrade", () -> new SpawnerUpgradeItem(false));
     public static final RegistryObject<SpawnerUpgradeItem> STORAGE_ADVANCED_SPAWNER_UPGRADE = STORAGE_ITEMS.register("storage_advanced_spawner_upgrade", () -> new SpawnerUpgradeItem(true));
@@ -97,6 +102,8 @@ public class SophisticatedSmeltery {
             new UpgradeContainerType<>(CastingUpgradeContainer::new);
     public static final UpgradeContainerType<AlloyerUpgradeWrapper, AlloyerUpgradeContainer> ALLOYER_CONTAINER =
             new UpgradeContainerType<>(AlloyerUpgradeContainer::new);
+    public static final UpgradeContainerType<PartBuilderUpgradeWrapper, PartBuilderUpgradeContainer> PART_BUILDER_CONTAINER =
+            new UpgradeContainerType<>(PartBuilderUpgradeContainer::new);
     public static final UpgradeContainerType<SpawnerUpgradeWrapper, SpawnerUpgradeContainer> SPAWNER_CONTAINER =
             new UpgradeContainerType<>(SpawnerUpgradeContainer::new);
 
@@ -117,6 +124,7 @@ public class SophisticatedSmeltery {
                     NativeFurnace.invalidateRecipes();
                     PortableAlloyer.invalidateRecipes();
                     PortableCasting.invalidateRecipes();
+                    PartBuilderUpgradeWrapper.invalidateRecipes();
                 }));
     }
 
@@ -127,6 +135,7 @@ public class SophisticatedSmeltery {
                         if (item.get() instanceof MeltingUpgradeItem) UpgradeContainerRegistry.register(item.getId(), MELTING_CONTAINER);
                         else if (item.get() instanceof AlloyerUpgradeItem) UpgradeContainerRegistry.register(item.getId(), ALLOYER_CONTAINER);
                         else if (item.get() instanceof CastingUpgradeItem) UpgradeContainerRegistry.register(item.getId(), CASTING_CONTAINER);
+                        else if (item.get() instanceof PartBuilderUpgradeItem) UpgradeContainerRegistry.register(item.getId(), PART_BUILDER_CONTAINER);
                         else if (item.get() instanceof SpawnerUpgradeItem) UpgradeContainerRegistry.register(item.getId(), SPAWNER_CONTAINER);
                     });
         });
@@ -140,7 +149,7 @@ public class SophisticatedSmeltery {
         for (String prefix : List.of("", "storage_")) {
             var melting = prefix.isEmpty() ? MELTING_UPGRADE : STORAGE_MELTING_UPGRADE;
             if (!melting.isPresent()) continue;
-            for (String name : List.of("melting_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade"))
+            for (String name : List.of("melting_upgrade", "part_builder_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade"))
                 output.accept(new ItemStack(ForgeRegistries.ITEMS.getValue(id(prefix + name))));
             addBoundFurnaces(output, melting.get(), prefix.isEmpty() ? ADVANCED_TRANSMUTE_UPGRADE : STORAGE_ADVANCED_TRANSMUTE_UPGRADE);
             for (String name : List.of("seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade"))

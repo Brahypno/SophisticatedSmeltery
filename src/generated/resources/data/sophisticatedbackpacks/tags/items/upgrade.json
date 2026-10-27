@@ -6,6 +6,10 @@
       "required": false
     },
     {
+      "id": "sophisticated_smeltery:part_builder_upgrade",
+      "required": false
+    },
+    {
       "id": "sophisticated_smeltery:scorched_alloyer_upgrade",
       "required": false
     },

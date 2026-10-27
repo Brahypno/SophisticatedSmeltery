@@ -18,6 +18,16 @@ final class SmelteryLanguageProvider extends LanguageProvider {
     }
 
     private void english() {
+        add("item.sophisticated_smeltery.part_builder_upgrade", "Part Builder Upgrade");
+        add("item.sophisticated_smeltery.part_builder_upgrade.tooltip", "Crafts parts with Tinkers' part builder recipes. Select a pattern, insert materials, and take the result.");
+        add("item.sophisticated_smeltery.storage_part_builder_upgrade", "Part Builder Upgrade");
+        add("item.sophisticated_smeltery.storage_part_builder_upgrade.tooltip", "Crafts parts with Tinkers' part builder recipes. Select a pattern, insert materials, and take the result.");
+        add("gui.sophisticated_smeltery.part_builder", "Part Builder");
+        add("gui.sophisticated_smeltery.part_builder_pattern", "Pattern");
+        add("gui.sophisticated_smeltery.part_builder_material", "Material");
+        add("gui.sophisticated_smeltery.part_builder_cost", "Cost: %s / %s");
+        add("gui.sophisticated_smeltery.part_builder_select", "Insert a pattern and select a part.");
+        add("gui.sophisticated_smeltery.part_builder_scroll", "Scroll to see more parts.");
         add("item.sophisticated_smeltery.spawner_upgrade", "Spawner Upgrade");
         add("item.sophisticated_smeltery.advanced_spawner_upgrade", "Advanced Spawner Upgrade");
         add("item.sophisticated_smeltery.spawner_upgrade.tooltip", "Runs one spawner using its native rules. With a Mob Catcher, spawns prefer backpack storage.");
@@ -117,6 +127,16 @@ final class SmelteryLanguageProvider extends LanguageProvider {
     }
 
     private void chinese() {
+        add("item.sophisticated_smeltery.part_builder_upgrade", "部件制作台升级");
+        add("item.sophisticated_smeltery.part_builder_upgrade.tooltip", "使用匠魂部件制作台配方制作部件。放入模具与材料，选择部件后取出产物。");
+        add("item.sophisticated_smeltery.storage_part_builder_upgrade", "部件制作台升级");
+        add("item.sophisticated_smeltery.storage_part_builder_upgrade.tooltip", "使用匠魂部件制作台配方制作部件。放入模具与材料，选择部件后取出产物。");
+        add("gui.sophisticated_smeltery.part_builder", "部件制作台");
+        add("gui.sophisticated_smeltery.part_builder_pattern", "模具");
+        add("gui.sophisticated_smeltery.part_builder_material", "材料");
+        add("gui.sophisticated_smeltery.part_builder_cost", "材料：%s / %s");
+        add("gui.sophisticated_smeltery.part_builder_select", "放入模具并选择部件。");
+        add("gui.sophisticated_smeltery.part_builder_scroll", "滚动查看其他部件。");
         add("item.sophisticated_smeltery.spawner_upgrade", "刷怪笼升级");
         add("item.sophisticated_smeltery.advanced_spawner_upgrade", "高级刷怪笼升级");
         add("item.sophisticated_smeltery.spawner_upgrade.tooltip", "按原生条件运行一个刷怪笼。安装生物捕捉升级时，优先生成到背包内。");

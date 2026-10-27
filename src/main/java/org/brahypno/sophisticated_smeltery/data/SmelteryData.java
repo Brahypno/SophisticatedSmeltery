@@ -9,7 +9,7 @@ import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 public final class SmelteryData {
     // IDs are used deliberately: optional host mods and Esotericism Tinker need not be installed to generate their resources.
     static final java.util.List<String> UPGRADES = java.util.List.of(
-            "melting_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+            "melting_upgrade", "part_builder_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
             "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade",
             "scorched_casting_upgrade", "advanced_scorched_casting_upgrade");
 

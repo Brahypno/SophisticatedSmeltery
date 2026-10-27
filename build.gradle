@@ -101,6 +101,11 @@ minecraft {
                 workingDirectory project.file('build/storage-compat/client')
                 mods { "${mod_id}" { source sourceSets.test } }
             }
+            if (project.hasProperty('partBuilderSmoke')) {
+                property 'sophisticatedsmeltery.partBuilderSmoke', 'true'
+                workingDirectory project.file('build/part-builder-client-run')
+                mods { "${mod_id}" { source sourceSets.test } }
+            }
             if (project.hasProperty('spawnerSmoke')) {
                 property 'sophisticatedsmeltery.spawnerSmoke', 'true'
                 workingDirectory project.file('build/spawner-client-run')

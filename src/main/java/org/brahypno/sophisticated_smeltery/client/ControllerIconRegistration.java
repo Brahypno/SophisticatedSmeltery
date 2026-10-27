@@ -38,6 +38,12 @@ public final class ControllerIconRegistration {
                 if (plate != null && table != null) event.getModels().put(modelId, new CastingIconModel(plate, table, state,
                         item.startsWith("advanced_") && advanced != null ? advanced.getParticleIcon() : null));
             }
+            var partBuilderState = slimeknights.tconstruct.tables.TinkerTables.partBuilder.get().defaultBlockState();
+            var partBuilderModel = event.getModels().get(BlockModelShaper.stateToModelLocation(partBuilderState));
+            var partBuilderId = new ModelResourceLocation(SophisticatedSmeltery.id(prefix + "part_builder_upgrade"), "inventory");
+            var partBuilderPlate = event.getModels().get(partBuilderId);
+            if (partBuilderPlate != null && partBuilderModel != null)
+                event.getModels().put(partBuilderId, new CastingIconModel(partBuilderPlate, partBuilderModel, partBuilderState, null));
             var alloyerState = TinkerSmeltery.scorchedAlloyer.get().defaultBlockState();
             var alloyerModel = event.getModels().get(BlockModelShaper.stateToModelLocation(alloyerState));
             var alloyerId = new ModelResourceLocation(SophisticatedSmeltery.id(prefix + "scorched_alloyer_upgrade"), "inventory");

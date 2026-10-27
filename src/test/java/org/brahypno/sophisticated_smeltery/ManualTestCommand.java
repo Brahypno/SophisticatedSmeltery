@@ -35,8 +35,24 @@ public final class ManualTestCommand {
                 .then(Commands.literal("casting").executes(context -> give(context, false, true)))
                 .then(Commands.literal("casting_expansion").executes(ManualTestCommand::giveCastingExpansion))
                 .then(Commands.literal("alloyer").executes(ManualTestCommand::giveAlloyer))
+                .then(Commands.literal("part_builder").executes(ManualTestCommand::givePartBuilder))
                 .then(Commands.literal("spawner").executes(ManualTestCommand::giveSpawner))
                 .then(Commands.literal("foundry").executes(context -> give(context, true))));
+    }
+
+    private static int givePartBuilder(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ItemStack backpack = new ItemStack(ModItems.NETHERITE_BACKPACK.get());
+        var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(SophisticatedSmeltery.PART_BUILDER_UPGRADE.get()));
+        player.getInventory().selected = 0;
+        player.getInventory().setItem(0, backpack);
+        player.getInventory().setItem(11, new ItemStack(slimeknights.tconstruct.tables.TinkerTables.pattern, 16));
+        player.getInventory().setItem(12, new ItemStack(Items.OAK_LOG, 16));
+        player.inventoryMenu.broadcastChanges();
+        backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int giveSpawner(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

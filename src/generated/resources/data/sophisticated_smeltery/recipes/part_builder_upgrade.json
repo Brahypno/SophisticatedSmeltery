@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    }
+  ],
+  "key": {
+    "B": {
+      "item": "sophisticatedbackpacks:upgrade_base"
+    },
+    "C": {
+      "tag": "forge:chests"
+    },
+    "I": {
+      "tag": "forge:ingots/iron"
+    },
+    "T": {
+      "item": "tconstruct:part_builder"
+    }
+  },
+  "pattern": [
+    " T ",
+    "IBI",
+    " C "
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:part_builder_upgrade"
+  }
+}

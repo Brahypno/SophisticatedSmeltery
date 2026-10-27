@@ -80,6 +80,28 @@ public final class StorageCompatibilityGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void partBuilderWorksInStorageAndUsesStoragePlate(GameTestHelper helper) {
+        var block = place(helper, new BlockPos(1, 1, 1), ModBlocks.NETHERITE_CHEST.get());
+        var storage = block.getStorageWrapper();
+        helper.assertTrue(storage.getUpgradeHandler().insertItem(0, new ItemStack(SophisticatedSmeltery.STORAGE_PART_BUILDER_UPGRADE.get()), false).isEmpty(), "Storage accepts its part builder upgrade");
+        var wrapper = (org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
+        wrapper.bind(helper.getLevel());
+        wrapper.inventory().setStackInSlot(0, new ItemStack(Items.OAK_LOG, 8));
+        wrapper.inventory().setStackInSlot(1, new ItemStack(slimeknights.tconstruct.tables.TinkerTables.pattern, 4));
+        wrapper.select(new slimeknights.tconstruct.library.recipe.partbuilder.Pattern("tconstruct:pick_head"));
+        helper.assertTrue(!wrapper.result().isEmpty(), "Native material parts work in a chest");
+        var restored = new org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeWrapper(storage, wrapper.getUpgradeStack().copy(), ignored -> {});
+        restored.bind(helper.getLevel());
+        helper.assertTrue(ItemStack.matches(restored.result(), wrapper.result()), "Chest part builder state survives reload");
+        var recipe = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id("storage_part_builder_upgrade")).orElseThrow();
+        var plate = new ItemStack(ForgeRegistries.ITEMS.getValue(ResourceLocation.parse("sophisticatedstorage:upgrade_base")));
+        helper.assertTrue(recipe.getIngredients().stream().anyMatch(ingredient -> ingredient.test(plate))
+                && recipe.getIngredients().stream().anyMatch(ingredient -> ingredient.test(new ItemStack(slimeknights.tconstruct.tables.TinkerTables.partBuilder))),
+                "Recipe uses the storage plate and native part builder");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void supportedContainersExposeAndPersistFluids(GameTestHelper helper) {
         List<Block> blocks = List.of(ModBlocks.NETHERITE_CHEST.get(), ModBlocks.NETHERITE_BARREL.get(),
                 ModBlocks.NETHERITE_SHULKER_BOX.get(), ModBlocks.LIMITED_NETHERITE_BARREL_1.get(),
@@ -285,7 +307,7 @@ public final class StorageCompatibilityGameTests {
         for (String prefix : List.of("", "storage_")) {
             String host = prefix.isEmpty() ? "sophisticatedbackpacks" : "sophisticatedstorage";
             boolean loaded = ModList.get().isLoaded(host);
-            for (String item : List.of("melting_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+            for (String item : List.of("melting_upgrade", "part_builder_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
                     "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade"))
                 helper.assertTrue(ForgeRegistries.ITEMS.containsKey(SophisticatedSmeltery.id(prefix + item)) == (loaded && (!item.equals("advanced_transmute_upgrade") || ModList.get().isLoaded("esotericism_tinker"))), "Conditional item registration: " + prefix + item);
             for (String name : List.of("melting_upgrade", "alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade", "advanced_transmute_upgrade",
@@ -318,7 +340,7 @@ public final class StorageCompatibilityGameTests {
             @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
         };
         var grid = new net.minecraft.world.inventory.TransientCraftingContainer(menu, 3, 3);
-        for (String name : List.of("melting_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+        for (String name : List.of("melting_upgrade", "part_builder_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
                 "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade")) {
             boolean expected = ModList.get().isLoaded("sophisticatedbackpacks") && ModList.get().isLoaded("sophisticatedstorage")
                     && (!name.contains("transmute") || ModList.get().isLoaded("esotericism_tinker"));
