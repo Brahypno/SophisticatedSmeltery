@@ -94,26 +94,26 @@ final class SmelteryLanguageProvider extends LanguageProvider {
         add("gui.sophisticated_smeltery.backpack_tank", "Backpack tank %s");
         add("gui.sophisticated_smeltery.tank_button", "Tank %s");
         add("gui.sophisticated_smeltery.transfer_hint", "Left: tank to furnace. Right: furnace to tank.");
-        add("item.sophisticated_smeltery.storage_spawner_upgrade", "Storage Spawner Upgrade");
-        add("item.sophisticated_smeltery.storage_advanced_spawner_upgrade", "Storage Advanced Spawner Upgrade");
+        add("item.sophisticated_smeltery.storage_spawner_upgrade", "Spawner Upgrade");
+        add("item.sophisticated_smeltery.storage_advanced_spawner_upgrade", "Advanced Spawner Upgrade");
         add("item.sophisticated_smeltery.storage_spawner_upgrade.tooltip", "Runs one spawner at the storage position using its native rules.");
         add("item.sophisticated_smeltery.storage_advanced_spawner_upgrade.tooltip", "Ignores player distance and natural spawn rules. Space, nearby limits, delay and redstone control still apply.");
-        add("item.sophisticated_smeltery.storage_scorched_alloyer_upgrade", "Storage Scorched Alloyer Upgrade");
+        add("item.sophisticated_smeltery.storage_scorched_alloyer_upgrade", "Scorched Alloyer Upgrade");
         add("item.sophisticated_smeltery.storage_scorched_alloyer_upgrade.tooltip", "Alloys fluids independently alongside melting upgrades. Includes an output tank and a 3x3 component grid for eight input tanks and one fuel slot.");
-        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade", "Storage Blank Advanced Transmute Upgrade");
-        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade.bound", "Storage Advanced %s Upgrade");
+        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade", "Blank Advanced Transmute Upgrade");
+        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade.bound", "Advanced %s Upgrade");
         add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade.tooltip", "Switch between Transmute, Smeltery and Foundry modes and toggle alloying independently.");
-        add("item.sophisticated_smeltery.storage_seared_casting_upgrade", "Storage Seared Casting Upgrade");
-        add("item.sophisticated_smeltery.storage_advanced_seared_casting_upgrade", "Storage Advanced Seared Casting Upgrade");
+        add("item.sophisticated_smeltery.storage_seared_casting_upgrade", "Seared Casting Upgrade");
+        add("item.sophisticated_smeltery.storage_advanced_seared_casting_upgrade", "Advanced Seared Casting Upgrade");
         add("item.sophisticated_smeltery.storage_advanced_seared_casting_upgrade.tooltip", "Pours manually or automatically, preferring the furnace's bottom fluid before tank upgrades.");
         add("item.sophisticated_smeltery.storage_seared_casting_upgrade.tooltip", "Uses Tinkers' casting recipes, preferring the furnace's bottom fluid before tank upgrades.");
-        add("item.sophisticated_smeltery.storage_scorched_casting_upgrade", "Storage Scorched Casting Upgrade");
-        add("item.sophisticated_smeltery.storage_advanced_scorched_casting_upgrade", "Storage Advanced Scorched Casting Upgrade");
+        add("item.sophisticated_smeltery.storage_scorched_casting_upgrade", "Scorched Casting Upgrade");
+        add("item.sophisticated_smeltery.storage_advanced_scorched_casting_upgrade", "Advanced Scorched Casting Upgrade");
         add("item.sophisticated_smeltery.storage_scorched_casting_upgrade.tooltip", "Casts using scorched table or basin rules. Requires a cast; lock it to refill from storage.");
         add("item.sophisticated_smeltery.storage_advanced_scorched_casting_upgrade.tooltip", "Pours manually or automatically using scorched casting rules. Lock a cast to refill from storage.");
-        add("item.sophisticated_smeltery.storage_melting_upgrade", "Storage Blank Melting Upgrade");
+        add("item.sophisticated_smeltery.storage_melting_upgrade", "Blank Melting Upgrade");
         add("item.sophisticated_smeltery.storage_melting_upgrade.tooltip", "Melts storage items using the bound controller's rules.");
-        add("item.sophisticated_smeltery.storage_melting_upgrade.bound", "Storage %s Upgrade");
+        add("item.sophisticated_smeltery.storage_melting_upgrade.bound", "%s Upgrade");
     }
 
     private void chinese() {
@@ -193,25 +193,25 @@ final class SmelteryLanguageProvider extends LanguageProvider {
         add("gui.sophisticated_smeltery.backpack_tank", "背包储罐 %s");
         add("gui.sophisticated_smeltery.tank_button", "储罐 %s");
         add("gui.sophisticated_smeltery.transfer_hint", "左键：储罐注入炉内；右键：炉液转入储罐。");
-        add("item.sophisticated_smeltery.storage_spawner_upgrade", "存储版刷怪笼升级");
-        add("item.sophisticated_smeltery.storage_advanced_spawner_upgrade", "存储版高级刷怪笼升级");
+        add("item.sophisticated_smeltery.storage_spawner_upgrade", "刷怪笼升级");
+        add("item.sophisticated_smeltery.storage_advanced_spawner_upgrade", "高级刷怪笼升级");
         add("item.sophisticated_smeltery.storage_spawner_upgrade.tooltip", "在存储位置按原生规则运行一个刷怪笼。");
         add("item.sophisticated_smeltery.storage_advanced_spawner_upgrade.tooltip", "忽略玩家距离和自然生成规则，保留空间、附近数量、刷怪间隔及红石控制。");
-        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade", "存储版空白高级嬗变炉升级");
-        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade.bound", "存储版高级%s升级");
+        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade", "空白高级嬗变炉升级");
+        add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade.bound", "高级%s升级");
         add("item.sophisticated_smeltery.storage_advanced_transmute_upgrade.tooltip", "支持嬗变、冶炼炉、熔铸炉三种模式，并可独立开关合金。");
-        add("item.sophisticated_smeltery.storage_seared_casting_upgrade", "存储版焦黑浇筑升级");
-        add("item.sophisticated_smeltery.storage_advanced_seared_casting_upgrade", "存储版高级焦黑浇筑升级");
+        add("item.sophisticated_smeltery.storage_seared_casting_upgrade", "焦黑浇筑升级");
+        add("item.sophisticated_smeltery.storage_advanced_seared_casting_upgrade", "高级焦黑浇筑升级");
         add("item.sophisticated_smeltery.storage_advanced_seared_casting_upgrade.tooltip", "优先使用炉内底层流体，也可使用储罐升级；支持手动或自动浇筑。");
         add("item.sophisticated_smeltery.storage_seared_casting_upgrade.tooltip", "使用匠魂浇筑配方，优先使用炉内底层流体，也可使用储罐升级。");
-        add("item.sophisticated_smeltery.storage_scorched_casting_upgrade", "存储版焦褐浇筑升级");
-        add("item.sophisticated_smeltery.storage_advanced_scorched_casting_upgrade", "存储版高级焦褐浇筑升级");
+        add("item.sophisticated_smeltery.storage_scorched_casting_upgrade", "焦褐浇筑升级");
+        add("item.sophisticated_smeltery.storage_advanced_scorched_casting_upgrade", "高级焦褐浇筑升级");
         add("item.sophisticated_smeltery.storage_scorched_casting_upgrade.tooltip", "按焦褐铸件台或铸造盆的规则浇筑，需要模具；可锁定模具并从存储补充。");
         add("item.sophisticated_smeltery.storage_advanced_scorched_casting_upgrade.tooltip", "支持手动或自动焦褐浇筑，需要模具；可锁定模具并从存储补充。");
-        add("item.sophisticated_smeltery.storage_melting_upgrade", "存储版空白熔炼升级");
+        add("item.sophisticated_smeltery.storage_melting_upgrade", "空白熔炼升级");
         add("item.sophisticated_smeltery.storage_melting_upgrade.tooltip", "让存储按绑定控制器的规则熔炼物品。");
-        add("item.sophisticated_smeltery.storage_melting_upgrade.bound", "存储版%s升级");
-        add("item.sophisticated_smeltery.storage_scorched_alloyer_upgrade", "存储版焦褐合金炉升级");
+        add("item.sophisticated_smeltery.storage_melting_upgrade.bound", "%s升级");
+        add("item.sophisticated_smeltery.storage_scorched_alloyer_upgrade", "焦褐合金炉升级");
         add("item.sophisticated_smeltery.storage_scorched_alloyer_upgrade.tooltip", "独立进行流体合金，可与熔炼升级共存。自带产物罐，九格组件槽支持八个原料储罐和一个燃料位。");
     }
 }
