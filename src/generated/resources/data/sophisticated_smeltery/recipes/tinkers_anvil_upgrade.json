@@ -8,9 +8,14 @@
     }
   ],
   "key": {
-    "A": {
-      "item": "tconstruct:tinkers_anvil"
-    },
+    "A": [
+      {
+        "item": "tconstruct:tinkers_anvil"
+      },
+      {
+        "item": "tconstruct:scorched_anvil"
+      }
+    ],
     "G": {
       "tag": "forge:ingots/gold"
     },

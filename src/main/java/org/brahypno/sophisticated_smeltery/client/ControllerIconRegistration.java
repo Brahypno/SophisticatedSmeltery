@@ -43,12 +43,15 @@ public final class ControllerIconRegistration {
                 boolean anvil = item.equals("tinkers_anvil_upgrade");
                 var state = (anvil ? slimeknights.tconstruct.tables.TinkerTables.tinkersAnvil
                         : slimeknights.tconstruct.tables.TinkerTables.tinkerStation).get().defaultBlockState();
+                if (anvil) state = state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING,
+                        net.minecraft.core.Direction.NORTH);
                 var table = event.getModels().get(BlockModelShaper.stateToModelLocation(state));
                 var id = new ModelResourceLocation(SophisticatedSmeltery.id(prefix + item), "inventory");
                 var plate = event.getModels().get(id);
                 if (plate != null && table != null)
-                    event.getModels().put(id, new CastingIconModel(plate, table, state,
-                            anvil && advanced != null ? advanced.getParticleIcon() : null));
+                    event.getModels().put(id, new TinkerStationIconModel(new CastingIconModel(plate, table, state,
+                            anvil && advanced != null ? advanced.getParticleIcon() : null, anvil, !anvil), plate,
+                            anvil && advanced != null ? advanced.getParticleIcon() : null, anvil));
             }
             var partBuilderModel = event.getModels().get(BlockModelShaper.stateToModelLocation(partBuilderState));
             var partBuilderId = new ModelResourceLocation(SophisticatedSmeltery.id(prefix + "part_builder_upgrade"), "inventory");

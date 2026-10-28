@@ -30,6 +30,7 @@ import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerType;
 import org.brahypno.sophisticated_smeltery.recipe.ControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.VisibleControllerBindingRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
+import org.brahypno.sophisticated_smeltery.recipe.TinkerStationAppearanceRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.furnace.PortableAlloyer;
@@ -95,6 +96,8 @@ public class SophisticatedSmeltery {
     public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(Registries.RECIPE_SERIALIZER, MODID);
     public static final RegistryObject<RecipeSerializer<ControllerBindingRecipe>> BIND_CONTROLLER = RECIPES.register(
             "bind_controller", () -> new SimpleCraftingRecipeSerializer<>(ControllerBindingRecipe::new));
+    public static final RegistryObject<RecipeSerializer<TinkerStationAppearanceRecipe>> WORKSTATION_APPEARANCE = RECIPES.register(
+            "workstation_appearance", () -> new SimpleCraftingRecipeSerializer<>(TinkerStationAppearanceRecipe::new));
     public static final RegistryObject<RecipeSerializer<VisibleControllerBindingRecipe>> VISIBLE_BINDING = RECIPES.register(
             "controller_binding", VisibleControllerBindingRecipe.Serializer::new);
     public static final RegistryObject<RecipeSerializer<CastingTierRecipe>> CASTING_TIER = RECIPES.register(

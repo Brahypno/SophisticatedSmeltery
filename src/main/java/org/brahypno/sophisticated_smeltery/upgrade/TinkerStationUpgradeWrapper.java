@@ -89,7 +89,9 @@ public final class TinkerStationUpgradeWrapper extends UpgradeWrapperBase<Tinker
     public void bind(Level level) {
         if (this.level != level) { this.level = level; dirty = true; revision++; }
     }
-    private ResourceLocation defaultLayout() { return new ResourceLocation("tconstruct", isAdvanced() ? "tinkers_anvil" : "tinker_station"); }
+    private ResourceLocation defaultLayout() {
+        return net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(TinkerStationAppearance.source(upgrade).getItem());
+    }
     public StationSlotLayout layout() {
         var loader = StationSlotLayoutLoader.getInstance();
         var selected = selection == null ? StationSlotLayout.EMPTY : loader.get(selection);

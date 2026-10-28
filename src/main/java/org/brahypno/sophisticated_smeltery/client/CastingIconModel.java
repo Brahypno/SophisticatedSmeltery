@@ -18,23 +18,34 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.joml.Vector3f;
 
-/** Project the native casting table's upward faces onto the upgrade plate. */
+/** Project native workstation faces onto the upgrade plate. */
 final class CastingIconModel implements BakedModel {
     private final BakedModel base;
     private final List<BakedQuad> overlay = new ArrayList<>();
 
     CastingIconModel(BakedModel base, BakedModel table, BlockState state, @Nullable TextureAtlasSprite advancedFrame) {
+        this(base, table, state, advancedFrame, false);
+    }
+
+    CastingIconModel(BakedModel base, BakedModel table, BlockState state, @Nullable TextureAtlasSprite advancedFrame, boolean sideView) {
+        this(base, table, state, advancedFrame, sideView, false);
+    }
+
+    CastingIconModel(BakedModel base, BakedModel table, BlockState state, @Nullable TextureAtlasSprite advancedFrame,
+                     boolean sideView, boolean showLegs) {
         this.base = base;
         if (advancedFrame != null) addAdvancedFrame(overlay, advancedFrame);
-        List<BakedQuad> top = new ArrayList<>(table.getQuads(state, Direction.UP, RandomSource.create(0)));
-        table.getQuads(state, null, RandomSource.create(0)).stream().filter(quad -> quad.getDirection() == Direction.UP).forEach(top::add);
-        for (BakedQuad quad : top) {
-            overlay.add(project(quad, false));
-            overlay.add(project(quad, true));
+        for (Direction face : showLegs ? List.of(Direction.UP, Direction.SOUTH) : List.of(sideView ? Direction.SOUTH : Direction.UP)) {
+            List<BakedQuad> faces = new ArrayList<>(table.getQuads(state, face, RandomSource.create(0)));
+            table.getQuads(state, null, RandomSource.create(0)).stream().filter(quad -> quad.getDirection() == face).forEach(faces::add);
+            for (BakedQuad quad : faces) {
+                overlay.add(project(quad, false, sideView, showLegs));
+                overlay.add(project(quad, true, sideView, showLegs));
+            }
         }
     }
 
-    private static BakedQuad project(BakedQuad quad, boolean back) {
+    private static BakedQuad project(BakedQuad quad, boolean back, boolean sideView, boolean showLegs) {
         int[] source = quad.getVertices();
         int[] result = source.clone();
         int stride = source.length / 4;
@@ -46,8 +57,10 @@ final class CastingIconModel implements BakedModel {
             float y = Float.intBitsToFloat(source[from + 1]);
             float z = Float.intBitsToFloat(source[from + 2]);
             result[to] = Float.floatToRawIntBits(0.25f + x * 0.5f);
-            result[to + 1] = Float.floatToRawIntBits(0.25f + (1 - z) * 0.5f);
-            result[to + 2] = Float.floatToRawIntBits(back ? 0.45f - y * 0.005f : 0.55f + y * 0.005f);
+            // The native station retextures only its legs, so retain both its top and front.
+            result[to + 1] = Float.floatToRawIntBits(0.25f + (sideView ? y : showLegs ? y * 0.75f + (1 - z) * 0.25f : 1 - z) * 0.5f);
+            float depth = sideView || showLegs ? z : y;
+            result[to + 2] = Float.floatToRawIntBits(back ? 0.45f - depth * 0.005f : 0.55f + depth * 0.005f);
             result[to + stride - 1] = back ? 0x00810000 : 0x007f0000;
         }
         return new BakedQuad(result, quad.getTintIndex(), back ? Direction.NORTH : Direction.SOUTH, quad.getSprite(), false, false);

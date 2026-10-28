@@ -98,6 +98,7 @@ minecraft {
         client {
             if (project.hasProperty('storageCompatSmoke')) {
                 property 'sophisticatedsmeltery.storageCompatSmoke', 'true'
+                if (project.hasProperty('workstationAppearanceSmoke')) property 'sophisticatedsmeltery.workstationAppearanceSmoke', 'true'
                 workingDirectory project.file('build/storage-compat/client')
                 mods { "${mod_id}" { source sourceSets.test } }
             }

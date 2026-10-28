@@ -128,5 +128,7 @@
   "item.sophisticated_smeltery.tinker_station_upgrade.tooltip": "使用匠魂原生配方组装、修复、强化和替换工具部件，提供三个材料槽。",
   "item.sophisticated_smeltery.tinkers_anvil_upgrade": "工匠砧升级",
   "item.sophisticated_smeltery.tinkers_anvil_upgrade.tooltip": "工匠台升级的高级版，提供五个材料槽，支持大型工具与更多材料的强化配方。",
+  "item.sophisticated_smeltery.workstation_appearance": "外观：%s",
+  "item.sophisticated_smeltery.workstation_appearance_hint": "与同类工匠台或工匠砧合成以更换外观，并返还原台子。",
   "itemGroup.sophisticated_smeltery": "精妙匠魂"
 }

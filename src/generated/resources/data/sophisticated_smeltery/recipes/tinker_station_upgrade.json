@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "sophisticated_smeltery:casting_upgrade_tier",
   "category": "misc",
   "conditions": [
     {

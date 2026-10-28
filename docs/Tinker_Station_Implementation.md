@@ -6,6 +6,18 @@ Both also have a result slot. Storage variants use the `storage_` prefix.
 Each host accepts its own upgrade plate; both tiers can coexist with other
 crafting, part builder, melting, casting and alloying upgrades.
 
+The anvil tier accepts both `tconstruct:tinkers_anvil` and
+`tconstruct:scorched_anvil`. Crafting saves the complete native workstation stack
+under `tinkerStationBlock`, retaining wood retexturing, metal material variants,
+and anvil block skins. Existing upgrades can be crafted with a matching-tier
+workstation to replace their appearance and return the previously bound stack;
+tools, ingredients and settings remain intact. Clearing an empty upgrade also
+returns its explicitly bound workstation. Legacy and creative stacks use the
+original default appearance until one is bound. Host conversions preserve it.
+The native model's own item overrides supply textures and colors. Anvils use a
+side view; stations expose their top and legs because only the legs are
+retextured by the native model. Appearance support adds no Mixin.
+
 The wrapper uses registered `ITinkerStationRecipe` instances for matching,
 validated results, tool-slot consumption and ingredient updates. Tool building,
 repair, modifiers, part swapping, recipe errors and crafting remainders follow
@@ -154,3 +166,16 @@ Verified on 2026-10-27:
   verifies reopening, and switches layouts while retaining a tool. Screenshots:
   `build/tinkers-anvil-small-selected.png`, `build/tinker-station-equipment.png`,
   and `build/tinkers-anvil-equipped-layout-switch.png`.
+- Native appearances: build and all 80 full-suite tests
+  passed (`build/workstation-appearance-verified.log`). Both anvil sources craft
+  large tools, retain material NBT, and preserve inventory/settings on rebinding,
+  host conversion and network synchronization. Rebinding and empty clearing
+  return the exact previously bound workstation. The real-world client verifies
+  eight distinct wood/material/block-skin models per host, including side views,
+  native host plates and advanced frames. Screenshot:
+  `build/storage-compat/workstation-appearances-both.png`.
+  All 16 Storage-only tests also passed
+  (`build/mixin-reduction-appearance-storage-only.log`).
+- Commit validation: the workstation feature compiles independently from its
+  staged sources (`build/commit-groups/foundation-compile.log`). The final build
+  and all 80 required tests passed (`build/commit-groups/final-validation.log`).

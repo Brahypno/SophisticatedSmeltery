@@ -39,6 +39,8 @@ public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack stack = grid.getItem(slot);
             if (stack.getItem() instanceof MeltingUpgradeItem) remaining.set(slot, ControllerBinding.getController(stack));
+            if (stack.getItem() instanceof org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem)
+                remaining.set(slot, org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance.bound(stack));
         }
         return remaining;
     }

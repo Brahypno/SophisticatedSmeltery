@@ -24,11 +24,18 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
 import slimeknights.tconstruct.smeltery.TinkerSmeltery;
+import slimeknights.tconstruct.tables.TinkerTables;
+import slimeknights.tconstruct.library.tools.part.IMaterialItem;
+import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
+import slimeknights.mantle.util.RetexturedHelper;
+import net.minecraft.world.level.block.Blocks;
+import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance;
 
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class StorageCompatibilityClientTest {
     private static boolean opened;
     private static boolean saved;
+    private static boolean loadingAppearanceWorld;
     private static final List<String> ITEMS = List.of("melting_upgrade", "part_builder_upgrade", "tinker_station_upgrade", "tinkers_anvil_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
             "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade");
 
@@ -36,7 +43,21 @@ public final class StorageCompatibilityClientTest {
         if (!Boolean.getBoolean("sophisticatedsmeltery.storageCompatSmoke") || opened || event.phase != TickEvent.Phase.END) return;
         var mc = Minecraft.getInstance();
         if (mc.screen != null && mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen")) mc.setScreen(new TitleScreen());
-        if (mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
+        boolean appearance = Boolean.getBoolean("sophisticatedsmeltery.workstationAppearanceSmoke");
+        if (appearance && !loadingAppearanceWorld && mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
+            loadingAppearanceWorld = true;
+            // Native material IDs are resolved against server data when ItemStack.of reads the saved source.
+            mc.createWorldOpenFlows().createFreshLevel("workstation-appearance-" + System.currentTimeMillis(),
+                    new net.minecraft.world.level.LevelSettings("Workstation appearances", net.minecraft.world.level.GameType.CREATIVE,
+                            false, net.minecraft.world.Difficulty.PEACEFUL, true, new net.minecraft.world.level.GameRules(),
+                            net.minecraft.world.level.WorldDataConfiguration.DEFAULT),
+                    new net.minecraft.world.level.levelgen.WorldOptions(42L, false, false),
+                    access -> access.registryOrThrow(net.minecraft.core.registries.Registries.WORLD_PRESET)
+                            .getHolderOrThrow(net.minecraft.world.level.levelgen.presets.WorldPresets.FLAT).value().createWorldDimensions());
+            return;
+        }
+        if (appearance ? loadingAppearanceWorld && mc.player != null && mc.screen == null
+                : mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
             opened = true;
             mc.options.guiScale().set(2);
             long window = mc.getWindow().getWindow();
@@ -90,13 +111,40 @@ public final class StorageCompatibilityClientTest {
                 ? ModList.get().isLoaded("sophisticatedstorage") ? "both" : "backpacks-only" : "storage-only";
         event.getGuiGraphics().flush();
         try (var image = Screenshot.takeScreenshot(mc.getMainRenderTarget())) {
-            image.writeToFile(Path.of("../host-split-icons-" + variant + ".png"));
+            image.writeToFile(Path.of("../" + (Boolean.getBoolean("sophisticatedsmeltery.workstationAppearanceSmoke")
+                    ? "workstation-appearances-" : "host-split-icons-") + variant + ".png"));
         } catch (Exception error) { throw new IllegalStateException(error); }
         SophisticatedSmeltery.LOGGER.info("HOST FAMILY CLIENT PASS: {} fixed host plates, frames, bound models and melting tab icon", variant);
         mc.stop();
     }
 
     private record Icon(ItemStack stack, String label, String host) {}
+    private static List<Icon> workstationAppearances(String prefix, String host) {
+        var icons = new ArrayList<Icon>();
+        for (var entry : java.util.Map.of("Oak station", Blocks.OAK_PLANKS, "Crimson station", Blocks.CRIMSON_PLANKS).entrySet())
+            icons.add(new Icon(TinkerStationAppearance.bind(stack(prefix + "tinker_station_upgrade"),
+                    RetexturedHelper.setTexture(new ItemStack(TinkerTables.tinkerStation), entry.getValue())), entry.getKey(), host));
+        for (boolean scorched : List.of(false, true)) {
+            var block = scorched ? TinkerTables.scorchedAnvil.asItem() : TinkerTables.tinkersAnvil.asItem();
+            for (String material : List.of("cobalt", "manyullyn"))
+                icons.add(new Icon(TinkerStationAppearance.bind(stack(prefix + "tinkers_anvil_upgrade"),
+                        ((IMaterialItem)block).withMaterialForDisplay(MaterialVariantId.parse("tconstruct:" + material))),
+                        (scorched ? "Scorch " : "Anvil ") + material, host));
+            icons.add(new Icon(TinkerStationAppearance.bind(stack(prefix + "tinkers_anvil_upgrade"),
+                    RetexturedHelper.setTexture(new ItemStack(block), Blocks.DIAMOND_BLOCK)),
+                    scorched ? "Scorch diamond" : "Anvil diamond", host));
+        }
+        var signatures = new java.util.HashSet<String>();
+        for (var icon : icons) {
+            var model = Minecraft.getInstance().getItemRenderer().getModel(icon.stack, null, null, 0);
+            var quads = model.getQuads(null, null, RandomSource.create(0));
+            var signature = quads.stream().map(quad -> quad.getSprite().contents().name()
+                    + java.util.Arrays.toString(quad.getVertices())).toList().toString();
+            if (!signatures.add(signature)) throw new IllegalStateException("Workstation appearance was lost: " + icon.label);
+        }
+        SophisticatedSmeltery.LOGGER.info("WORKSTATION APPEARANCE PASS: {} native wood/material/retexture models for {}", signatures.size(), host);
+        return icons;
+    }
     private static final class Gallery extends Screen {
         private int frames;
         private final List<List<Icon>> families = new ArrayList<>();
@@ -105,6 +153,10 @@ public final class StorageCompatibilityClientTest {
             for (String prefix : List.of("", "storage_")) {
                 String host = prefix.isEmpty() ? "sophisticatedbackpacks" : "sophisticatedstorage";
                 if (!ModList.get().isLoaded(host)) continue;
+                if (Boolean.getBoolean("sophisticatedsmeltery.workstationAppearanceSmoke")) {
+                    families.add(workstationAppearances(prefix, host));
+                    continue;
+                }
                 List<Icon> icons = new ArrayList<>();
                 icons.add(new Icon(new ItemStack(BuiltInRegistries.ITEM.get(new ResourceLocation(host, "upgrade_base"))), "Native plate", host));
                 icons.add(new Icon(stack(prefix + "melting_upgrade"), "Melting", host));

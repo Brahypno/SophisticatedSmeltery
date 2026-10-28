@@ -19,6 +19,9 @@ import org.brahypno.sophisticated_smeltery.recipe.CastingTierRecipe;
 import org.brahypno.sophisticated_smeltery.recipe.UpgradeClearingRecipe;
 import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeContainer;
 import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance;
+import slimeknights.mantle.util.RetexturedHelper;
+import net.minecraft.world.level.block.Blocks;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 import slimeknights.tconstruct.library.recipe.TinkerRecipeTypes;
 import slimeknights.tconstruct.library.recipe.tinkerstation.building.ToolBuildingRecipe;
@@ -217,7 +220,7 @@ public final class TinkerStationUpgradeGameTests {
             var recipe = (CastingTierRecipe)helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
             helper.assertTrue(recipe.matches(grid, helper.getLevel()), "Configured station can be upgraded");
             ItemStack upgraded = recipe.assemble(grid, helper.getLevel().registryAccess());
-            helper.assertTrue(source.getTag().equals(upgraded.getTag()), "Tier recipe preserves existing state");
+            helper.assertTrue(source.getTag().getAllKeys().stream().allMatch(key -> source.getTag().get(key).equals(upgraded.getTag().get(key))), "Tier recipe preserves existing state");
             var restored = new TinkerStationUpgradeWrapper(host.storage, upgraded, ignored -> {}); restored.bind(helper.getLevel());
             helper.assertTrue(restored.inventory().getSlots() == 6 && restored.shiftIntoStorage() && restored.itemName().equals("Saved pick")
                     && restored.layout().getName().equals(wrapper.layout().getName()) && ItemStack.matches(restored.result(), wrapper.result()), "Anvil restores inputs, layout, name and destination with two new slots");
@@ -232,6 +235,70 @@ public final class TinkerStationUpgradeGameTests {
         }
         helper.succeed();
     }
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void nativeAppearancesSurviveCraftingRebindingAndHostConversion(GameTestHelper helper) {
+        for (var host : hosts(helper)) {
+            var wood = RetexturedHelper.setTexture(new ItemStack(TinkerTables.tinkerStation), Blocks.CRIMSON_PLANKS);
+            var grid = grid(); grid.setItem(1, wood);
+            grid.setItem(3, new ItemStack(Items.IRON_INGOT)); grid.setItem(5, new ItemStack(Items.IRON_INGOT));
+            grid.setItem(4, new ItemStack(ForgeRegistries.ITEMS.getValue(new ResourceLocation(
+                    host.prefix.isEmpty() ? "sophisticatedbackpacks" : "sophisticatedstorage", "upgrade_base"))));
+            grid.setItem(7, new ItemStack(Items.CHEST));
+            var recipe = (CastingTierRecipe)helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id(host.prefix + "tinker_station_upgrade")).orElseThrow();
+            helper.assertTrue(recipe.matches(grid, helper.getLevel()), "Retextured station matches the original recipe");
+            var station = recipe.assemble(grid, helper.getLevel().registryAccess());
+            helper.assertTrue(ItemStack.matches(TinkerStationAppearance.bound(station), wood), "Crafting captures native wood NBT");
+            station.getOrCreateTag().putString("tinkerStationName", "Keep this name");
+            for (var block : List.of(TinkerTables.tinkersAnvil, TinkerTables.scorchedAnvil)) {
+                var anvil = ((IMaterialItem)block.asItem()).withMaterialForDisplay(MaterialVariantId.parse("tconstruct:cobalt"));
+                helper.assertTrue(IMaterialItem.getMaterialFromStack(anvil).equals(MaterialVariantId.parse("tconstruct:cobalt")), "Native display interface supplies a real material-bearing anvil");
+                grid.clearContent(); grid.setItem(1, anvil); grid.setItem(4, station);
+                grid.setItem(3, new ItemStack(Items.GOLD_INGOT)); grid.setItem(5, new ItemStack(Items.GOLD_INGOT));
+                for (int slot = 6; slot < 9; slot++) grid.setItem(slot, new ItemStack(Items.REDSTONE));
+                recipe = (CastingTierRecipe)helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id(host.prefix + "tinkers_anvil_upgrade")).orElseThrow();
+                helper.assertTrue(recipe.matches(grid, helper.getLevel()), "Both native anvils can upgrade a station");
+                var upgrade = recipe.assemble(grid, helper.getLevel().registryAccess());
+                helper.assertTrue(ItemStack.matches(TinkerStationAppearance.bound(upgrade), anvil)
+                        && upgrade.getTag().getString("tinkerStationName").equals("Keep this name"), "Tier crafting captures native material and preserves settings");
+                var wrapper = new TinkerStationUpgradeWrapper(host.storage, upgrade, ignored -> {}); wrapper.bind(helper.getLevel());
+                helper.assertTrue(wrapper.getInputCount() == 5 && wrapper.layout().getName().equals(ForgeRegistries.BLOCKS.getKey(block.get())), "Native anvil default layout and five inputs");
+                fill(wrapper, building(helper, "sledge_hammer"));
+                helper.assertTrue(ItemStack.matches(wrapper.result(), baseline(helper, wrapper).calcResult(null)) && !wrapper.result().isEmpty(), "Both anvils build large tools like native stations");
+                var before = wrapper.inventory().serializeNBT();
+                var skin = RetexturedHelper.setTexture(new ItemStack(block), Blocks.DIAMOND_BLOCK);
+                grid.clearContent(); grid.setItem(0, wrapper.getUpgradeStack()); grid.setItem(8, skin);
+                var rebind = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id("workstation_appearance")).orElseThrow();
+                var appearanceRecipe = (org.brahypno.sophisticated_smeltery.recipe.TinkerStationAppearanceRecipe)rebind;
+                helper.assertTrue(appearanceRecipe.matches(grid, helper.getLevel()), "Appearance can change while tools and parts remain inside");
+                upgrade = appearanceRecipe.assemble(grid, helper.getLevel().registryAccess());
+                helper.assertTrue(ItemStack.matches(appearanceRecipe.getRemainingItems(grid).get(0), anvil), "Rebinding returns the exact previous anvil");
+                var restored = new TinkerStationUpgradeWrapper(host.storage, upgrade, ignored -> {}); restored.bind(helper.getLevel());
+                helper.assertTrue(before.equals(restored.inventory().serializeNBT()) && ItemStack.matches(TinkerStationAppearance.bound(upgrade), skin), "Rebinding preserves all inputs and the new skin");
+                grid.clearContent(); grid.setItem(0, upgrade);
+                var clear = new UpgradeClearingRecipe(SophisticatedSmeltery.id("test_clear_appearance"), net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
+                helper.assertTrue(!clear.matches(grid, helper.getLevel()), "Clearing still protects stored parts");
+                for (int slot = 0; slot < restored.inventory().getSlots(); slot++) restored.inventory().setStackInSlot(slot, ItemStack.EMPTY);
+                grid.setItem(0, restored.getUpgradeStack());
+                helper.assertTrue(clear.matches(grid, helper.getLevel()) && ItemStack.matches(clear.getRemainingItems(grid).get(0), skin), "Clearing returns the customized source after contents are removed");
+                grid.setItem(8, wood);
+                helper.assertTrue(!appearanceRecipe.matches(grid, helper.getLevel()), "Anvils reject basic-station appearances");
+                String conversionId = host.prefix.isEmpty() ? "storage_tinkers_anvil_upgrade_from_backpack_tinkers_anvil_upgrade" : "backpack_tinkers_anvil_upgrade_from_storage_tinkers_anvil_upgrade";
+                var conversion = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id(conversionId));
+                if (conversion.isPresent()) {
+                    grid.clearContent(); grid.setItem(1, upgrade);
+                    var converted = ((CastingTierRecipe)conversion.get()).assemble(grid, helper.getLevel().registryAccess());
+                    helper.assertTrue(upgrade.getTag().equals(converted.getTag()) && ItemStack.matches(TinkerStationAppearance.bound(converted), skin), "Host conversion preserves full appearance and workstation state");
+                }
+                var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+                try {
+                    buffer.writeItem(upgrade);
+                    helper.assertTrue(ItemStack.matches(buffer.readItem(), upgrade), "Native appearance survives item network synchronization");
+                } finally { buffer.release(); }
+            }
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, batch = "tinker_station_reload")
     public static void recipeReloadInvalidatesOpenResultAndReportsNativeErrors(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager(); var original = new ArrayList<>(manager.getRecipes());

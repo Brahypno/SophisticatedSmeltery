@@ -26,6 +26,12 @@ public final class CastingTierRecipe extends ShapedRecipe {
                 break;
             }
         }
+        if (result.getItem() instanceof org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem) {
+            for (int slot = 0; slot < grid.getContainerSize(); slot++) {
+                if (org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance.accepts(result, grid.getItem(slot)))
+                    return org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance.bind(result, grid.getItem(slot));
+            }
+        }
         return result;
     }
     @Override public RecipeSerializer<?> getSerializer() { return SophisticatedSmeltery.CASTING_TIER.get(); }

@@ -128,5 +128,7 @@
   "item.sophisticated_smeltery.tinker_station_upgrade.tooltip": "Builds, repairs, modifies and swaps tool parts using native Tinkers' recipes, with three input slots.",
   "item.sophisticated_smeltery.tinkers_anvil_upgrade": "Tinkers' Anvil Upgrade",
   "item.sophisticated_smeltery.tinkers_anvil_upgrade.tooltip": "An advanced Tinker Station with five input slots for large tools and recipes requiring more ingredients.",
+  "item.sophisticated_smeltery.workstation_appearance": "Appearance: %s",
+  "item.sophisticated_smeltery.workstation_appearance_hint": "Craft with a matching station or anvil to change its appearance and return the previous workstation.",
   "itemGroup.sophisticated_smeltery": "Sophisticated Smeltery"
 }

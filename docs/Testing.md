@@ -1,6 +1,6 @@
 # GameTest suites
 
-The default `runGameTestServer` command runs the full 79-test suite. Use it
+The default `runGameTestServer` command runs the full 80-test suite. Use it
 for release validation or changes outside the focused coverage below. This
 includes three slot-transfer algorithm tests: 128 seeded differential layouts,
 blocked-path operation counts and immediate recovery, and native void callbacks.
@@ -15,7 +15,7 @@ For tick-path performance changes, use the focused suite:
 ./gradlew.bat runGameTestServer -PgameTestSuite=performance -PwithBackpacks=false --offline
 ```
 
-This matrix executes **25 + 25 + 15 = 65** tests with the current test set:
+This matrix executes **25 + 25 + 16 = 66** tests with the current test set:
 
 | Focused classes | Tests | Coverage |
 | --- | ---: | --- |
@@ -25,7 +25,7 @@ This matrix executes **25 + 25 + 15 = 65** tests with the current test set:
 | CastingUpgradeGameTests | 2 | Manual and automatic casting, heating independence, removal/reload and shared fluids |
 | CastingRecipeGameTests | 1 | Tier recipe state preservation and network serialization |
 
-Without Backpacks, both suite names run the 15 Storage/workstation tests,
+Without Backpacks, both suite names run the 16 Storage/workstation tests,
 covering container capabilities, linked storage, spawning, optional recipes and
 host conversions. These test classes compile independently of Backpacks.
 
@@ -57,4 +57,4 @@ See [Part_Builder_Implementation.md](Part_Builder_Implementation.md) for behavio
 and recipe details.
 
 
-Tinker station changes add five tests, including native recipe comparisons and player equipment rules, also included in Storage-only runs. The real small-backpack UI check is `./gradlew.bat runClient -PtinkerStationSmoke --offline`. See [Tinker_Station_Implementation.md](Tinker_Station_Implementation.md).
+Tinker station changes add six tests, including native recipe comparisons, player equipment rules and appearance preservation, also included in Storage-only runs. The real small-backpack UI check is `./gradlew.bat runClient -PtinkerStationSmoke --offline`; native material and skin rendering is checked with `./gradlew.bat runClient -PstorageCompatSmoke -PworkstationAppearanceSmoke --offline`. See [Tinker_Station_Implementation.md](Tinker_Station_Implementation.md).

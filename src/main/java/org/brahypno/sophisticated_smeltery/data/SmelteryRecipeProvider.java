@@ -15,6 +15,7 @@ final class SmelteryRecipeProvider extends JsonDataProvider {
 
     @Override protected void generate(BiConsumer<String, JsonObject> output) {
         this.output = output;
+        recipe("workstation_appearance", object("type", MOD + "workstation_appearance"), null);
         for (String host : List.of("sophisticatedbackpacks", "sophisticatedstorage")) {
             String prefix = host.equals("sophisticatedstorage") ? "storage_" : "";
             JsonArray conditions = conditions(host);
@@ -29,12 +30,12 @@ final class SmelteryRecipeProvider extends JsonDataProvider {
             shaped(prefix + "spawner_upgrade", "minecraft:crafting_shaped", array("BBB", "BUB", "BBB"),
                     object("B", item("minecraft:iron_bars"), "U", item(base)), prefix + "spawner_upgrade", conditions,
                     "has_bars", predicate("minecraft:iron_bars"));
-            shaped(prefix + "tinker_station_upgrade", "minecraft:crafting_shaped", array(" T ", "IBI", " C "),
+            shaped(prefix + "tinker_station_upgrade", MOD + "casting_upgrade_tier", array(" T ", "IBI", " C "),
                     object("T", item("tconstruct:tinker_station"), "I", tag("forge:ingots/iron"),
                             "B", item(base), "C", tag("forge:chests")), prefix + "tinker_station_upgrade", conditions,
                     "has_upgrade_base", predicate(base));
             shaped(prefix + "tinkers_anvil_upgrade", MOD + "casting_upgrade_tier", array(" A ", "GUG", "RRR"),
-                    object("A", item("tconstruct:tinkers_anvil"), "G", tag("forge:ingots/gold"),
+                    object("A", array(item("tconstruct:tinkers_anvil"), item("tconstruct:scorched_anvil")), "G", tag("forge:ingots/gold"),
                             "U", item(MOD + prefix + "tinker_station_upgrade"), "R", tag("forge:dusts/redstone")),
                     prefix + "tinkers_anvil_upgrade", conditions, "has_upgrade", predicate(MOD + prefix + "tinker_station_upgrade"));
             recipe(prefix + "alloyer_upgrade", object("type", "minecraft:crafting_shapeless",
