@@ -36,10 +36,60 @@ public final class ManualTestCommand {
                 .then(Commands.literal("casting_expansion").executes(ManualTestCommand::giveCastingExpansion))
                 .then(Commands.literal("alloyer").executes(ManualTestCommand::giveAlloyer))
                 .then(Commands.literal("part_builder").executes(ManualTestCommand::givePartBuilder))
+                .then(Commands.literal("tinker_station").executes(context -> giveTinkerStation(context, false)))
+                .then(Commands.literal("tinkers_anvil").executes(context -> giveTinkerStation(context, true)))
+                .then(Commands.literal("tinker_info").executes(context -> giveTinkerStation(context, true, true)))
                 .then(Commands.literal("spawner").executes(ManualTestCommand::giveSpawner))
                 .then(Commands.literal("foundry").executes(context -> give(context, true))));
     }
 
+    private static int giveTinkerStation(CommandContext<CommandSourceStack> context, boolean advanced) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        return giveTinkerStation(context, advanced, false);
+    }
+    private static int giveTinkerStation(CommandContext<CommandSourceStack> context, boolean advanced, boolean information) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        ItemStack backpack = new ItemStack(ModItems.BACKPACK.get());
+        var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(advanced ? SophisticatedSmeltery.TINKERS_ANVIL_UPGRADE.get() : SophisticatedSmeltery.TINKER_STATION_UPGRADE.get()));
+        var parts = java.util.List.of(slimeknights.tconstruct.tools.TinkerToolParts.pickHead,
+                slimeknights.tconstruct.tools.TinkerToolParts.toolHandle, slimeknights.tconstruct.tools.TinkerToolParts.toolBinding);
+        for (int i = 0; i < parts.size(); i++) player.getInventory().setItem(11 + i,
+                slimeknights.tconstruct.library.tools.part.IMaterialItem.withMaterial(new ItemStack(parts.get(i), 4),
+                        slimeknights.tconstruct.library.materials.definition.MaterialVariantId.parse("tconstruct:iron")));
+        if (information) {
+            try {
+                var item = slimeknights.tconstruct.tools.TinkerTools.pickaxe.get();
+                var iron = slimeknights.tconstruct.library.materials.definition.MaterialVariant.of(
+                        slimeknights.tconstruct.library.materials.definition.MaterialVariantId.parse("tconstruct:iron"));
+                var tool = slimeknights.tconstruct.library.tools.nbt.ToolStack.createTool(item, item.getToolDefinition(),
+                        new slimeknights.tconstruct.library.tools.nbt.MaterialNBT(java.util.List.of(iron, iron, iron)));
+                for (String modifier : java.util.List.of("haste", "sharpness", "reinforced", "diamond", "emerald", "netherite",
+                        "experienced", "magnetic", "soulbound", "silky", "smite", "knockback", "expanded", "hydraulic",
+                        "lightspeed", "severing", "necrotic", "piercing", "autosmelt")) {
+                    var id = new slimeknights.tconstruct.library.modifiers.ModifierId("tconstruct", modifier);
+                    if (!slimeknights.tconstruct.library.modifiers.ModifierManager.INSTANCE.contains(id)) throw new IllegalStateException("Missing test modifier: " + id);
+                    tool.addModifier(id, 1);
+                }
+                tool.setDamage(50);
+                var workstation = (org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeWrapper)storage.getUpgradeHandler().getSlotWrappers().get(0);
+                workstation.inventory().setStackInSlot(0, tool.createStack());
+            } catch (RuntimeException failure) {
+                SophisticatedSmeltery.LOGGER.error("Workstation information fixture failed", failure);
+                throw failure;
+            }
+        }
+        player.getInventory().setItem(14, ItemStack.EMPTY);
+        var equipment = java.util.List.of(Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS, Items.SHIELD);
+        for (int index = 0; index < equipment.size(); index++) {
+            player.getInventory().setItem(index < 4 ? 39 - index : 40, ItemStack.EMPTY);
+            player.getInventory().setItem(15 + index, new ItemStack(equipment.get(index)));
+        }
+        player.getInventory().selected = 0; player.getInventory().setItem(0, backpack);
+        player.inventoryMenu.broadcastChanges();
+        backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        return Command.SINGLE_SUCCESS;
+    }
     private static int givePartBuilder(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         ItemStack backpack = new ItemStack(ModItems.NETHERITE_BACKPACK.get());

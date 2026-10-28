@@ -39,6 +39,17 @@ public final class ControllerIconRegistration {
                         item.startsWith("advanced_") && advanced != null ? advanced.getParticleIcon() : null));
             }
             var partBuilderState = slimeknights.tconstruct.tables.TinkerTables.partBuilder.get().defaultBlockState();
+            for (String item : java.util.List.of("tinker_station_upgrade", "tinkers_anvil_upgrade")) {
+                boolean anvil = item.equals("tinkers_anvil_upgrade");
+                var state = (anvil ? slimeknights.tconstruct.tables.TinkerTables.tinkersAnvil
+                        : slimeknights.tconstruct.tables.TinkerTables.tinkerStation).get().defaultBlockState();
+                var table = event.getModels().get(BlockModelShaper.stateToModelLocation(state));
+                var id = new ModelResourceLocation(SophisticatedSmeltery.id(prefix + item), "inventory");
+                var plate = event.getModels().get(id);
+                if (plate != null && table != null)
+                    event.getModels().put(id, new CastingIconModel(plate, table, state,
+                            anvil && advanced != null ? advanced.getParticleIcon() : null));
+            }
             var partBuilderModel = event.getModels().get(BlockModelShaper.stateToModelLocation(partBuilderState));
             var partBuilderId = new ModelResourceLocation(SophisticatedSmeltery.id(prefix + "part_builder_upgrade"), "inventory");
             var partBuilderPlate = event.getModels().get(partBuilderId);

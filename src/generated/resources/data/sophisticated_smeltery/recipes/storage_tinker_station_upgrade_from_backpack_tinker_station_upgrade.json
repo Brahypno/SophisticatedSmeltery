@@ -1,0 +1,30 @@
+{
+  "type": "sophisticated_smeltery:casting_upgrade_tier",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedbackpacks"
+    },
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "U": {
+      "item": "sophisticated_smeltery:tinker_station_upgrade"
+    }
+  },
+  "pattern": [
+    "PUP",
+    " P ",
+    "P P"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_tinker_station_upgrade"
+  }
+}

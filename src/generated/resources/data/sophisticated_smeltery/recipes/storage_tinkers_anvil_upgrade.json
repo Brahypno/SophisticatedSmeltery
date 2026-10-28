@@ -1,0 +1,32 @@
+{
+  "type": "sophisticated_smeltery:casting_upgrade_tier",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "key": {
+    "A": {
+      "item": "tconstruct:tinkers_anvil"
+    },
+    "G": {
+      "tag": "forge:ingots/gold"
+    },
+    "R": {
+      "tag": "forge:dusts/redstone"
+    },
+    "U": {
+      "item": "sophisticated_smeltery:storage_tinker_station_upgrade"
+    }
+  },
+  "pattern": [
+    " A ",
+    "GUG",
+    "RRR"
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_tinkers_anvil_upgrade"
+  }
+}

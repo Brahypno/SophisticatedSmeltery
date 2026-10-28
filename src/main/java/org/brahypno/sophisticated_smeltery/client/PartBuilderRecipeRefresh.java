@@ -11,5 +11,6 @@ import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeWrapper;
 public final class PartBuilderRecipeRefresh {
     @SubscribeEvent public static void recipesUpdated(RecipesUpdatedEvent event) {
         PartBuilderUpgradeWrapper.invalidateRecipes();
+        org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeWrapper.invalidateRecipes();
     }
 }

@@ -101,6 +101,11 @@ minecraft {
                 workingDirectory project.file('build/storage-compat/client')
                 mods { "${mod_id}" { source sourceSets.test } }
             }
+            if (project.hasProperty('tinkerStationSmoke')) {
+                property 'sophisticatedsmeltery.tinkerStationSmoke', 'true'
+                workingDirectory project.file('build/tinker-station-client-run')
+                mods { "${mod_id}" { source sourceSets.test } }
+            }
             if (project.hasProperty('partBuilderSmoke')) {
                 property 'sophisticatedsmeltery.partBuilderSmoke', 'true'
                 workingDirectory project.file('build/part-builder-client-run')
@@ -243,7 +248,7 @@ sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 // Existing integration tests require backpacks. Keep storage-only runs genuinely independent.
 if (!providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
-    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java', '**/GameTestRegistration.java'])
+    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java', '**/TinkerStationUpgradeGameTests.java', '**/GameTestRegistration.java'])
 }
 if (!providers.gradleProperty('withStorage').map { it.toBoolean() }.getOrElse(true)) {
     sourceSets.test.java.exclude('**/StorageCompatibilityGameTests.java')

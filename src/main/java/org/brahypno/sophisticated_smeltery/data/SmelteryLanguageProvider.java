@@ -17,7 +17,38 @@ final class SmelteryLanguageProvider extends LanguageProvider {
         else english();
     }
 
+    private void workstationTranslations(boolean chinese) {
+        for (String prefix : java.util.List.of("", "storage_")) {
+            add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade", chinese ? "工匠台升级" : "Tinker Station Upgrade");
+            add("item.sophisticated_smeltery." + prefix + "tinkers_anvil_upgrade", chinese ? "工匠砧升级" : "Tinkers' Anvil Upgrade");
+            add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade.tooltip", chinese
+                    ? "使用匠魂原生配方组装、修复、强化和替换工具部件，提供三个材料槽。"
+                    : "Builds, repairs, modifies and swaps tool parts using native Tinkers' recipes, with three input slots.");
+            add("item.sophisticated_smeltery." + prefix + "tinkers_anvil_upgrade.tooltip", chinese
+                    ? "工匠台升级的高级版，提供五个材料槽，支持大型工具与更多材料的强化配方。"
+                    : "An advanced Tinker Station with five input slots for large tools and recipes requiring more ingredients.");
+        }
+        add("gui.sophisticated_smeltery.tinker_station", chinese ? "工匠台" : "Tinker Station");
+        add("gui.sophisticated_smeltery.tinkers_anvil", chinese ? "工匠砧" : "Tinkers' Anvil");
+        add("gui.sophisticated_smeltery.tinker_station_name", chinese ? "工具名称" : "Tool name");
+        add("gui.sophisticated_smeltery.tinker_station_tool", chinese ? "放入工具" : "Insert a tool");
+        add("gui.sophisticated_smeltery.tinker_station_input", chinese ? "材料槽 %s" : "Ingredient %s");
+        add("gui.sophisticated_smeltery.tinker_station_hint", chinese ? "取出产物制作" : "Take result to craft");
+        add("gui.sophisticated_smeltery.tinker_station_page_craft", chinese ? "制作" : "Craft");
+        add("gui.sophisticated_smeltery.tinker_station_page_stats", chinese ? "数值" : "Stats");
+        add("gui.sophisticated_smeltery.tinker_station_page_modifiers", chinese ? "强化" : "Mods");
+        add("gui.sophisticated_smeltery.tinker_station_information", chinese ? "工具数据" : "Tool information");
+        add("gui.sophisticated_smeltery.tinker_station_drag_hint", chinese ? "按住标题栏拖动数据面板。" : "Drag the title bar to move the information panel.");
+        add("gui.sophisticated_smeltery.tinker_station_info_empty", chinese ? "放入工具或部件后，可查看工具数值和强化数据。" : "Insert a tool or parts to inspect its stats and modifiers.");
+        add("gui.sophisticated_smeltery.tinker_station_no_modifiers", chinese ? "没有可显示的强化或特性。" : "No visible modifiers or traits.");
+        add("gui.sophisticated_smeltery.tinker_station_scroll_hint", chinese ? "滚动鼠标滚轮，或点击上下按钮翻页。" : "Scroll or use the arrows to page through the information.");
+        add("gui.sophisticated_smeltery.tinker_station_modifiers_hint", chinese ? "悬停查看说明；Shift 仅显示强化，Ctrl 仅显示材料特性。可滚动或拖动滚动条。" : "Hover for descriptions. Shift shows upgrades; Ctrl shows traits. Scroll or drag the scrollbar.");
+        add("gui.sophisticated_smeltery.tinker_station_help", chinese
+                ? "选择工具布局并按槽位提示放入部件以组装工具。选择修复与强化布局，放入工具及材料以修复、强化或替换部件。滚动查看其他布局。"
+                : "Select a tool layout and insert the indicated parts to build it. Use the repair layout with a tool and ingredients to repair, modify or swap parts. Scroll for more layouts.");
+    }
     private void english() {
+        workstationTranslations(false);
         add("item.sophisticated_smeltery.part_builder_upgrade", "Part Builder Upgrade");
         add("item.sophisticated_smeltery.part_builder_upgrade.tooltip", "Crafts parts with Tinkers' part builder recipes. Select a pattern, insert materials, and take the result.");
         add("item.sophisticated_smeltery.storage_part_builder_upgrade", "Part Builder Upgrade");
@@ -127,6 +158,7 @@ final class SmelteryLanguageProvider extends LanguageProvider {
     }
 
     private void chinese() {
+        workstationTranslations(true);
         add("item.sophisticated_smeltery.part_builder_upgrade", "部件制作台升级");
         add("item.sophisticated_smeltery.part_builder_upgrade.tooltip", "使用匠魂部件制作台配方制作部件。放入模具与材料，选择部件后取出产物。");
         add("item.sophisticated_smeltery.storage_part_builder_upgrade", "部件制作台升级");

@@ -10,6 +10,14 @@
       "required": false
     },
     {
+      "id": "sophisticated_smeltery:tinker_station_upgrade",
+      "required": false
+    },
+    {
+      "id": "sophisticated_smeltery:tinkers_anvil_upgrade",
+      "required": false
+    },
+    {
       "id": "sophisticated_smeltery:scorched_alloyer_upgrade",
       "required": false
     },

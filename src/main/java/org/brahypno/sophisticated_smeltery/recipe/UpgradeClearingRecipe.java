@@ -27,6 +27,8 @@ public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
             if (stack.getItem() instanceof MeltingUpgradeItem && !ControllerBinding.cleanForBinding(stack)) return false;
             if (stack.getItem() instanceof PartBuilderUpgradeItem
                     && !PartBuilderUpgradeWrapper.cleanForClearing(stack)) return false;
+            if (stack.getItem() instanceof org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem
+                    && !org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeWrapper.cleanForClearing(stack)) return false;
             if (stack.getItem() instanceof AlloyerUpgradeItem && !AlloyerUpgradeWrapper.cleanForClearing(stack)) return false;
         }
         return true;

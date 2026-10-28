@@ -307,10 +307,10 @@ public final class StorageCompatibilityGameTests {
         for (String prefix : List.of("", "storage_")) {
             String host = prefix.isEmpty() ? "sophisticatedbackpacks" : "sophisticatedstorage";
             boolean loaded = ModList.get().isLoaded(host);
-            for (String item : List.of("melting_upgrade", "part_builder_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+            for (String item : List.of("melting_upgrade", "part_builder_upgrade", "tinker_station_upgrade", "tinkers_anvil_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
                     "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade"))
                 helper.assertTrue(ForgeRegistries.ITEMS.containsKey(SophisticatedSmeltery.id(prefix + item)) == (loaded && (!item.equals("advanced_transmute_upgrade") || ModList.get().isLoaded("esotericism_tinker"))), "Conditional item registration: " + prefix + item);
-            for (String name : List.of("melting_upgrade", "alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade", "advanced_transmute_upgrade",
+            for (String name : List.of("melting_upgrade", "tinker_station_upgrade", "tinkers_anvil_upgrade", "alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade", "advanced_transmute_upgrade",
                     "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade",
                     "smeltery_upgrade", "foundry_upgrade", "transmute_upgrade")) {
                 boolean expected = loaded && (!name.contains("transmute") || ModList.get().isLoaded("esotericism_tinker"));
@@ -340,7 +340,7 @@ public final class StorageCompatibilityGameTests {
             @Override public boolean stillValid(net.minecraft.world.entity.player.Player player) { return true; }
         };
         var grid = new net.minecraft.world.inventory.TransientCraftingContainer(menu, 3, 3);
-        for (String name : List.of("melting_upgrade", "part_builder_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+        for (String name : List.of("melting_upgrade", "part_builder_upgrade", "tinker_station_upgrade", "tinkers_anvil_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
                 "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade")) {
             boolean expected = ModList.get().isLoaded("sophisticatedbackpacks") && ModList.get().isLoaded("sophisticatedstorage")
                     && (!name.contains("transmute") || ModList.get().isLoaded("esotericism_tinker"));
