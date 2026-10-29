@@ -88,6 +88,8 @@
   "item.sophisticated_smeltery.melting_upgrade": "Blank Melting Upgrade",
   "item.sophisticated_smeltery.melting_upgrade.bound": "%s Upgrade",
   "item.sophisticated_smeltery.melting_upgrade.tooltip": "Melts backpack items using the bound controller's rules.",
+  "item.sophisticated_smeltery.modifier_worktable_upgrade": "Modifier Worktable Upgrade",
+  "item.sophisticated_smeltery.modifier_worktable_upgrade.tooltip": "Provides a Modifier Worktable in your backpack.",
   "item.sophisticated_smeltery.part_builder_upgrade": "Part Builder Upgrade",
   "item.sophisticated_smeltery.part_builder_upgrade.tooltip": "Crafts parts with Tinkers' part builder recipes. Select a pattern, insert materials, and take the result.",
   "item.sophisticated_smeltery.scorched_alloyer_upgrade": "Scorched Alloyer Upgrade",
@@ -110,6 +112,8 @@
   "item.sophisticated_smeltery.storage_melting_upgrade": "Blank Melting Upgrade",
   "item.sophisticated_smeltery.storage_melting_upgrade.bound": "%s Upgrade",
   "item.sophisticated_smeltery.storage_melting_upgrade.tooltip": "Melts storage items using the bound controller's rules.",
+  "item.sophisticated_smeltery.storage_modifier_worktable_upgrade": "Modifier Worktable Upgrade",
+  "item.sophisticated_smeltery.storage_modifier_worktable_upgrade.tooltip": "Provides a Modifier Worktable in your storage.",
   "item.sophisticated_smeltery.storage_part_builder_upgrade": "Part Builder Upgrade",
   "item.sophisticated_smeltery.storage_part_builder_upgrade.tooltip": "Crafts parts with Tinkers' part builder recipes. Select a pattern, insert materials, and take the result.",
   "item.sophisticated_smeltery.storage_scorched_alloyer_upgrade": "Scorched Alloyer Upgrade",
@@ -129,6 +133,6 @@
   "item.sophisticated_smeltery.tinkers_anvil_upgrade": "Tinkers' Anvil Upgrade",
   "item.sophisticated_smeltery.tinkers_anvil_upgrade.tooltip": "An advanced Tinker Station with five input slots for large tools and recipes requiring more ingredients.",
   "item.sophisticated_smeltery.workstation_appearance": "Appearance: %s",
-  "item.sophisticated_smeltery.workstation_appearance_hint": "Craft with a matching station or anvil to change its appearance and return the previous workstation.",
+  "item.sophisticated_smeltery.workstation_appearance_hint": "Craft with a matching workstation to change its appearance and return the previous one.",
   "itemGroup.sophisticated_smeltery": "Sophisticated Smeltery"
 }

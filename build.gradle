@@ -96,6 +96,12 @@ minecraft {
         }
 
         client {
+            if (project.hasProperty('modifierWorktableSmoke')) {
+                property 'sophisticatedsmeltery.modifierWorktableSmoke', 'true'
+                property 'sophisticatedsmeltery.modifierWorktableHost', providers.gradleProperty('modifierWorktableHost').getOrElse('backpack')
+                workingDirectory project.file('build/modifier-worktable-client-run')
+                mods { "${mod_id}" { source sourceSets.test } }
+            }
             if (project.hasProperty('storageCompatSmoke')) {
                 property 'sophisticatedsmeltery.storageCompatSmoke', 'true'
                 if (project.hasProperty('workstationAppearanceSmoke')) property 'sophisticatedsmeltery.workstationAppearanceSmoke', 'true'
@@ -249,7 +255,7 @@ sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
 sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
 // Existing integration tests require backpacks. Keep storage-only runs genuinely independent.
 if (!providers.gradleProperty('withBackpacks').map { it.toBoolean() }.getOrElse(true)) {
-    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java', '**/TinkerStationUpgradeGameTests.java', '**/GameTestRegistration.java'])
+    sourceSets.test.java.setIncludes(['**/StorageCompatibility*.java', '**/TinkerStationUpgradeGameTests.java', '**/ModifierWorktableUpgradeGameTests.java', '**/GameTestRegistration.java'])
 }
 if (!providers.gradleProperty('withStorage').map { it.toBoolean() }.getOrElse(true)) {
     sourceSets.test.java.exclude('**/StorageCompatibilityGameTests.java')

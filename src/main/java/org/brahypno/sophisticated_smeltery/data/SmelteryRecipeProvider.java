@@ -30,6 +30,10 @@ final class SmelteryRecipeProvider extends JsonDataProvider {
             shaped(prefix + "spawner_upgrade", "minecraft:crafting_shaped", array("BBB", "BUB", "BBB"),
                     object("B", item("minecraft:iron_bars"), "U", item(base)), prefix + "spawner_upgrade", conditions,
                     "has_bars", predicate("minecraft:iron_bars"));
+            shaped(prefix + "modifier_worktable_upgrade", MOD + "casting_upgrade_tier", array(" T ", "IBI", " C "),
+                    object("T", item("tconstruct:modifier_worktable"), "I", tag("forge:ingots/iron"),
+                            "B", item(base), "C", tag("forge:chests")), prefix + "modifier_worktable_upgrade", conditions,
+                    "has_upgrade_base", predicate(base));
             shaped(prefix + "tinker_station_upgrade", MOD + "casting_upgrade_tier", array(" T ", "IBI", " C "),
                     object("T", item("tconstruct:tinker_station"), "I", tag("forge:ingots/iron"),
                             "B", item(base), "C", tag("forge:chests")), prefix + "tinker_station_upgrade", conditions,

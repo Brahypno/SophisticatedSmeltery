@@ -12,6 +12,7 @@ import net.minecraft.world.level.Level;
 import org.brahypno.sophisticated_smeltery.SophisticatedSmeltery;
 import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance;
 import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.ModifierWorktableUpgradeItem;
 
 /** Replaces the workstation appearance without clearing tools, ingredients or settings. */
 public final class TinkerStationAppearanceRecipe extends CustomRecipe {
@@ -22,7 +23,7 @@ public final class TinkerStationAppearanceRecipe extends CustomRecipe {
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack stack = grid.getItem(slot);
             if (stack.isEmpty()) continue;
-            if (stack.getItem() instanceof TinkerStationUpgradeItem && upgrade == -1) upgrade = slot;
+            if ((stack.getItem() instanceof TinkerStationUpgradeItem || stack.getItem() instanceof ModifierWorktableUpgradeItem) && upgrade == -1) upgrade = slot;
             else if (workstation == -1) workstation = slot;
             else return null;
         }

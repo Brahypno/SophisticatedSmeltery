@@ -15,6 +15,8 @@ import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.AlloyerUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeWrapper;
+import org.brahypno.sophisticated_smeltery.upgrade.ModifierWorktableUpgradeItem;
+import org.brahypno.sophisticated_smeltery.upgrade.ModifierWorktableUpgradeWrapper;
 
 /** Core's clearing rules, with molten-content checks and controller returns for melting upgrades. */
 public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
@@ -27,6 +29,8 @@ public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
             if (stack.getItem() instanceof MeltingUpgradeItem && !ControllerBinding.cleanForBinding(stack)) return false;
             if (stack.getItem() instanceof PartBuilderUpgradeItem
                     && !PartBuilderUpgradeWrapper.cleanForClearing(stack)) return false;
+            if (stack.getItem() instanceof ModifierWorktableUpgradeItem
+                    && !ModifierWorktableUpgradeWrapper.cleanForClearing(stack)) return false;
             if (stack.getItem() instanceof org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem
                     && !org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeWrapper.cleanForClearing(stack)) return false;
             if (stack.getItem() instanceof AlloyerUpgradeItem && !AlloyerUpgradeWrapper.cleanForClearing(stack)) return false;
@@ -39,7 +43,8 @@ public final class UpgradeClearingRecipe extends UpgradeClearRecipe {
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack stack = grid.getItem(slot);
             if (stack.getItem() instanceof MeltingUpgradeItem) remaining.set(slot, ControllerBinding.getController(stack));
-            if (stack.getItem() instanceof org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem)
+            if (stack.getItem() instanceof org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeItem
+                    || stack.getItem() instanceof ModifierWorktableUpgradeItem)
                 remaining.set(slot, org.brahypno.sophisticated_smeltery.upgrade.TinkerStationAppearance.bound(stack));
         }
         return remaining;

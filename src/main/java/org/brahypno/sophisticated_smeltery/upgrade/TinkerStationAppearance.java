@@ -10,6 +10,7 @@ public final class TinkerStationAppearance {
     private TinkerStationAppearance() { }
 
     public static boolean accepts(ItemStack upgrade, ItemStack workstation) {
+        if (upgrade.getItem() instanceof ModifierWorktableUpgradeItem) return workstation.is(TinkerTables.modifierWorktable.asItem());
         if (!(upgrade.getItem() instanceof TinkerStationUpgradeItem item)) return false;
         return item.isAdvanced()
                 ? workstation.is(TinkerTables.tinkersAnvil.asItem()) || workstation.is(TinkerTables.scorchedAnvil.asItem())
@@ -25,6 +26,7 @@ public final class TinkerStationAppearance {
     public static ItemStack source(ItemStack upgrade) {
         ItemStack source = bound(upgrade);
         if (!source.isEmpty()) return source;
+        if (upgrade.getItem() instanceof ModifierWorktableUpgradeItem) return new ItemStack(TinkerTables.modifierWorktable);
         return new ItemStack(((TinkerStationUpgradeItem)upgrade.getItem()).isAdvanced()
                 ? TinkerTables.tinkersAnvil.asItem() : TinkerTables.tinkerStation.asItem());
     }

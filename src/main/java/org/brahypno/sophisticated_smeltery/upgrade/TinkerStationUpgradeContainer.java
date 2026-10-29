@@ -1,24 +1,20 @@
 package org.brahypno.sophisticated_smeltery.upgrade;
 
-import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.SlotSuppliedHandler;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerBase;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerType;
-import slimeknights.tconstruct.tables.menu.slot.ArmorSlot;
 
 public final class TinkerStationUpgradeContainer extends UpgradeContainerBase<TinkerStationUpgradeWrapper, TinkerStationUpgradeContainer> {
     private final Slot output;
-    private final List<Slot> equipmentSlots = new ArrayList<>();
+    private final List<Slot> equipmentSlots;
     public TinkerStationUpgradeContainer(Player player, int id, TinkerStationUpgradeWrapper wrapper,
             UpgradeContainerType<TinkerStationUpgradeWrapper, TinkerStationUpgradeContainer> type) {
         super(player, id, wrapper, type);
@@ -26,17 +22,7 @@ public final class TinkerStationUpgradeContainer extends UpgradeContainerBase<Ti
         for (int slot = 0; slot < wrapper.inventory().getSlots(); slot++)
             slots.add(new SlotSuppliedHandler(() -> upgradeWrapper.inventory(), slot, -2000, -2000));
         output = new ToolResultSlot(); slots.add(output);
-        for (ArmorItem.Type typeOfArmor : ArmorItem.Type.values()) {
-            equipmentSlots.add(new ArmorSlot(player.getInventory(), typeOfArmor.getSlot(), -2000, -2000) {
-                @Override public boolean mayPickup(Player player) { return super.mayPickup(player) && !upgradeWrapper.isHostStack(getItem()); }
-                @Override public boolean isActive() { return isOpen(); }
-            });
-        }
-        equipmentSlots.add(new Slot(player.getInventory(), 40, -2000, -2000) {
-            @Override public boolean mayPickup(Player player) { return !upgradeWrapper.isHostStack(getItem()); }
-            @Override public boolean mayPlace(ItemStack stack) { return !upgradeWrapper.isHostStack(getItem()); }
-            @Override public boolean isActive() { return isOpen(); }
-        }.setBackground(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD));
+        equipmentSlots = WorkstationEquipmentSlots.create(player, this::isOpen, stack -> upgradeWrapper.isHostStack(stack));
         slots.addAll(equipmentSlots);
     }
     public Slot resultSlot() { return output; }

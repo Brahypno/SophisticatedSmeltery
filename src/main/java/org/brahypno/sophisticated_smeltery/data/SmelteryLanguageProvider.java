@@ -20,9 +20,13 @@ final class SmelteryLanguageProvider extends LanguageProvider {
     private void workstationTranslations(boolean chinese) {
         add("item.sophisticated_smeltery.workstation_appearance", chinese ? "外观：%s" : "Appearance: %s");
         add("item.sophisticated_smeltery.workstation_appearance_hint", chinese
-                ? "与同类工匠台或工匠砧合成以更换外观，并返还原台子。"
-                : "Craft with a matching station or anvil to change its appearance and return the previous workstation.");
+                ? "与同类工作台或工匠砧合成以更换外观，并返还原台子。"
+                : "Craft with a matching workstation to change its appearance and return the previous one.");
         for (String prefix : java.util.List.of("", "storage_")) {
+            add("item.sophisticated_smeltery." + prefix + "modifier_worktable_upgrade", chinese ? "强化调配台升级" : "Modifier Worktable Upgrade");
+            add("item.sophisticated_smeltery." + prefix + "modifier_worktable_upgrade.tooltip", chinese
+                    ? (prefix.isEmpty() ? "在背包提供强化调配台" : "在存储提供强化调配台")
+                    : (prefix.isEmpty() ? "Provides a Modifier Worktable in your backpack." : "Provides a Modifier Worktable in your storage."));
             add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade", chinese ? "工匠台升级" : "Tinker Station Upgrade");
             add("item.sophisticated_smeltery." + prefix + "tinkers_anvil_upgrade", chinese ? "工匠砧升级" : "Tinkers' Anvil Upgrade");
             add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade.tooltip", chinese

@@ -36,6 +36,8 @@ public final class ManualTestCommand {
                 .then(Commands.literal("casting_expansion").executes(ManualTestCommand::giveCastingExpansion))
                 .then(Commands.literal("alloyer").executes(ManualTestCommand::giveAlloyer))
                 .then(Commands.literal("part_builder").executes(ManualTestCommand::givePartBuilder))
+                .then(Commands.literal("modifier_worktable").executes(context -> giveModifierWorktable(context, false)))
+                .then(Commands.literal("storage_modifier_worktable").executes(context -> giveModifierWorktable(context, true)))
                 .then(Commands.literal("tinker_station").executes(context -> giveTinkerStation(context, false)))
                 .then(Commands.literal("tinkers_anvil").executes(context -> giveTinkerStation(context, true)))
                 .then(Commands.literal("tinker_info").executes(context -> giveTinkerStation(context, true, true)))
@@ -88,6 +90,36 @@ public final class ManualTestCommand {
         player.getInventory().selected = 0; player.getInventory().setItem(0, backpack);
         player.inventoryMenu.broadcastChanges();
         backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int giveModifierWorktable(CommandContext<CommandSourceStack> context, boolean useStorage) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        net.p3pp3rf1y.sophisticatedcore.api.IStorageWrapper storage;
+        ItemStack backpack = new ItemStack(ModItems.BACKPACK.get());
+        net.minecraft.core.BlockPos pos = player.blockPosition().offset(2, 0, 0);
+        if (useStorage) {
+            player.serverLevel().setBlockAndUpdate(pos, net.p3pp3rf1y.sophisticatedstorage.init.ModBlocks.NETHERITE_CHEST.get().defaultBlockState());
+            storage = ((net.p3pp3rf1y.sophisticatedstorage.block.StorageBlockEntity)player.serverLevel().getBlockEntity(pos)).getStorageWrapper();
+        } else storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
+        storage.getInventoryHandler();
+        storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(useStorage ? SophisticatedSmeltery.STORAGE_MODIFIER_WORKTABLE_UPGRADE.get() : SophisticatedSmeltery.MODIFIER_WORKTABLE_UPGRADE.get()));
+        var tool = slimeknights.tconstruct.library.tools.nbt.ToolStack.from(ModifierWorktableUpgradeGameTests.tool());
+        for (String name : java.util.List.of("sharpness", "reinforced", "emerald", "netherite", "experienced", "magnetic", "soulbound", "silky", "smite", "knockback", "expanded", "hydraulic", "lightspeed", "severing", "necrotic", "piercing", "autosmelt"))
+            tool.addModifier(new slimeknights.tconstruct.library.modifiers.ModifierId("tconstruct", name), 1);
+        player.getInventory().setItem(11, tool.createStack()); player.getInventory().setItem(12, new ItemStack(Items.COMPASS));
+        for (int slot = 36; slot <= 40; slot++) player.getInventory().setItem(slot, ItemStack.EMPTY);
+        player.getInventory().selected = 0; player.getInventory().setItem(0, backpack);
+        player.inventoryMenu.broadcastChanges();
+        if (useStorage) {
+            // Opening follows placement in this fixture; deliver the block before the native menu packet.
+            player.connection.send(new net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket(player.serverLevel(), pos));
+            var update = player.serverLevel().getBlockEntity(pos).getUpdatePacket();
+            if (update != null) player.connection.send(update);
+            player.serverLevel().getBlockState(pos).use(player.serverLevel(), player, net.minecraft.world.InteractionHand.MAIN_HAND,
+                    new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos), net.minecraft.core.Direction.UP, pos, false));
+            if (player.containerMenu == player.inventoryMenu) throw new IllegalStateException("Storage fixture did not open its native menu at " + pos);
+        }
+        else backpack.getItem().use(player.level(), player, net.minecraft.world.InteractionHand.MAIN_HAND);
         return Command.SINGLE_SUCCESS;
     }
     private static int givePartBuilder(CommandContext<CommandSourceStack> context) throws com.mojang.brigadier.exceptions.CommandSyntaxException {

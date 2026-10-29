@@ -18,6 +18,10 @@
       "required": false
     },
     {
+      "id": "sophisticated_smeltery:modifier_worktable_upgrade",
+      "required": false
+    },
+    {
       "id": "sophisticated_smeltery:scorched_alloyer_upgrade",
       "required": false
     },

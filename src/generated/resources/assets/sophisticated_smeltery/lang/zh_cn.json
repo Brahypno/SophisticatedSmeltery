@@ -88,6 +88,8 @@
   "item.sophisticated_smeltery.melting_upgrade": "空白熔炼升级",
   "item.sophisticated_smeltery.melting_upgrade.bound": "%s升级",
   "item.sophisticated_smeltery.melting_upgrade.tooltip": "让背包按绑定控制器的规则熔炼物品。",
+  "item.sophisticated_smeltery.modifier_worktable_upgrade": "强化调配台升级",
+  "item.sophisticated_smeltery.modifier_worktable_upgrade.tooltip": "在背包提供强化调配台",
   "item.sophisticated_smeltery.part_builder_upgrade": "部件制作台升级",
   "item.sophisticated_smeltery.part_builder_upgrade.tooltip": "使用匠魂部件制作台配方制作部件。放入模具与材料，选择部件后取出产物。",
   "item.sophisticated_smeltery.scorched_alloyer_upgrade": "焦褐合金炉升级",
@@ -110,6 +112,8 @@
   "item.sophisticated_smeltery.storage_melting_upgrade": "空白熔炼升级",
   "item.sophisticated_smeltery.storage_melting_upgrade.bound": "%s升级",
   "item.sophisticated_smeltery.storage_melting_upgrade.tooltip": "让存储按绑定控制器的规则熔炼物品。",
+  "item.sophisticated_smeltery.storage_modifier_worktable_upgrade": "强化调配台升级",
+  "item.sophisticated_smeltery.storage_modifier_worktable_upgrade.tooltip": "在存储提供强化调配台",
   "item.sophisticated_smeltery.storage_part_builder_upgrade": "部件制作台升级",
   "item.sophisticated_smeltery.storage_part_builder_upgrade.tooltip": "使用匠魂部件制作台配方制作部件。放入模具与材料，选择部件后取出产物。",
   "item.sophisticated_smeltery.storage_scorched_alloyer_upgrade": "焦褐合金炉升级",
@@ -129,6 +133,6 @@
   "item.sophisticated_smeltery.tinkers_anvil_upgrade": "工匠砧升级",
   "item.sophisticated_smeltery.tinkers_anvil_upgrade.tooltip": "工匠台升级的高级版，提供五个材料槽，支持大型工具与更多材料的强化配方。",
   "item.sophisticated_smeltery.workstation_appearance": "外观：%s",
-  "item.sophisticated_smeltery.workstation_appearance_hint": "与同类工匠台或工匠砧合成以更换外观，并返还原台子。",
+  "item.sophisticated_smeltery.workstation_appearance_hint": "与同类工作台或工匠砧合成以更换外观，并返还原台子。",
   "itemGroup.sophisticated_smeltery": "精妙匠魂"
 }

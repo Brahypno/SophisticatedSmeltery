@@ -1,0 +1,32 @@
+{
+  "type": "sophisticated_smeltery:casting_upgrade_tier",
+  "category": "misc",
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "sophisticatedstorage"
+    }
+  ],
+  "key": {
+    "B": {
+      "item": "sophisticatedstorage:upgrade_base"
+    },
+    "C": {
+      "tag": "forge:chests"
+    },
+    "I": {
+      "tag": "forge:ingots/iron"
+    },
+    "T": {
+      "item": "tconstruct:modifier_worktable"
+    }
+  },
+  "pattern": [
+    " T ",
+    "IBI",
+    " C "
+  ],
+  "result": {
+    "item": "sophisticated_smeltery:storage_modifier_worktable_upgrade"
+  }
+}

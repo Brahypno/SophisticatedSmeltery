@@ -36,7 +36,7 @@ public final class StorageCompatibilityClientTest {
     private static boolean opened;
     private static boolean saved;
     private static boolean loadingAppearanceWorld;
-    private static final List<String> ITEMS = List.of("melting_upgrade", "part_builder_upgrade", "tinker_station_upgrade", "tinkers_anvil_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
+    private static final List<String> ITEMS = List.of("melting_upgrade", "part_builder_upgrade", "tinker_station_upgrade", "tinkers_anvil_upgrade", "modifier_worktable_upgrade", "scorched_alloyer_upgrade", "spawner_upgrade", "advanced_spawner_upgrade",
             "advanced_transmute_upgrade", "seared_casting_upgrade", "advanced_seared_casting_upgrade", "scorched_casting_upgrade", "advanced_scorched_casting_upgrade");
 
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
@@ -86,7 +86,7 @@ public final class StorageCompatibilityClientTest {
         String expected = ModList.get().isLoaded("sophisticatedbackpacks") ? "melting_upgrade" : "storage_melting_upgrade";
         if (families > 0 && !ItemStack.isSameItemSameTags(tab.getIconItem(), stack(expected)))
             throw new IllegalStateException("Tab icon must use this mod's " + expected);
-        int expectedCount = families * (ModList.get().isLoaded("esotericism_tinker") ? 15 : 13);
+        int expectedCount = families * (ModList.get().isLoaded("esotericism_tinker") ? 16 : 14);
         if (tab.getDisplayItems().size() != expectedCount || tab.getDisplayItems().stream().anyMatch(item ->
                 !BuiltInRegistries.ITEM.getKey(item.getItem()).getNamespace().equals(SophisticatedSmeltery.MODID)))
             throw new IllegalStateException("Creative tab must contain only the loaded families of this mod's upgrades");

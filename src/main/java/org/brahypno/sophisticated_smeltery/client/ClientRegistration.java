@@ -21,6 +21,7 @@ public final class ClientRegistration {
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.ALLOYER_CONTAINER, AlloyerUpgradeTab::new);
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.PART_BUILDER_CONTAINER, PartBuilderUpgradeTab::new);
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.TINKER_STATION_CONTAINER, TinkerStationUpgradeTab::new);
+            UpgradeGuiManager.registerTab(SophisticatedSmeltery.MODIFIER_WORKTABLE_CONTAINER, ModifierWorktableUpgradeTab::new);
             UpgradeGuiManager.registerTab(SophisticatedSmeltery.SPAWNER_CONTAINER, SpawnerUpgradeTab::new);
             UpgradeGuiManager.registerInventoryControl(MeltingUpgradeItem.TYPE, screen ->
                     screen.getMenu().getUpgradeContainers().values().stream()
