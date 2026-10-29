@@ -18,25 +18,21 @@ final class SmelteryLanguageProvider extends LanguageProvider {
     }
 
     private void workstationTranslations(boolean chinese) {
-        add("item.sophisticated_smeltery.workstation_appearance", chinese ? "外观：%s" : "Appearance: %s");
-        add("item.sophisticated_smeltery.workstation_appearance_hint", chinese
-                ? "与同类工作台或工匠砧合成以更换外观，并返还原台子。"
-                : "Craft with a matching workstation to change its appearance and return the previous one.");
         for (String prefix : java.util.List.of("", "storage_")) {
             add("item.sophisticated_smeltery." + prefix + "modifier_worktable_upgrade", chinese ? "强化调配台升级" : "Modifier Worktable Upgrade");
             add("item.sophisticated_smeltery." + prefix + "modifier_worktable_upgrade.tooltip", chinese
-                    ? (prefix.isEmpty() ? "在背包提供强化调配台" : "在存储提供强化调配台")
-                    : (prefix.isEmpty() ? "Provides a Modifier Worktable in your backpack." : "Provides a Modifier Worktable in your storage."));
-            add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade", chinese ? "工匠台升级" : "Tinker Station Upgrade");
+                    ? "在升级标签页中添加一个强化调配台"
+                    : "Modifier Worktable in an upgrade tab");
+            add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade", chinese ? "工匠站升级" : "Tinker Station Upgrade");
             add("item.sophisticated_smeltery." + prefix + "tinkers_anvil_upgrade", chinese ? "工匠砧升级" : "Tinkers' Anvil Upgrade");
             add("item.sophisticated_smeltery." + prefix + "tinker_station_upgrade.tooltip", chinese
-                    ? "使用匠魂原生配方组装、修复、强化和替换工具部件，提供三个材料槽。"
-                    : "Builds, repairs, modifies and swaps tool parts using native Tinkers' recipes, with three input slots.");
+                    ? "在升级标签页中添加一个工匠站"
+                    : "Tinker Station in an upgrade tab");
             add("item.sophisticated_smeltery." + prefix + "tinkers_anvil_upgrade.tooltip", chinese
-                    ? "工匠台升级的高级版，提供五个材料槽，支持大型工具与更多材料的强化配方。"
-                    : "An advanced Tinker Station with five input slots for large tools and recipes requiring more ingredients.");
+                    ? "在升级标签页中添加一个工匠砧"
+                    : "Tinkers' Anvil in an upgrade tab");
         }
-        add("gui.sophisticated_smeltery.tinker_station", chinese ? "工匠台" : "Tinker Station");
+        add("gui.sophisticated_smeltery.tinker_station", chinese ? "工匠站" : "Tinker Station");
         add("gui.sophisticated_smeltery.tinkers_anvil", chinese ? "工匠砧" : "Tinkers' Anvil");
         add("gui.sophisticated_smeltery.tinker_station_name", chinese ? "工具名称" : "Tool name");
         add("gui.sophisticated_smeltery.tinker_station_tool", chinese ? "放入工具" : "Insert a tool");
