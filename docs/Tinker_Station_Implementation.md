@@ -25,8 +25,15 @@ native recipe behavior. Large tools requiring more than three ingredients need
 the anvil tier. Previewing never consumes items. Taking a result crafts once;
 Shift-click follows the selected player/storage destination.
 
-The sidebar is 125 by 224 GUI pixels. Its five-row, five-column scrolling picker
-shows up to 25 native layouts at once, with wheel scrolling for more.
+The sidebar is 125 GUI pixels wide. Client config
+`config/sophisticated_smeltery-client.toml` exposes
+`[tinkerStation] toolSelectionRows` (1–5, default 3), shared by both tiers and
+hosts. Each row shows five native layouts, with wheel scrolling for more.
+Changing the row count moves the ingredient slots, retained-item row, destination
+button, result and rename field, and resizes the sidebar. Heights for 1–5 rows
+are 170, 170, 188, 206 and 224 pixels; the shortest layouts reserve space for
+all five equipment slots and keep the result beneath them. Reopen the storage
+screen to apply a changed value. The default is 36 pixels shorter than five rows.
 It uses native
 station layouts, icons, ingredient hints and slot filters. Layout buttons reuse
 the native `icons.png` wood style for the station and metal style for the anvil,
@@ -46,8 +53,8 @@ the name clears after crafting, as in the native station. Hover over the
 result slot for the complete recipe error or usage instructions.
 
 
-The selected layout caption is omitted so the picker fits five rows without
-increasing sidebar height. Tool information is a separate 166 by 244 GUI pixel
+The selected layout caption is omitted to keep the sidebar compact.
+Tool information is a separate 166 by 244 GUI pixel
 window, initially placed to the left of the storage and its upgrade controls.
 Its two panels are always visible together: tool stats above and modifiers below.
 Before a tool exists, they show the native layout instructions and required
@@ -179,3 +186,10 @@ Verified on 2026-10-27:
 - Commit validation: the workstation feature compiles independently from its
   staged sources (`build/commit-groups/foundation-compile.log`). The final build
   and all 80 required tests passed (`build/commit-groups/final-validation.log`).
+- Configurable picker rows: build and real-client checks passed
+  (`build/tinker-configurable-rows.log`). Both tiers verify all five row settings,
+  scrolling, layout selection, panel height and slot bounds without overlaps.
+  The default three-row layout also passes naming, crafting, Shift-click output,
+  equipment, reopening and floating-panel interactions. Screenshots:
+  `build/tinkers-anvil-small-selected.png` and `build/tinkers-anvil-rows-1.png`
+  through `build/tinkers-anvil-rows-5.png` (station equivalents are also saved).

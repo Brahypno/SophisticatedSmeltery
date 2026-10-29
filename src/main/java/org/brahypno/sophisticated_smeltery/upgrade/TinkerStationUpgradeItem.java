@@ -21,10 +21,8 @@ public final class TinkerStationUpgradeItem extends UpgradeItemBase<TinkerStatio
     @Override public void appendHoverText(ItemStack stack, net.minecraft.world.level.Level level,
                                           List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(net.minecraft.network.chat.Component.translatable("item.sophisticated_smeltery.workstation_appearance",
-                TinkerStationAppearance.source(stack).getHoverName()).withStyle(net.minecraft.ChatFormatting.GRAY));
-        tooltip.add(net.minecraft.network.chat.Component.translatable("item.sophisticated_smeltery.workstation_appearance_hint")
-                .withStyle(net.minecraft.ChatFormatting.GRAY));
+        ItemStack source = TinkerStationAppearance.source(stack);
+        source.getItem().appendHoverText(source, level, tooltip, flag);
     }
     @Override public UpgradeType<TinkerStationUpgradeWrapper> getType() { return TYPE; }
     @Override public List<IUpgradeItem.UpgradeConflictDefinition> getUpgradeConflicts() { return List.of(); }

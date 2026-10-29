@@ -16,26 +16,33 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ToggleButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Dimension;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
+import org.brahypno.sophisticated_smeltery.ClientConfig;
 import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeContainer;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 import slimeknights.tconstruct.library.tools.layout.StationSlotLayout;
 
 /** Native layout picker, slot artwork and filters in a storage upgrade sidebar. */
 public final class TinkerStationUpgradeTab extends UpgradeSettingsTab<TinkerStationUpgradeContainer> {
-    public static final int LAYOUT_COLUMNS = 5, LAYOUT_ROWS = 5;
-    private static final int PICKER_TOP = 26, INPUT_TOP = 118, OVERFLOW_TOP = 118, RESULT_TOP = 154;
+    public static final int LAYOUT_COLUMNS = 5;
+    private static final int PICKER_TOP = 26;
+    private final int layoutRows, inputTop, resultTop;
     private int firstRow;
     private final TextBox name;
     private final TinkerStationInformationPanel information;
 
     public TinkerStationUpgradeTab(TinkerStationUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
         super(container, position, screen, text(container.getUpgradeWrapper().isAdvanced() ? "tinkers_anvil" : "tinker_station"), container.getUpgradeStack().getHoverName());
-        openTabDimension = new Dimension(125, 224);
-        for (int index = 0; index < LAYOUT_COLUMNS * LAYOUT_ROWS; index++) addCrafting(new LayoutButton(
+        layoutRows = ClientConfig.TINKER_STATION_TOOL_ROWS.get();
+        inputTop = PICKER_TOP + layoutRows * 18 + 2;
+        // Keep the result below the five player equipment slots even with a short picker.
+        resultTop = Math.max(inputTop + 36, PICKER_TOP + container.equipmentSlots().size() * 18 + 2);
+        int nameTop = Math.max(inputTop + 89, resultTop + 35);
+        openTabDimension = new Dimension(125, nameTop + 17);
+        for (int index = 0; index < LAYOUT_COLUMNS * layoutRows; index++) addCrafting(new LayoutButton(
                 new Position(x + 8 + index % LAYOUT_COLUMNS * 18, y + PICKER_TOP + index / LAYOUT_COLUMNS * 18), index));
         for (int slot = 0; slot < container.getUpgradeWrapper().inventory().getSlots(); slot++)
             addCrafting(new SlotHint(new Position(x, y), slot));
-        name = addCrafting(new TextBox(new Position(x + 32, y + 207), new Dimension(82, 9)) {
+        name = addCrafting(new TextBox(new Position(x + 32, y + nameTop), new Dimension(82, 9)) {
             @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
                 graphics.blit(TinkerStationGui.TINKER, x - 1, y - 2, 0, 244, 90, 12);
             }
@@ -57,17 +64,18 @@ public final class TinkerStationUpgradeTab extends UpgradeSettingsTab<TinkerStat
         var destination = screen.getMenu().getStorageWrapper().getStorageType().equals("backpack")
                 ? net.p3pp3rf1y.sophisticatedbackpacks.client.gui.SBPButtonDefinitions.SHIFT_CLICK_TARGET
                 : net.p3pp3rf1y.sophisticatedstorage.client.gui.StorageButtonDefinitions.SHIFT_CLICK_TARGET;
-        addCrafting(new ToggleButton<>(new Position(x + 8, y + OVERFLOW_TOP), destination,
+        addCrafting(new ToggleButton<>(new Position(x + 8, y + inputTop), destination,
                 button -> { if (button == 0) container.toggleDestination(); }, () -> getContainer().getUpgradeWrapper().shiftIntoStorage()));
-        addCrafting(new Status(new Position(x + 94, y + RESULT_TOP)));
+        addCrafting(new Status(new Position(x + 94, y + resultTop)));
         information = new TinkerStationInformationPanel(screen, container);
     }
     private <W extends WidgetBase> W addCrafting(W widget) {
         return addHideableChild(widget);
     }
     public TinkerStationInformationPanel information() { return information; }
+    public int layoutRows() { return layoutRows; }
     private static Component text(String key, Object... args) { return Component.translatable("gui.sophisticated_smeltery." + key, args); }
-    private int hiddenRows() { return Math.max(0, (getContainer().getUpgradeWrapper().layouts().size() + LAYOUT_COLUMNS - 1) / LAYOUT_COLUMNS - LAYOUT_ROWS); }
+    private int hiddenRows() { return Math.max(0, (getContainer().getUpgradeWrapper().layouts().size() + LAYOUT_COLUMNS - 1) / LAYOUT_COLUMNS - layoutRows); }
     private StationSlotLayout layoutAt(int index) {
         firstRow = Math.min(firstRow, hiddenRows());
         var layouts = getContainer().getUpgradeWrapper().layouts();
@@ -78,11 +86,11 @@ public final class TinkerStationUpgradeTab extends UpgradeSettingsTab<TinkerStat
         var wrapper = getContainer().getUpgradeWrapper();
         var layout = wrapper.layout();
         var slot = layout.getSlot(index);
-        if (!slot.isHidden()) return new Position(x + 8 + slot.getX(), y + INPUT_TOP + slot.getY());
+        if (!slot.isHidden()) return new Position(x + 8 + slot.getX(), y + inputTop + slot.getY());
         if (wrapper.inventory().getStackInSlot(index).isEmpty()) return new Position(-2000, -2000);
         int filled = 0;
         for (int i = 0; i < index; i++) if (layout.getSlot(i).isHidden() && !wrapper.inventory().getStackInSlot(i).isEmpty()) filled++;
-        return new Position(x + 32 + filled * 18, y + OVERFLOW_TOP);
+        return new Position(x + 32 + filled * 18, y + inputTop);
     }
     @Override protected void moveSlotsToTab() { positionSlots(); }
     private void positionSlots() {
@@ -96,7 +104,7 @@ public final class TinkerStationUpgradeTab extends UpgradeSettingsTab<TinkerStat
             slots.get(slot).x = pos.x() - screen.getGuiLeft(); slots.get(slot).y = pos.y() - screen.getGuiTop();
         }
         var output = getContainer().resultSlot();
-        output.x = x - screen.getGuiLeft() + 99; output.y = y - screen.getGuiTop() + RESULT_TOP + 5;
+        output.x = x - screen.getGuiLeft() + 99; output.y = y - screen.getGuiTop() + resultTop + 5;
         var equipment = getContainer().equipmentSlots();
         for (int index = 0; index < equipment.size(); index++) {
             equipment.get(index).x = x - screen.getGuiLeft() + 104;
@@ -131,12 +139,12 @@ public final class TinkerStationUpgradeTab extends UpgradeSettingsTab<TinkerStat
             graphics.blit(TinkerStationGui.TINKER, screen.getGuiLeft() + equipment.x - 1,
                     screen.getGuiTop() + equipment.y - 1, 194, 0, 18, 18);
         }
-        graphics.blit(TinkerStationGui.TINKER, x + 94, y + RESULT_TOP, 109, 33, 26, 26);
-        graphics.drawString(font, ">", x + 85, y + RESULT_TOP + 9, 0xff606060, false);
+        graphics.blit(TinkerStationGui.TINKER, x + 94, y + resultTop, 109, 33, 26, 26);
+        graphics.drawString(font, ">", x + 85, y + resultTop + 9, 0xff606060, false);
     }
     @Override public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (getContainer().isOpen() && mouseX >= x + 7 && mouseX < x + 8 + LAYOUT_COLUMNS * 18
-                && mouseY >= y + PICKER_TOP - 1 && mouseY < y + PICKER_TOP + LAYOUT_ROWS * 18 && hiddenRows() > 0) {
+                && mouseY >= y + PICKER_TOP - 1 && mouseY < y + PICKER_TOP + layoutRows * 18 && hiddenRows() > 0) {
             firstRow = Math.max(0, Math.min(hiddenRows(), firstRow + (delta > 0 ? -1 : 1))); return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);

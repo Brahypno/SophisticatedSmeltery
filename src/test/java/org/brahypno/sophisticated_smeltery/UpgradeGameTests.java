@@ -47,6 +47,35 @@ public final class UpgradeGameTests {
         wrapper.getComponents().setStackInSlot(0, new ItemStack(TinkerSmeltery.searedBricks, 4));
     }
 
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void controllerAppearanceTracksIgnitionAndHeatingSwitch(GameTestHelper helper) {
+        var storage = backpack();
+        var wrapper = melting(storage);
+        materials(wrapper);
+        int[] rebuilds = {0};
+        storage.getRenderInfo().setRenderUpdateChangeListener(info -> rebuilds[0]++);
+        var burn = new CompoundTag();
+        burn.putInt("fuel", 100);
+        wrapper.getFurnace().fuel().readFromTag(burn);
+        wrapper.persist();
+        helper.assertTrue(ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 1,
+                "Ignition refreshes the equipment snapshot and requests a placed model rebuild");
+        wrapper.persist();
+        helper.assertTrue(rebuilds[0] == 1, "Unchanged burning state must not rebuild the model");
+        wrapper.setHeating(false);
+        helper.assertTrue(!ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 2,
+                "Heating off hides fire even with paid fuel remaining");
+        wrapper.setHeating(true);
+        helper.assertTrue(ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 3,
+                "Heating on restores the burning appearance");
+        burn.putInt("fuel", 0);
+        wrapper.getFurnace().fuel().readFromTag(burn);
+        wrapper.persist();
+        helper.assertTrue(!ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 4,
+                "Exhausted fuel refreshes the idle appearance");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100)
     public static void missingControllerFallsBackWithoutLosingStoredState(GameTestHelper helper) {
         var donor = melting(backpack());

@@ -127,6 +127,7 @@ public class SophisticatedSmeltery {
             new UpgradeContainerType<>(ModifierWorktableUpgradeContainer::new);
 
     public SophisticatedSmeltery() {
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.CLIENT, ClientConfig.SPEC);
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         if (ModList.get().isLoaded("sophisticatedbackpacks")) ITEMS.register(bus);
         if (ModList.get().isLoaded("sophisticatedstorage")) STORAGE_ITEMS.register(bus);

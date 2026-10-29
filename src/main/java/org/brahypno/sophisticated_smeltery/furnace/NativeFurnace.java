@@ -266,6 +266,8 @@ public final class NativeFurnace {
         CompoundTag state = new CompoundTag();
         state.put("tank", controller.getTank().write(new CompoundTag()));
         state.put("fuel", fuel.writeToTag(new CompoundTag()));
+        // Transmute heaters can keep the native controller active without fuel.
+        state.putBoolean("hasHeat", fuel.hasFuel() || heatPolicy.temperatureBonus(controller) > 0);
         ListTag progress = new ListTag();
         inputs.forEach(input -> { if (!input.isEmpty()) progress.add(input.saveProgress()); });
         savedProgress.values().forEach(tag -> progress.add(tag.copy()));

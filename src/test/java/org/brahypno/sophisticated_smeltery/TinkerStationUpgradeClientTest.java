@@ -29,6 +29,9 @@ import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeContainer
 public final class TinkerStationUpgradeClientTest {
     private static int stage, ticks, frames;
     private static boolean advanced, inspectingPreview;
+    private static final java.util.List<Integer> ROW_COUNTS = java.util.List.of(1, 2, 3, 4, 5);
+    private static int rowSetting, originalRows;
+    private static boolean checkingRowSettings = true;
     private static int equipmentStep;
     private static final java.util.List<net.minecraft.world.item.Item> EQUIPMENT = java.util.List.of(
             net.minecraft.world.item.Items.DIAMOND_HELMET, net.minecraft.world.item.Items.DIAMOND_CHESTPLATE,
@@ -41,6 +44,8 @@ public final class TinkerStationUpgradeClientTest {
         if (++ticks > 7200) throw new IllegalStateException("Workstation UI timed out at " + stage);
         if (stage == 0 && mc.screen != null && mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen")) mc.setScreen(new TitleScreen());
         if (stage == 0 && mc.screen instanceof TitleScreen && mc.getOverlay() == null) {
+            originalRows = ClientConfig.TINKER_STATION_TOOL_ROWS.get();
+            ClientConfig.TINKER_STATION_TOOL_ROWS.set(ROW_COUNTS.get(0));
             mc.options.guiScale().set(2);
             org.lwjgl.glfw.GLFW.glfwSetWindowSize(mc.getWindow().getWindow(), 1280, 720);
             stage = 1;
@@ -75,24 +80,38 @@ public final class TinkerStationUpgradeClientTest {
                 verifySlotBounds(screen, tab, container);
                 capture(advanced ? "tinkers-anvil-small-empty" : "tinker-station-small-empty");
                 var layouts = wrapper.layouts();
-                if (layouts.size() > TinkerStationUpgradeTab.LAYOUT_COLUMNS * TinkerStationUpgradeTab.LAYOUT_ROWS) {
-                    check(tab.mouseScrolled(tab.getX() + 20, tab.getY() + 107, -1), "Wheel scrolling reaches the fifth picker row");
-                    check(tab.mouseScrolled(tab.getX() + 20, tab.getY() + 107, 1), "Wheel scrolling returns to the first layouts without arrow buttons");
+                if (layouts.size() > TinkerStationUpgradeTab.LAYOUT_COLUMNS * tab.layoutRows()) {
+                    int wheelY = tab.getY() + 26 + tab.layoutRows() * 18 - 9;
+                    check(tab.mouseScrolled(tab.getX() + 20, wheelY, -1), "Wheel scrolling reaches layouts below the configured rows");
+                    check(tab.mouseScrolled(tab.getX() + 20, wheelY, 1), "Wheel scrolling returns to the first layouts without arrow buttons");
                 }
-                int index = Math.min(layouts.size(), TinkerStationUpgradeTab.LAYOUT_COLUMNS * TinkerStationUpgradeTab.LAYOUT_ROWS) - 1;
+                int index = Math.min(layouts.size(), TinkerStationUpgradeTab.LAYOUT_COLUMNS * tab.layoutRows()) - 1;
                 click(screen, tab.getX() + 17 + index % TinkerStationUpgradeTab.LAYOUT_COLUMNS * 18,
                         tab.getY() + 35 + index / TinkerStationUpgradeTab.LAYOUT_COLUMNS * 18);
                 stage = 31; frames = 0; return;
             }
             case 31 -> {
                 var layouts = wrapper.layouts();
-                int last = Math.min(layouts.size(), TinkerStationUpgradeTab.LAYOUT_COLUMNS * TinkerStationUpgradeTab.LAYOUT_ROWS) - 1;
+                int last = Math.min(layouts.size(), TinkerStationUpgradeTab.LAYOUT_COLUMNS * tab.layoutRows()) - 1;
                 if (!wrapper.layout().getName().equals(layouts.get(last).getName())) return;
-                check(last / TinkerStationUpgradeTab.LAYOUT_COLUMNS >= 2, "Expanded five-column picker selects a real native layout in its lower rows");
                 verifySlotBounds(screen, tab, container);
+                if (checkingRowSettings) {
+                    capture((advanced ? "tinkers-anvil" : "tinker-station") + "-rows-" + tab.layoutRows());
+                    SophisticatedSmeltery.LOGGER.info("WORKSTATION ROWS PASS: {} rows, {}px panel, {}", tab.layoutRows(), tab.getHeight(), advanced ? "anvil" : "station");
+                    mc.player.closeContainer();
+                    if (!advanced) advanced = true;
+                    else {
+                        advanced = false;
+                        if (++rowSetting == ROW_COUNTS.size()) {
+                            checkingRowSettings = false;
+                            ClientConfig.TINKER_STATION_TOOL_ROWS.set(originalRows);
+                        } else ClientConfig.TINKER_STATION_TOOL_ROWS.set(ROW_COUNTS.get(rowSetting));
+                    }
+                    stage = 1; frames = 0; return;
+                }
                 capture(advanced ? "tinkers-anvil-expanded-picker" : "tinker-station-expanded-picker");
                 int index = java.util.stream.IntStream.range(0, layouts.size()).filter(i -> layouts.get(i).getName().toString().equals("tconstruct:pickaxe")).findFirst().orElseThrow();
-                int rows = Math.max(0, index / TinkerStationUpgradeTab.LAYOUT_COLUMNS - TinkerStationUpgradeTab.LAYOUT_ROWS + 1);
+                int rows = Math.max(0, index / TinkerStationUpgradeTab.LAYOUT_COLUMNS - tab.layoutRows() + 1);
                 for (int row = 0; row < rows; row++) tab.mouseScrolled(tab.getX() + 20, tab.getY() + 40, -1);
                 int relative = index - rows * TinkerStationUpgradeTab.LAYOUT_COLUMNS;
                 click(screen, tab.getX() + 17 + relative % TinkerStationUpgradeTab.LAYOUT_COLUMNS * 18,
@@ -142,7 +161,7 @@ public final class TinkerStationUpgradeClientTest {
             case 9 -> { if (screen.getMenu().getCarried().isEmpty()) return; clickUpgradeSlot(screen, container, 3); }
             case 10 -> {
                 if (wrapper.result().isEmpty()) return;
-                click(screen, tab.getX() + 40, tab.getY() + 211);
+                click(screen, tab.getX() + 40, tab.getY() + tab.getHeight() - 13);
                 for (char c : "Small pick".toCharArray()) check(screen.charTyped(c, 0), "Name field accepts typing");
             }
             case 11 -> {
@@ -157,7 +176,7 @@ public final class TinkerStationUpgradeClientTest {
                 check(ItemStack.matches(screen.getMenu().getCarried(), expected) && wrapper.getInput(0).getCount() == 3, "Named result and exact server consumption");
                 clickPlayerSlot(screen, 14);
             }
-            case 13 -> { if (!screen.getMenu().getCarried().isEmpty()) return; click(screen, tab.getX() + 16, tab.getY() + 126); }
+            case 13 -> { if (!screen.getMenu().getCarried().isEmpty()) return; click(screen, tab.getX() + 16, tab.getY() + 36 + tab.layoutRows() * 18); }
             case 14 -> {
                 if (!wrapper.shiftIntoStorage()) return;
                 mc.gameMode.handleInventoryMouseClick(screen.getMenu().containerId, container.resultSlot().index, 0, ClickType.QUICK_MOVE, mc.player);
@@ -233,7 +252,7 @@ public final class TinkerStationUpgradeClientTest {
                 check(container.resultSlot().x >= 0, "Both information panels leave crafting available");
                 if (inspectingPreview) { clickUpgradeSlot(screen, container, wrapper.inventory().getSlots()); stage = 12; frames = 0; return; }
                 capture("tinkers-anvil-information-returned");
-                SophisticatedSmeltery.LOGGER.info("TINKER STATION UI PASSED: both tiers equip all four armor pieces and offhand through real slot clicks, equipment survives closing/reopening, wheel-only five-row picker, relocated destination button, native panels, dragging, naming and crafting");
+                SophisticatedSmeltery.LOGGER.info("TINKER STATION UI PASSED: all five configured row counts fit both tiers; equipment survives closing/reopening; wheel scrolling, relocated controls, native panels, dragging, naming and crafting work at {} rows", tab.layoutRows());
                 stage = 40; mc.player.closeContainer(); mc.stop(); return;
             }
             case 29 -> {
@@ -254,7 +273,7 @@ public final class TinkerStationUpgradeClientTest {
                 if (!wrapper.layout().getName().toString().equals("tconstruct:pickaxe")) return;
                 var retained = container.getSlots().get(0);
                 check(screen.getGuiLeft() + retained.x >= tab.getX() + 32
-                                && screen.getGuiTop() + retained.y == tab.getY() + 118 && !retained.getItem().isEmpty(),
+                                && screen.getGuiTop() + retained.y == tab.getY() + 28 + tab.layoutRows() * 18 && !retained.getItem().isEmpty(),
                         "Switching recipes with a tool inserted keeps it accessible beside the relocated green button");
                 verifySlotBounds(screen, tab, container);
                 capture("tinkers-anvil-equipped-layout-switch");
@@ -270,7 +289,9 @@ public final class TinkerStationUpgradeClientTest {
         stage++; frames = 0;
     }
     private static void verifySlotBounds(StorageScreenBase<?> screen, TinkerStationUpgradeTab tab, TinkerStationUpgradeContainer container) {
-        int pickerBottom = tab.getY() + 26 + TinkerStationUpgradeTab.LAYOUT_ROWS * 18;
+        check(tab.layoutRows() == ClientConfig.TINKER_STATION_TOOL_ROWS.get(), "Reopening reads the configured row count");
+        check(tab.getHeight() == new int[]{170, 170, 188, 206, 224}[tab.layoutRows() - 1], "Panel height follows rows while reserving equipment and result space");
+        int pickerBottom = tab.getY() + 26 + tab.layoutRows() * 18;
         for (var slot : container.getSlots()) {
             if (slot.x < 0) continue;
             int left = screen.getGuiLeft() + slot.x, top = screen.getGuiTop() + slot.y;
@@ -278,8 +299,14 @@ public final class TinkerStationUpgradeClientTest {
             if (equipment) check(left >= tab.getX() + 8 + TinkerStationUpgradeTab.LAYOUT_COLUMNS * 18 + 4,
                     "Equipment column stays beside all five tool columns");
             check(left >= tab.getX() && left + 16 <= tab.getX() + tab.getWidth()
-                            && top >= (equipment ? tab.getY() + 26 : pickerBottom) && top + 16 <= (equipment ? pickerBottom : tab.getY() + 200),
-                    "Every visible crafting slot fits between the expanded picker and bottom controls");
+                            && top >= (equipment ? tab.getY() + 26 : pickerBottom)
+                            && top + 16 <= (equipment ? tab.getY() + 115 : tab.getY() + tab.getHeight() - 24),
+                    "Every visible crafting slot fits the configured picker and bottom controls");
+            for (var other : container.getSlots()) {
+                if (other == slot || other.x < 0) continue;
+                check(slot.x + 16 <= other.x || other.x + 16 <= slot.x || slot.y + 16 <= other.y || other.y + 16 <= slot.y,
+                        "Shorter pickers keep equipment, crafting inputs and result slots separate");
+            }
         }
     }
     private static void verifyEquipped(TinkerStationUpgradeContainer container) {

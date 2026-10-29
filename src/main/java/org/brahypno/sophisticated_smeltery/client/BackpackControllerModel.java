@@ -40,6 +40,7 @@ public final class BackpackControllerModel {
                 if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING))
                     state = state.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
                 if (state.hasProperty(ControllerBlock.IN_STRUCTURE)) state = state.setValue(ControllerBlock.IN_STRUCTURE, true);
+                if (state.hasProperty(ControllerBlock.ACTIVE)) state = state.setValue(ControllerBlock.ACTIVE, ControllerBinding.isActive(upgrade));
                 return state;
             }
         }
@@ -55,7 +56,6 @@ public final class BackpackControllerModel {
     private static List<BakedQuad> bake(BlockState controller, Direction facing) {
         var model = Minecraft.getInstance().getBlockRenderer().getBlockModel(controller);
         var bakery = new FaceBakery();
-        var face = new BlockElementFace(null, -1, "", new BlockFaceUV(new float[]{0, 0, 16, 16}, 0));
         var rotation = switch (facing) {
             case EAST -> BlockModelRotation.X0_Y90;
             case SOUTH -> BlockModelRotation.X0_Y180;
@@ -66,8 +66,11 @@ public final class BackpackControllerModel {
         for (Direction direction : Direction.values()) {
             var originals = model.getQuads(controller, direction, RandomSource.create(0));
             var sprite = direction == Direction.NORTH || originals.isEmpty() ? model.getParticleIcon() : originals.get(0).getSprite();
-            // Lower pouch height, projecting three pixels from its front face.
-            result.add(bakery.bakeQuad(new Vector3f(5, 0, 0), new Vector3f(11, 6, 3.01f),
+            // A twelve-pixel controller with its upper half removed. Enclose the
+            // entire front pouch (including its clips), almost flush with it.
+            float[] uv = direction.getAxis().isHorizontal() ? new float[]{0, 8, 16, 16} : new float[]{0, 0, 16, 16};
+            var face = new BlockElementFace(null, -1, "", new BlockFaceUV(uv, 0));
+            result.add(bakery.bakeQuad(new Vector3f(2, 0, 2.65f), new Vector3f(14, 6.01f, 5.01f),
                     face, sprite, direction, rotation, null, true, SophisticatedSmeltery.id("backpack_controller")));
         }
         return List.copyOf(result);

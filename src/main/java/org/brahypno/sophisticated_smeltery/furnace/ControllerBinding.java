@@ -23,6 +23,15 @@ public final class ControllerBinding {
     private static final Map<Block, Component> NAMES = new ConcurrentHashMap<>();
     private ControllerBinding() {}
 
+    /** Native fuel or heater condition, gated by portable heating and formation. */
+    public static boolean isActive(ItemStack upgrade) {
+        CompoundTag tag = upgrade.getTag();
+        if (tag == null || tag.contains("heating") && !tag.getBoolean("heating")) return false;
+        CompoundTag state = tag.getCompound(STATE);
+        return state.getInt("x") > 0 && state.getInt("y") > 0 && state.getInt("z") > 0
+                && (state.getBoolean("hasHeat") || state.getCompound("fuel").getInt("fuel") > 0);
+    }
+
     public static ItemStack getController(ItemStack upgrade) {
         CompoundTag tag = upgrade.getTag();
         return tag == null ? ItemStack.EMPTY : ItemStack.of(tag.getCompound(CONTROLLER).copy());

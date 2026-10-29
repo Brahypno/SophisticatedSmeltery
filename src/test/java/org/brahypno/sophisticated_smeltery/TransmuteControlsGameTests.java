@@ -54,6 +54,31 @@ public final class TransmuteControlsGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void heaterOnlyControllerAppearanceTracksHeatAndSwitch(GameTestHelper helper) {
+        if (!ModList.get().isLoaded("esotericism_tinker")) { helper.succeed(); return; }
+        for (boolean advanced : new boolean[]{false, true}) {
+            var storage = storage(advanced);
+            var wrapper = wrapper(storage);
+            int[] rebuilds = {0};
+            storage.getRenderInfo().setRenderUpdateChangeListener(info -> rebuilds[0]++);
+            helper.assertTrue(!ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)),
+                    "Disabled Transmute controller stays idle with heater components installed");
+            wrapper.setHeating(true);
+            helper.assertTrue(!wrapper.getFurnace().fuel().hasFuel() && wrapper.getFurnace().heatingTemperature() > 0
+                            && ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 1,
+                    "Heater-only Transmute activates and syncs its appearance without burning fuel");
+            wrapper.setHeating(false);
+            helper.assertTrue(!ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 2,
+                    "Disabling heating turns off the heater-only controller appearance");
+            wrapper.setHeating(true);
+            wrapper.getComponents().setStackInSlot(2, ItemStack.EMPTY);
+            helper.assertTrue(!ControllerBinding.isActive(storage.getRenderInfo().getUpgradeItems().get(0)) && rebuilds[0] == 4,
+                    "Removing the heaters restores idle appearance when there is no fuel");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
     public static void tierRecipeLayoutStateNetworkAndNoDuplicateRefund(GameTestHelper helper) {
         var optional = helper.getLevel().getRecipeManager().byKey(SophisticatedSmeltery.id("advanced_transmute_upgrade"));
         if (!ModList.get().isLoaded("esotericism_tinker")) {

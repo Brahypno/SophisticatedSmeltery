@@ -13,6 +13,7 @@
     "SpawnerRulesMixin",
     "WorldSpawnerTickMixin",
     "HeatingControllerAccess",
+    "RenderInfoAccess",
     "MobCatcherStorageAccess",
     "HeatingControllerMixin",
     "AlloyerControllerMixin",
@@ -32,7 +33,9 @@
   ],
   "client": [
     "StorageScreenControlsAccess",
-    "BackpackControllerModelMixin"
+    "BackpackControllerModelMixin",
+    "BackpackControllerParticlesMixin",
+    "BackpackControllerWornParticlesMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -11,6 +11,7 @@ public final class CompatMixinPlugin implements IMixinConfigPlugin {
     @Override public boolean shouldApplyMixin(String target, String mixin) {
         String mod = mixin.endsWith("BackpackFluidUpgradeMixin") || mixin.endsWith("MobCatcherStorageAccess")
                 || mixin.endsWith("BackpackFluidSideMixin") || mixin.endsWith("BackpackControllerModelMixin")
+                || mixin.endsWith("BackpackControllerParticlesMixin") || mixin.endsWith("BackpackControllerWornParticlesMixin")
                 ? "sophisticatedbackpacks"
                 : mixin.endsWith("StorageFluidWrapperMixin") || mixin.endsWith("StorageFluidCapabilityMixin") || mixin.endsWith("StoragePackedFluidMixin")
                 ? "sophisticatedstorage" : null;

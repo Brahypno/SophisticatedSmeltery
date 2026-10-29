@@ -23,6 +23,7 @@ import net.p3pp3rf1y.sophisticatedcore.upgrades.ITickableUpgrade;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.UpgradeWrapperBase;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.tank.TankUpgradeItem;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.mixin.RenderInfoAccess;
 import org.brahypno.sophisticated_smeltery.furnace.NativeFurnace;
 import org.brahypno.sophisticated_smeltery.furnace.PortableMobMelting;
 import org.brahypno.sophisticated_smeltery.furnace.UpgradeTankHandler;
@@ -44,6 +45,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     private boolean transferring;
     private boolean loading = true;
     private boolean dirty;
+    private boolean renderedActive;
     private int lastMaterials = -1;
     private double lastCapacityMultiplier = -1;
     private int[] inputSlots = new int[0];
@@ -51,6 +53,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
 
     public MeltingUpgradeWrapper(IStorageWrapper storage, ItemStack upgrade, Consumer<ItemStack> save) {
         super(storage, upgrade, save);
+        renderedActive = ControllerBinding.isActive(upgrade);
         CompoundTag tag = upgrade.getTag();
         CompoundTag state = tag == null ? new CompoundTag() : tag.getCompound(ControllerBinding.STATE);
         var controller = ControllerBinding.create(ControllerBinding.getController(upgrade));
@@ -282,6 +285,14 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         upgrade.getOrCreateTag().put(ControllerBinding.STATE, state);
         dirty = false;
         save();
+        boolean active = ControllerBinding.isActive(upgrade);
+        if (active != renderedActive) {
+            renderedActive = active;
+            // Upgrade render stacks are copies; fuel NBT changes alone do not
+            // refresh the item/equipment snapshot or rebuild placed geometry.
+            storageWrapper.getUpgradeHandler().setRenderUpgradeItems();
+            ((RenderInfoAccess)storageWrapper.getRenderInfo()).sophisticatedsmeltery$save(true);
+        }
     }
 
     @Override public void onBeforeRemoved() { persist(); }
