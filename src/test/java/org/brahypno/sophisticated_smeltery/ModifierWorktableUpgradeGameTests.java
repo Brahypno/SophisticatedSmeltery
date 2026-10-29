@@ -96,7 +96,9 @@ public final class ModifierWorktableUpgradeGameTests {
                         : operation.equals("book") ? new ItemStack(Items.LAPIS_LAZULI, 8) : ItemStack.EMPTY);
                 var tile = baseline(helper, wrapper);
                 helper.assertTrue(wrapper.recipe() != null && wrapper.recipe().getId().equals(tile.getCurrentRecipe().getId()), "Same native recipe for " + operation);
-                helper.assertTrue(!wrapper.options().isEmpty() && wrapper.options().equals(tile.getCurrentButtons()), "Same native modifier choices for " + operation);
+                helper.assertTrue(!wrapper.options().isEmpty() && wrapper.options().equals(tile.getCurrentButtons()),
+                        "Same native modifier choices for " + host.prefix + operation + "; recipe=" + wrapper.recipe().getId()
+                                + "; upgrade=" + wrapper.options() + "; native=" + tile.getCurrentButtons());
                 wrapper.select(0); tile.selectModifier(0);
                 var player = helper.makeMockPlayer(); var nativePlayer = helper.makeMockPlayer();
                 var expected = tile.calcResult(nativePlayer).copy();

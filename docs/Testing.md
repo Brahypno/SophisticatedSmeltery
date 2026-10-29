@@ -7,6 +7,11 @@ blocked-path operation counts and immediate recovery, and native void callbacks.
 Slot-transfer changes require the full suite because the focused suite does not
 select these tests or `CastingExpansionGameTests`.
 
+The Transmute mob-melting reload test reconstructs recipes through their native
+network serializers after clearing caches. Restoring only the fuel lookup leaves
+modifier-slot and salvage registrations empty, causing later worktable tests to
+see no extractable modifiers in both the upgrade and the native worktable.
+
 Controller appearance is covered by `controllerAppearanceTracksIgnitionAndHeatingSwitch`:
 ignition, heating off/on with remaining fuel, exhaustion, and render updates only
 when the active state changes. Run `./gradlew.bat runClient -PbackpackControllerSmoke --offline`

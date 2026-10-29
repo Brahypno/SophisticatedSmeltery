@@ -126,11 +126,22 @@ public final class MobMeltingGameTests {
     }
 
     private static void reloadRecipeCaches(GameTestHelper helper) {
-        slimeknights.tconstruct.common.recipe.RecipeCacheInvalidator.reload(false);
-        // Real datapack loading reconstructs fuel recipes after clearing their lookup.
-        // replaceRecipes() reuses existing instances, so restore that lookup explicitly here.
-        helper.getLevel().getRecipeManager().getAllRecipesFor(slimeknights.tconstruct.library.recipe.TinkerRecipeTypes.FUEL.get())
-                .forEach(slimeknights.tconstruct.library.recipe.fuel.MeltingFuelLookup::addFuel);
+        var manager = helper.getLevel().getRecipeManager();
+        var modifiers = slimeknights.tconstruct.library.recipe.modifiers.ModifierRecipeLookup.getRecipeModifierList();
+        var buffer = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        try {
+            new net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket(manager.getRecipes()).write(buffer);
+            slimeknights.tconstruct.common.recipe.RecipeCacheInvalidator.reload(false);
+            // Real reload reconstructs recipes, registering fuel, modifier slots,
+            // salvage and other native lookups. Reusing recipe instances after
+            // a global clear leaves unrelated worktable extraction lists empty.
+            var restored = new net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket(buffer);
+            manager.replaceRecipes(restored.getRecipes());
+            helper.assertTrue(modifiers.equals(slimeknights.tconstruct.library.recipe.modifiers.ModifierRecipeLookup.getRecipeModifierList()),
+                    "Simulated reload preserves native modifier recipe registrations");
+        } finally {
+            buffer.release();
+        }
     }
 
     @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID, timeoutTicks = 100, batch = "estinker_mobs")
