@@ -92,7 +92,7 @@ public final class HeatingSwitchClientTest {
             return;
         }
         if (stage == 3) {
-            CastingRecipeJeiProbe.verifyUniqueTierRecipes();
+            if (!Boolean.getBoolean("sophisticatedsmeltery.meltingInteractionSmoke")) CastingRecipeJeiProbe.verifyUniqueTierRecipes();
             check(scrolling == (size == 0), "Exercise both actual scrolling and non-scrolling backpack screens");
             check(control.getX() == screen.getGuiLeft() - 22 && control.getY() == screen.getGuiTop() + 8,
                     "Heating switch must use the native upgrade switch position");

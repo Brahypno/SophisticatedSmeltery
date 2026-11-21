@@ -19,6 +19,7 @@ import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Dimension;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.GuiHelper;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Position;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
+import slimeknights.mantle.client.screen.ElementScreen;
 import slimeknights.tconstruct.smeltery.client.screen.HeatingStructureScreen;
 import slimeknights.tconstruct.smeltery.client.screen.module.GuiFuelModule;
 import slimeknights.tconstruct.smeltery.client.screen.module.GuiSmelteryTank;
@@ -27,6 +28,13 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     private static final int TAB_WIDTH = 138;
     private static final int TITLE_X = 20;
     private static final int POSITION_BUTTON_X = TAB_WIDTH - Dimension.SQUARE_12.width() - 6;
+    private static final int FUEL_X = 115;
+    private static final int FIRE_Y = 25;
+    private static final int FUEL_TANK_OFFSET = 16;
+    private static final int FUEL_TANK_WIDTH = 16;
+    private static final int FUEL_TANK_HEIGHT = 88;
+    private static final ElementScreen FIRE = GuiFuelModule.makeFire(HeatingStructureScreen.BACKGROUND);
+    private static final ElementScreen UNLIT_FIRE = FIRE.move(153, 15, FIRE.w, FIRE.h);
     private final Label furnaceTitle;
     private GuiSmelteryTank tankGui;
     private GuiFuelModule fuelGui;
@@ -44,7 +52,7 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         furnaceTitle = addHideableChildWithoutSizing(new Label(new Position(x + TITLE_X, y + 8), title, () -> POSITION_BUTTON_X - TITLE_X - 5));
         addHideableChild(new SlotPositionButton(new Position(x + POSITION_BUTTON_X, y + 6), container));
         addHideableChild(new NativeTank(new Position(x + 5, y + 24)));
-        addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
+        addHideableChild(new NativeFuel(new Position(x + FUEL_X, y + FIRE_Y)));
         addHideableChild(new BucketTransferModeButton(new Position(x + 65 + BucketTransferModeButton.MODE_BUTTON_OFFSET, y + 138),
                 () -> container.getUpgradeWrapper().getTransferDirection(), () -> container.action("bucketMode")));
         if (container.getUpgradeWrapper().hasTransmuteControls()) {
@@ -93,9 +101,10 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
         tankGui = new GuiSmelteryTank(screen, wrapper.getTank(), x - screen.getGuiLeft() + 5,
                 y - screen.getGuiTop() + 24, 106, 106,
                 BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(wrapper.getFurnace().controller().getType()));
-        fuelGui = new GuiFuelModule(screen, wrapper.getFurnace().fuel(), x - screen.getGuiLeft() + 115,
-                y - screen.getGuiTop() + 41, 16, 88, x - screen.getGuiLeft() + 116,
-                y - screen.getGuiTop() + 25, false, HeatingStructureScreen.BACKGROUND);
+        int fuelX = x - screen.getGuiLeft() + FUEL_X;
+        int fireY = y - screen.getGuiTop() + FIRE_Y;
+        fuelGui = new GuiFuelModule(screen, wrapper.getFurnace().fuel(), fuelX, fireY + FUEL_TANK_OFFSET,
+                FUEL_TANK_WIDTH, FUEL_TANK_HEIGHT, fuelX + 1, fireY, false, HeatingStructureScreen.BACKGROUND);
     }
 
     @Override protected void moveSlotsToTab() {
@@ -154,21 +163,47 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
     }
 
     private final class NativeFuel extends WidgetBase {
-        private NativeFuel(Position position) { super(position, new Dimension(16, 88)); }
+        private NativeFuel(Position position) {
+            super(position, new Dimension(FUEL_TANK_WIDTH, FUEL_TANK_OFFSET + FUEL_TANK_HEIGHT));
+        }
+
+        private int currentTemperature() {
+            var wrapper = getContainer().getUpgradeWrapper();
+            var furnace = wrapper.getFurnace();
+            return wrapper.isHeating() && furnace.dimensions().volume() > 0 ? furnace.heatingTemperature() : 0;
+        }
+
         @Override protected void renderBg(GuiGraphics graphics, Minecraft minecraft, int mouseX, int mouseY) {
             updateNativeModules();
-            graphics.fill(x - 1, y - 1, x + 17, y + 89, 0xff737373);
-            graphics.fill(x, y, x + 16, y + 88, 0xff252525);
+            int tankY = y + FUEL_TANK_OFFSET;
+            graphics.fill(x - 1, tankY - 1, x + FUEL_TANK_WIDTH + 1, tankY + FUEL_TANK_HEIGHT + 1, 0xff737373);
+            graphics.fill(x, tankY, x + FUEL_TANK_WIDTH, tankY + FUEL_TANK_HEIGHT, 0xff252525);
             graphics.flush();
+            boolean hot = currentTemperature() > 0;
+            if (hot) UNLIT_FIRE.draw(graphics, x + 1, y);
             fuelGui.draw(graphics);
+            var fuel = getContainer().getUpgradeWrapper().getFurnace().fuel();
+            if (!hot) {
+                // Paused burn time remains in the fuel module while the furnace is off.
+                UNLIT_FIRE.draw(graphics, x + 1, y);
+            } else if (!fuel.hasFuel() || fuel.getFuelQuality() <= 0) {
+                // Transmute heaters can supply heat without burning fuel.
+                FIRE.draw(graphics, x + 1, y);
+            }
         }
         @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) { }
         @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (!isMouseOver(mouseX, mouseY) || button > 1) return false;
+            if (mouseY < y + FUEL_TANK_OFFSET || !isMouseOver(mouseX, mouseY) || button > 1) return false;
             getContainer().fuelClick(button == 1);
             return true;
         }
         @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
+            if (isMouseOver(mouseX, mouseY) && mouseY < y + FIRE.h && mouseX >= x + 1 && mouseX < x + 1 + FIRE.w) {
+                var wrapper = getContainer().getUpgradeWrapper();
+                Component tooltip = wrapper.isHeating() ? text("temperature", currentTemperature()) : text("heating_off");
+                graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                return;
+            }
             updateNativeModules();
             fuelGui.addTooltip(graphics, mouseX, mouseY, getContainer().getUpgradeWrapper().getFurnace().fuel().hasSources());
         }

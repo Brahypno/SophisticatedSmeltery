@@ -16,6 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
+import org.brahypno.sophisticated_smeltery.client.MeltingHeatingSwitch;
 import org.brahypno.sophisticated_smeltery.client.MeltingUpgradeTab;
 import org.brahypno.sophisticated_smeltery.client.BucketTransferModeButton;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
@@ -120,6 +121,20 @@ public final class MeltingInteractionClientTest {
                         "GUI injection leaves the exact expected gold fluid and no hidden container items");
                 capture(event, "bucket-ui-injection-complete");
                 SophisticatedSmeltery.LOGGER.info("ACTUAL FLUID UI PASSED: layer selection, stacked cursor fill, right-click injection, all three modes, GUI slots, consecutive output and exact conservation");
+                checkHeatIndicator(event, tab, false);
+                toggleHeating(screen);
+            }
+            case 25 -> {
+                if (!wrapper.isHeating() || !wrapper.getFurnace().fuel().hasFuel()) return;
+                checkHeatIndicator(event, tab, true);
+                capture(event, "melting-heat-lit");
+                toggleHeating(screen);
+            }
+            case 26 -> {
+                if (wrapper.isHeating()) return;
+                check(wrapper.getFurnace().fuel().hasFuel(), "Switching off preserves the paid burn time");
+                checkHeatIndicator(event, tab, false);
+                SophisticatedSmeltery.LOGGER.info("HEAT INDICATOR UI PASSED: idle, burning, and paused with fuel remaining");
                 running = false;
                 mc.player.closeContainer();
                 mc.stop();
@@ -129,6 +144,30 @@ public final class MeltingInteractionClientTest {
         SophisticatedSmeltery.LOGGER.info("Fluid UI click stage {} completed", stage);
         stage++;
         frames = 0;
+    }
+
+    private static void toggleHeating(StorageScreenBase<?> screen) {
+        var control = screen.children().stream().filter(MeltingHeatingSwitch.class::isInstance)
+                .map(MeltingHeatingSwitch.class::cast).findFirst().orElseThrow();
+        click(screen, control.getX() + 3, control.getY() + 6, 0);
+    }
+
+    private static void checkHeatIndicator(ScreenEvent.Render.Post event, MeltingUpgradeTab tab, boolean lit) {
+        event.getGuiGraphics().flush();
+        var mc = Minecraft.getInstance();
+        double scale = mc.getWindow().getGuiScale();
+        boolean hasFireColor = false;
+        boolean hasUnlitColor = false;
+        try (var image = Screenshot.takeScreenshot(mc.getMainRenderTarget())) {
+            for (int y = 25; y < 39; y++) {
+                for (int x = 116; x < 130; x++) {
+                    int rgb = image.getPixelRGBA((int)((tab.getX() + x) * scale), (int)((tab.getY() + y) * scale));
+                    hasFireColor |= (rgb & 0xff) > ((rgb >> 16) & 0xff) + 40;
+                    hasUnlitColor |= (rgb & 0xffffff) == 0x8b8b8b;
+                }
+            }
+        }
+        check(lit ? hasFireColor : !hasFireColor && hasUnlitColor, "Render the expected heat indicator for lit=" + lit);
     }
 
     private static void clickFluid(StorageScreenBase<?> screen, MeltingUpgradeTab tab, MeltingUpgradeContainer container, Item bucket, int button) {
