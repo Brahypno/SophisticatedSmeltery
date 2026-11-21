@@ -11,6 +11,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
+import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ButtonDefinitions;
+import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.Label;
+import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ToggleButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.WidgetBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.Dimension;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.utils.GuiHelper;
@@ -21,18 +24,25 @@ import slimeknights.tconstruct.smeltery.client.screen.module.GuiFuelModule;
 import slimeknights.tconstruct.smeltery.client.screen.module.GuiSmelteryTank;
 
 public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeContainer> {
+    private static final int TAB_WIDTH = 138;
+    private static final int TITLE_X = 20;
+    private static final int POSITION_BUTTON_X = TAB_WIDTH - Dimension.SQUARE_12.width() - 6;
+    private final Label furnaceTitle;
     private GuiSmelteryTank tankGui;
     private GuiFuelModule fuelGui;
     private Object displayedTank;
 
     public MeltingUpgradeTab(MeltingUpgradeContainer container, Position position, StorageScreenBase<?> screen) {
-        super(container, position, screen, container.getUpgradeWrapper().isOperational()
-                        ? container.getUpgradeWrapper().getFurnace().controller().getDisplayName() : container.getUpgradeStack().getHoverName(),
+        super(container, position, screen, container.getUpgradeWrapper().isOperational() ? Component.empty() : container.getUpgradeStack().getHoverName(),
                 container.getUpgradeStack().getHoverName());
         if (!container.getUpgradeWrapper().isOperational()) {
-            openTabDimension = new Dimension(138, 200);
+            furnaceTitle = null;
+            openTabDimension = new Dimension(TAB_WIDTH, 200);
             return;
         }
+        Component title = container.getUpgradeWrapper().getFurnace().controller().getDisplayName();
+        furnaceTitle = addHideableChildWithoutSizing(new Label(new Position(x + TITLE_X, y + 8), title, () -> POSITION_BUTTON_X - TITLE_X - 5));
+        addHideableChild(new SlotPositionButton(new Position(x + POSITION_BUTTON_X, y + 6), container));
         addHideableChild(new NativeTank(new Position(x + 5, y + 24)));
         addHideableChild(new NativeFuel(new Position(x + 115, y + 41)));
         addHideableChild(new BucketTransferModeButton(new Position(x + 65 + BucketTransferModeButton.MODE_BUTTON_OFFSET, y + 138),
@@ -47,10 +57,34 @@ public final class MeltingUpgradeTab extends UpgradeSettingsTab<MeltingUpgradeCo
                     () -> text("tank_button", tank + 1), button -> container.transfer(tank, button == 0),
                     () -> List.of(text("backpack_tank", tank + 1), text("transfer_hint"))));
         }
-        openTabDimension = new Dimension(138, container.getUpgradeWrapper().getBackpackTanks().isEmpty() ? 200 : 224);
+        openTabDimension = new Dimension(TAB_WIDTH, container.getUpgradeWrapper().getBackpackTanks().isEmpty() ? 200 : 224);
+    }
+
+    @Override protected void onTabOpen() {
+        super.onTabOpen();
+        if (furnaceTitle != null) {
+            // The base tab gives its empty title label the full header hitbox.
+            children.removeIf(child -> child instanceof Label && child != furnaceTitle);
+        }
     }
 
     static Component text(String key, Object... args) { return Component.translatable("gui.sophisticated_smeltery." + key, args); }
+
+    private static final class SlotPositionButton extends ToggleButton<Boolean> {
+        private SlotPositionButton(Position position, MeltingUpgradeContainer container) {
+            super(position, ButtonDefinitions.createSmallToggleButtonDefinition(ButtonDefinitions.getBooleanStateData(
+                            new StateData(null, text("melting_slots_end")), new StateData(null, text("melting_slots_start")))),
+                    button -> container.action("meltingSlotPosition"), () -> container.getUpgradeWrapper().areMeltingSlotsAtEnd());
+        }
+
+        @Override public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            return button == 0 && super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            graphics.drawCenteredString(font, getState.get() ? "↓" : "↑", x + 6, y + 2, 0xffffffff);
+        }
+    }
 
     private void updateNativeModules() {
         var wrapper = getContainer().getUpgradeWrapper();

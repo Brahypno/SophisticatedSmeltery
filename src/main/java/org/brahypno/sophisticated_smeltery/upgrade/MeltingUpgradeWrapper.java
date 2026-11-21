@@ -49,6 +49,7 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
     private int lastMaterials = -1;
     private double lastCapacityMultiplier = -1;
     private int[] inputSlots = new int[0];
+    private int firstInputSlot = -1;
     private int lastContainerFluidRevision = -1;
 
     public MeltingUpgradeWrapper(IStorageWrapper storage, ItemStack upgrade, Consumer<ItemStack> save) {
@@ -182,10 +183,23 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         return (int)Math.min(slots, storageWrapper.getInventoryHandler().getSlots());
     }
 
+    public boolean areMeltingSlotsAtEnd() {
+        return upgrade.hasTag() && upgrade.getTag().getBoolean("meltingSlotsAtEnd");
+    }
+
+    public void toggleMeltingSlotPosition() {
+        if (!isOperational()) return;
+        upgrade.getOrCreateTag().putBoolean("meltingSlotsAtEnd", !areMeltingSlotsAtEnd());
+        persist();
+    }
+
+    public int getFirstMeltingSlot() {
+        return areMeltingSlotsAtEnd() ? storageWrapper.getInventoryHandler().getSlots() - getMeltingSlotCount() : 0;
+    }
+
     public boolean isMeltingSlot(int slot) {
-        int total = storageWrapper.getInventoryHandler().getSlots();
-        int count = getMeltingSlotCount();
-        return slot >= 0 && slot < total && slot < count;
+        int first = getFirstMeltingSlot();
+        return slot >= first && slot < first + getMeltingSlotCount();
     }
 
     @Override public void tick(@Nullable Entity entity, Level level, BlockPos pos) {
@@ -193,9 +207,12 @@ public final class MeltingUpgradeWrapper extends UpgradeWrapperBase<MeltingUpgra
         if (furnace.refreshRecipes()) lastMaterials = -1;
         updateCapacity();
         int count = getMeltingSlotCount();
-        if (inputSlots.length != count) {
+        int first = getFirstMeltingSlot();
+        if (firstInputSlot != first || inputSlots.length != count) {
+            firstInputSlot = first;
             inputSlots = new int[count];
-            for (int index = 0; index < count; index++) inputSlots[index] = index;
+            for (int index = 0; index < count; index++) inputSlots[index] = first + index;
+            dirty = true;
         }
         furnace.bindInputs(level, storageWrapper.getInventoryHandler(), inputSlots);
         if ((level.getGameTime() & 3) == 0 || (level.getGameTime() & 3) == 1) furnace.refreshInputs();

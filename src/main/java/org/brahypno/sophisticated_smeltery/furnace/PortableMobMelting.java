@@ -74,12 +74,13 @@ public final class PortableMobMelting implements MobMelting {
         if (upgrade.isHeating() && upgrade.getMeltingSlotCount() > 0 && level.getGameTime() % 20 == 12
                 && upgrade.getStorage() instanceof IBackpackWrapper backpack) {
             List<CapturedMob> mobs = new ArrayList<>(MobCatcherStorage.getCapturedMobs(backpack));
-            int meltingSlots = upgrade.getMeltingSlotCount();
+            int first = upgrade.getFirstMeltingSlot();
+            int end = first + upgrade.getMeltingSlotCount();
+            int columns = MobCatcherStorage.getColumns(backpack);
             boolean mobsChanged = false;
             for (int index = 0; index < mobs.size(); index++) {
                 CapturedMob mob = mobs.get(index);
-                // The anchor is the first occupied slot, so any overlap with the prefix is equivalent.
-                if (mob.slot() < 0 || mob.slot() >= meltingSlots) continue;
+                if (!overlapsMeltingSlots(mob, columns, first, end)) continue;
                 var type = MobCatcherStorage.getEntityType(mob).orElse(null);
                 if (type == null || type.is(TinkerTags.EntityTypes.MELTING_BLACKLIST)) continue;
                 Entity entity = type.create(level);
@@ -156,13 +157,23 @@ public final class PortableMobMelting implements MobMelting {
         }
     }
 
+    private static boolean overlapsMeltingSlots(CapturedMob mob, int columns, int first, int end) {
+        if (mob.slot() < 0) return false;
+        for (int row = 0; row < mob.height(); row++) {
+            int slot = Math.max(first, mob.slot() + row * columns);
+            if (slot >= end) break;
+            if (mob.occupiesSlot(slot, columns)) return true;
+        }
+        return false;
+    }
+
     private boolean flushDrops() {
         if (pendingDrops.isEmpty()) return false;
         boolean changed = false;
         int meltingSlots = upgrade.getMeltingSlotCount();
         for (var iterator = pendingDrops.listIterator(); iterator.hasNext();) {
             ItemStack original = iterator.next();
-            ItemStack remaining = StorageSlotTransfer.insert(upgrade.getStorage(), original, meltingSlots);
+            ItemStack remaining = StorageSlotTransfer.insert(upgrade.getStorage(), original, meltingSlots, upgrade.areMeltingSlotsAtEnd());
             if (remaining.getCount() != original.getCount()) changed = true;
             if (remaining.isEmpty()) iterator.remove();
             else iterator.set(remaining);

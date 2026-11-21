@@ -21,6 +21,7 @@ import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackBlockEntity;
 import net.p3pp3rf1y.sophisticatedbackpacks.backpack.BackpackItem;
 import net.p3pp3rf1y.sophisticatedbackpacks.api.CapabilityBackpackWrapper;
 import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.furnace.StorageSlotTransfer;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeItem;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.MeltingUpgradeContainer;
@@ -239,6 +240,47 @@ public final class UpgradeGameTests {
         helper.assertTrue(storage.getInventoryForInputOutput().insertItem(0, new ItemStack(Items.IRON_INGOT), false).isEmpty()
                         && storage.getInventoryHandler().getStackInSlot(0).getCount() == 64,
                 "The same melting slot must remain accessible to normal backpack automation input");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", templateNamespace = SophisticatedSmeltery.MODID)
+    public static void meltingSlotPositionRebindsSameSizedRangeAndPersists(GameTestHelper helper) {
+        var storage = backpack();
+        var wrapper = melting(storage);
+        var inventory = storage.getInventoryHandler();
+        int last = inventory.getSlots() - 1;
+        materials(wrapper);
+        wrapper.setHeating(false);
+        inventory.setStackInSlot(0, new ItemStack(Items.IRON_INGOT));
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        wrapper.getFurnace().melting().heatItems(3000, 5);
+        helper.assertTrue(wrapper.isMeltingSlot(0) && wrapper.getFurnace().progressAt(0).getInt("time") > 0,
+                "Existing upgrades start at the front and process the first real slot");
+
+        var container = new MeltingUpgradeContainer(helper.makeMockPlayer(), 0, wrapper, SophisticatedSmeltery.MELTING_CONTAINER);
+        var action = new CompoundTag();
+        action.putString("action", "meltingSlotPosition");
+        container.handleMessage(action);
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(wrapper.isMeltingSlot(last) && !wrapper.isMeltingSlot(0)
+                        && wrapper.getFurnace().melting().getStackInSlot(0).isEmpty() && inventory.getStackInSlot(0).is(Items.IRON_INGOT),
+                "Moving to an empty end slot clears the old recipe view without moving the iron");
+
+        inventory.setStackInSlot(last, new ItemStack(Items.GOLD_INGOT));
+        var restored = new MeltingUpgradeWrapper(storage, storage.getUpgradeHandler().getStackInSlot(0).copy(), ignored -> {});
+        restored.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(restored.isMeltingSlot(last) && restored.getFurnace().melting().getStackInSlot(0).is(Items.GOLD_INGOT),
+                "Reload binds the persisted end slot to its actual stack");
+        helper.assertTrue(StorageSlotTransfer.insert(storage, new ItemStack(Items.GOLD_INGOT), restored.getMeltingSlotCount(),
+                        restored.areMeltingSlotsAtEnd()).isEmpty()
+                        && inventory.getStackInSlot(1).is(Items.GOLD_INGOT) && inventory.getStackInSlot(last).getCount() == 1,
+                "Inserting output prefers ordinary slots when the melting region is at the end");
+
+        container.handleMessage(action);
+        wrapper.tick(null, helper.getLevel(), BlockPos.ZERO);
+        helper.assertTrue(wrapper.isMeltingSlot(0) && !wrapper.isMeltingSlot(last)
+                        && wrapper.getFurnace().melting().getStackInSlot(0).is(Items.IRON_INGOT),
+                "Clicking again rebinds the original front slot");
         helper.succeed();
     }
 

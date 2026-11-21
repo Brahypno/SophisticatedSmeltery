@@ -41,6 +41,8 @@
   "gui.sophisticated_smeltery.heating_off": "Heat: OFF",
   "gui.sophisticated_smeltery.heating_on": "Heat: ON",
   "gui.sophisticated_smeltery.materials": "Materials",
+  "gui.sophisticated_smeltery.melting_slots_end": "Melting slots: End of storage. Click to switch.",
+  "gui.sophisticated_smeltery.melting_slots_start": "Melting slots: Start of storage. Click to switch.",
   "gui.sophisticated_smeltery.part_builder": "Part Builder",
   "gui.sophisticated_smeltery.part_builder_cost": "Cost: %s / %s",
   "gui.sophisticated_smeltery.part_builder_material": "Material",

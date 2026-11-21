@@ -41,6 +41,8 @@
   "gui.sophisticated_smeltery.heating_off": "加热：关",
   "gui.sophisticated_smeltery.heating_on": "加热：开",
   "gui.sophisticated_smeltery.materials": "结构材料",
+  "gui.sophisticated_smeltery.melting_slots_end": "熔炼格：库存末尾。点击切换。",
+  "gui.sophisticated_smeltery.melting_slots_start": "熔炼格：库存开头。点击切换。",
   "gui.sophisticated_smeltery.part_builder": "部件制作台",
   "gui.sophisticated_smeltery.part_builder_cost": "材料：%s / %s",
   "gui.sophisticated_smeltery.part_builder_material": "材料",

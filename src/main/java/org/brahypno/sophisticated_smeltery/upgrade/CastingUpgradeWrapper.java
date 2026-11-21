@@ -167,8 +167,10 @@ public final class CastingUpgradeWrapper extends UpgradeWrapperBase<CastingUpgra
     private void exportSlot(int outputSlot) {
         ItemStack original = casting.inventory().getStackInSlot(outputSlot);
         if (original.isEmpty()) return;
-        int meltingSlots = controller().map(MeltingUpgradeWrapper::getMeltingSlotCount).orElse(0);
-        ItemStack remaining = StorageSlotTransfer.insert(storageWrapper, original.copy(), meltingSlots);
+        var melting = controller().orElse(null);
+        int meltingSlots = melting == null ? 0 : melting.getMeltingSlotCount();
+        ItemStack remaining = StorageSlotTransfer.insert(storageWrapper, original.copy(),
+                meltingSlots, melting != null && melting.areMeltingSlotsAtEnd());
         if (remaining.getCount() != original.getCount()) casting.setOutputRemainder(outputSlot, remaining);
     }
 

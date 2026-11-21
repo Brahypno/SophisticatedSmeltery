@@ -48,15 +48,22 @@ public final class StorageSlotTransfer {
     }
 
     public static ItemStack insert(IStorageWrapper storage, ItemStack stack, int meltingSlots) {
+        return insert(storage, stack, meltingSlots, false);
+    }
+
+    public static ItemStack insert(IStorageWrapper storage, ItemStack stack, int meltingSlots, boolean meltingAtEnd) {
         if (stack.isEmpty()) return stack;
         var inventory = storage.getInventoryHandler();
+        int total = inventory.getSlots();
+        int split = meltingAtEnd ? total - meltingSlots : meltingSlots;
         // These callbacks may consume/transform input even in an unrelated occupied slot.
         // Keep their original per-slot invocation order when such an upgrade is installed.
         if (!storage.getUpgradeHandler().getWrappersThatImplementFromMainStorage(IInsertResponseUpgrade.class).isEmpty()) {
             ItemStack remaining = stack;
             for (int pass = 0; pass < 2 && !remaining.isEmpty(); pass++) {
-                int start = pass == 0 ? meltingSlots : 0;
-                int end = pass == 0 ? inventory.getSlots() : meltingSlots;
+                boolean lowerSlots = (pass == 0) == meltingAtEnd;
+                int start = lowerSlots ? 0 : split;
+                int end = lowerSlots ? split : total;
                 for (int slot = start; slot < end && !remaining.isEmpty(); slot++)
                     remaining = inventory.insertItemOnlyToSlot(slot, remaining, false);
             }
@@ -70,8 +77,9 @@ public final class StorageSlotTransfer {
         var empty = (NavigableSet<Integer>)index.sophisticatedsmeltery$getEmptySlots();
         ItemStack remaining = stack;
         for (int pass = 0; pass < 2 && !remaining.isEmpty(); pass++) {
-            int start = pass == 0 ? meltingSlots : 0;
-            int end = pass == 0 ? inventory.getSlots() : meltingSlots;
+            boolean lowerSlots = (pass == 0) == meltingAtEnd;
+            int start = lowerSlots ? 0 : split;
+            int end = lowerSlots ? split : total;
             while (start < end) {
                 int slot = matches.nextSetBit(start);
                 Integer emptySlot = empty.ceiling(start);

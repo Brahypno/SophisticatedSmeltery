@@ -18,8 +18,9 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
     }
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         var wrapper = container.getUpgradeWrapper();
-        int count = Math.min(wrapper.getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
-        for (int index = 0; index < count; index++) {
+        int first = wrapper.getFirstMeltingSlot();
+        int end = Math.min(first + wrapper.getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
+        for (int index = first; index < end; index++) {
             Slot slot = screen.getMenu().getSlot(index);
             if (!slot.isActive()) continue;
             var progress = wrapper.getFurnace().progressAt(index);
@@ -44,10 +45,12 @@ final class MeltingSlotOverlay extends UpgradeInventoryControlBase {
     }
 
     private static Slot hoveredHeatBar(StorageScreenBase<?> screen, MeltingUpgradeContainer container, double mouseX, double mouseY) {
-        int count = Math.min(container.getUpgradeWrapper().getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
+        var wrapper = container.getUpgradeWrapper();
+        int first = wrapper.getFirstMeltingSlot();
+        int end = Math.min(first + wrapper.getMeltingSlotCount(), screen.getMenu().getNumberOfStorageInventorySlots());
         double x = mouseX - screen.getGuiLeft();
         double y = mouseY - screen.getGuiTop();
-        for (int index = 0; index < count; index++) {
+        for (int index = first; index < end; index++) {
             Slot slot = screen.getMenu().getSlot(index);
             if (slot.isActive() && slot.hasItem() && x >= slot.x + BAR_OFFSET && x < slot.x + BAR_OFFSET + BAR_WIDTH
                     && y >= slot.y && y < slot.y + 16) return slot;

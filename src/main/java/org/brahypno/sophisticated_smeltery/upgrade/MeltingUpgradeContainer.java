@@ -66,6 +66,7 @@ public final class MeltingUpgradeContainer extends UpgradeContainerBase<MeltingU
         if (!upgradeWrapper.isOperational()) return;
         switch (data.getString("action")) {
             case "heating" -> upgradeWrapper.setHeating(!upgradeWrapper.isHeating());
+            case "meltingSlotPosition" -> upgradeWrapper.toggleMeltingSlotPosition();
             case "bucketMode" -> upgradeWrapper.cycleTransferDirection();
             case "transmuteMode" -> upgradeWrapper.cycleTransmuteMode();
             case "transmuteAlloying" -> upgradeWrapper.toggleTransmuteAlloying();

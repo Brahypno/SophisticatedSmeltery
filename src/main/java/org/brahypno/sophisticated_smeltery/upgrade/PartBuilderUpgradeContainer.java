@@ -9,6 +9,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.SlotSuppliedHandler;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerBase;
 import net.p3pp3rf1y.sophisticatedcore.common.gui.UpgradeContainerType;
+import net.p3pp3rf1y.sophisticatedcore.upgrades.IUpgradeWrapper;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 
 public final class PartBuilderUpgradeContainer extends UpgradeContainerBase<PartBuilderUpgradeWrapper, PartBuilderUpgradeContainer> {
@@ -23,6 +24,11 @@ public final class PartBuilderUpgradeContainer extends UpgradeContainerBase<Part
         output = new PartResultSlot();
         slots.add(output);
     }
+    @Override public void setUpgradeWrapper(IUpgradeWrapper wrapper) {
+        super.setUpgradeWrapper(wrapper);
+        // Slot sync can replace the wrapper before the picker or result slot reads it.
+        upgradeWrapper.bind(player.level());
+    }
     public void select(Pattern pattern) {
         upgradeWrapper.select(pattern);
         sendDataToServer(() -> { var data = new CompoundTag(); data.putString("pattern", pattern.toString()); return data; });
@@ -34,7 +40,6 @@ public final class PartBuilderUpgradeContainer extends UpgradeContainerBase<Part
     }
     @Override public void handleMessage(CompoundTag data) {
         if (player.isSpectator()) return;
-        upgradeWrapper.bind(player.level());
         if (data.contains("pattern")) {
             Pattern pattern = Pattern.tryParse(data.getString("pattern"));
             if (pattern != null) upgradeWrapper.select(pattern);
@@ -54,7 +59,6 @@ public final class PartBuilderUpgradeContainer extends UpgradeContainerBase<Part
         private ItemStack prepared = ItemStack.EMPTY;
         private PartResultSlot() { super(new SimpleContainer(1), 0, -2000, -2000); }
         @Override public ItemStack getItem() {
-            upgradeWrapper.bind(player.level());
             int revision = upgradeWrapper.revision();
             if (displayedWrapper != upgradeWrapper || displayedRevision != revision) {
                 displayedWrapper = upgradeWrapper;

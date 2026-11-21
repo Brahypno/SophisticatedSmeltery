@@ -128,6 +128,12 @@ public final class ManualTestCommand {
         var storage = backpack.getCapability(CapabilityBackpackWrapper.getCapabilityInstance()).orElseThrow(IllegalStateException::new);
         storage.getInventoryHandler();
         storage.getUpgradeHandler().setStackInSlot(0, new ItemStack(SophisticatedSmeltery.PART_BUILDER_UPGRADE.get()));
+        if (Boolean.getBoolean("sophisticatedsmeltery.partBuilderSmoke")) {
+            var melting = ControllerBinding.bind(new ItemStack(SophisticatedSmeltery.MELTING_UPGRADE.get()), new ItemStack(TinkerSmeltery.smelteryController));
+            melting.getOrCreateTag().putBoolean("heating", false);
+            storage.getUpgradeHandler().setStackInSlot(1, melting);
+            storage.getUpgradeHandler().setStackInSlot(2, new ItemStack(SophisticatedSmeltery.SEARED_CASTING_UPGRADE.get()));
+        }
         player.getInventory().selected = 0;
         player.getInventory().setItem(0, backpack);
         player.getInventory().setItem(11, new ItemStack(slimeknights.tconstruct.tables.TinkerTables.pattern, 16));

@@ -22,6 +22,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import org.brahypno.sophisticated_smeltery.client.PartBuilderUpgradeTab;
+import org.brahypno.sophisticated_smeltery.furnace.ControllerBinding;
+import org.brahypno.sophisticated_smeltery.upgrade.CastingUpgradeWrapper;
 import org.brahypno.sophisticated_smeltery.upgrade.PartBuilderUpgradeContainer;
 import slimeknights.tconstruct.library.recipe.partbuilder.Pattern;
 
@@ -94,6 +96,12 @@ public final class PartBuilderUpgradeClientTest {
                 if (wrapper.result().isEmpty() || container.getSlots().get(2).getItem().isEmpty()) return;
                 expected = wrapper.result().copy(); used = wrapper.selectedRecipe().getItemsUsed(wrapper);
                 capture("part-builder-selected");
+                var meltingUpdate = screen.getMenu().getUpgradeContainers().get(1).getUpgradeStack().copy();
+                meltingUpdate.getOrCreateTagElement(ControllerBinding.STATE).putBoolean("hasHeat", true);
+                checkPatternSync(screen, container, 1, meltingUpdate);
+                var castingUpdate = screen.getMenu().getUpgradeContainers().get(2).getUpgradeStack().copy();
+                castingUpdate.getOrCreateTagElement(CastingUpgradeWrapper.STATE).putInt("timer", 1);
+                checkPatternSync(screen, container, 2, castingUpdate);
                 clickUpgradeSlot(screen, container, 2);
             }
             case 9 -> {
@@ -128,12 +136,24 @@ public final class PartBuilderUpgradeClientTest {
             case 17 -> {
                 if (!container.isOpen()) return;
                 capture("part-builder-reopened");
-                SophisticatedSmeltery.LOGGER.info("PART BUILDER UI PASSED: native scrollbar drag and wheel, real input clicks, pattern selection, output pickup, exact native consumption, Shift destination, saved inputs and selection, reopening");
+                SophisticatedSmeltery.LOGGER.info("PART BUILDER UI PASSED: native scrollbar drag and wheel, real input clicks, pattern selection, output pickup, exact native consumption, Shift destination, saved inputs and selection, reopening, and progress sync");
                 stage = 20; mc.player.closeContainer(); mc.stop(); return;
             }
             default -> { return; }
         }
         stage++; frames = 0;
+    }
+    private static void checkPatternSync(StorageScreenBase<?> screen, PartBuilderUpgradeContainer container, int slot, ItemStack update) {
+        var menu = screen.getMenu();
+        var previous = container.getUpgradeWrapper();
+        var patterns = previous.patterns();
+        check(!patterns.isEmpty(), "The open pattern grid has shapes before syncing progress");
+        menu.setItem(menu.getFirstUpgradeSlot() + slot, menu.getStateId(), update);
+        var refreshed = container.getUpgradeWrapper();
+        check(refreshed != previous && container.isOpen(), "Progress sync replaces the wrapper with the tab still open");
+        // The picker renders before the result slot is queried on the next frame.
+        check(patterns.equals(refreshed.patterns()) && previous.selected().equals(refreshed.selected()),
+                "Progress sync must preserve the pattern grid and selection before the result slot is read");
     }
     private static void clickPlayerSlot(StorageScreenBase<?> screen, int inventoryIndex) {
         var mc = Minecraft.getInstance();

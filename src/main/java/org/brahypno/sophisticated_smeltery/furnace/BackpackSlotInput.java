@@ -30,7 +30,7 @@ public final class BackpackSlotInput {
         ItemStack current = slot < inventory.getSlots() ? inventory.getStackInSlot(slot) : ItemStack.EMPTY;
         int count = Math.min(current.getCount(), batchLimit);
         if (count == 0) {
-            if (!view.isEmpty()) module.setStack(ItemStack.EMPTY);
+            if (!module.getStack().isEmpty()) module.setStack(ItemStack.EMPTY);
             view = ItemStack.EMPTY;
         } else if (!ItemStack.isSameItemSameTags(current, view) || view.getCount() != count
                 || current.getCount() < lastCount || module.getStack().isEmpty()) {

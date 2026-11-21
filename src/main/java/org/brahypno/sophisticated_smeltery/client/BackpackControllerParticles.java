@@ -13,7 +13,7 @@ import slimeknights.tconstruct.smeltery.block.controller.FoundryControllerBlock;
 
 /** Native controller fire and smoke, positioned at the cropped lower grille. */
 public final class BackpackControllerParticles {
-    private static final ResourceLocation TRANSMUTE_CONTROLLER = new ResourceLocation("esotericism_tinker", "transmute_controller");
+    private static final ResourceLocation TRANSMUTE_CONTROLLER =  new ResourceLocation("esotericism_tinker", "transmute_controller");
     private BackpackControllerParticles() {}
 
     public static void render(Level level, RandomSource random, RenderInfo info,

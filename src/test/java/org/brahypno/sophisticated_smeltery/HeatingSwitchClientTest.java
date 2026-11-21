@@ -19,6 +19,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.UpgradeSettingsTab;
+import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ToggleButton;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.controls.ItemButton;
 import org.brahypno.sophisticated_smeltery.client.MeltingHeatingSwitch;
 import org.brahypno.sophisticated_smeltery.client.MeltingUpgradeTab;
@@ -34,12 +35,15 @@ public final class HeatingSwitchClientTest {
     private static int size;
     private static int mobHealth;
     private static int stoppedMobHealth;
+    private static int slotPositionClicks;
 
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if (!Boolean.getBoolean("sophisticatedsmeltery.heatingSwitchSmoke") || event.phase != TickEvent.Phase.END) return;
         var mc = Minecraft.getInstance();
         if (stage >= 9) return;
-        if (++ticks > 7200) throw new IllegalStateException("Actual backpack UI test timed out at stage " + stage
+        boolean positionSmoke = Boolean.getBoolean("sophisticatedsmeltery.meltingSlotPositionSmoke");
+        if (++ticks > (positionSmoke && stage >= 5 ? 1200 : 7200)) throw new IllegalStateException("Actual backpack UI test timed out at stage " + stage
+                + ", melting slot position clicks=" + slotPositionClicks
                 + ", screen=" + (mc.screen == null ? "null" : mc.screen.getClass().getName()));
         if (stage == 0 && mc.screen != null && mc.screen.getClass().getSimpleName().equals("AccessibilityOnboardingScreen")) {
             mc.setScreen(new TitleScreen());
@@ -54,7 +58,7 @@ public final class HeatingSwitchClientTest {
                     access -> access.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions());
         } else if (stage == 1 && mc.player != null && mc.getConnection() != null && mc.screen == null) {
             mc.getConnection().sendCommand(Boolean.getBoolean("sophisticatedsmeltery.foundryLayoutSmoke") ? "ssmeltery_test foundry" : "ssmeltery_test");
-            stage = 3;
+            stage = positionSmoke ? 5 : 3;
             ticks = 0;
         }
     }
@@ -122,6 +126,22 @@ public final class HeatingSwitchClientTest {
             stage = 6;
         } else if (stage == 6 && container.isOpen()) {
             var melting = tabs.stream().filter(MeltingUpgradeTab.class::isInstance).findFirst().orElseThrow();
+            if (Boolean.getBoolean("sophisticatedsmeltery.meltingSlotPositionSmoke")) {
+                if (!verifySlotPosition(event, screen, melting, container)) return;
+                if (size++ == 0) {
+                    click(screen, melting.getX() + 8, melting.getY() + 12);
+                    resize(mc, 1280, 900);
+                    stage = 5;
+                    frames = 0;
+                } else {
+                    SophisticatedSmeltery.LOGGER.info("MELTING SLOT POSITION UI PASSED: {}, scroll/no-scroll and start/end synchronization",
+                            container.getUpgradeWrapper().getFurnace().controller().getDisplayName().getString());
+                    stage = 9;
+                    mc.player.closeContainer();
+                    mc.stop();
+                }
+                return;
+            }
             assertIconAnchor(melting);
             TabFrameClientProbe.verifyContinuousHeader(event, melting);
             MeltingInteractionClientTest.verifyContainerRow(screen, (MeltingUpgradeTab)melting, container);
@@ -157,6 +177,32 @@ public final class HeatingSwitchClientTest {
             }
         } else return;
         frames = 0;
+    }
+
+    private static boolean verifySlotPosition(ScreenEvent.Render.Post event, StorageScreenBase<?> screen,
+                                              UpgradeSettingsTab<?> melting, MeltingUpgradeContainer container) {
+        var wrapper = container.getUpgradeWrapper();
+        if (wrapper.areMeltingSlotsAtEnd() != (slotPositionClicks == 1)) return false;
+        if (slotPositionClicks == 2) {
+            slotPositionClicks = 0;
+            return true;
+        }
+        if (slotPositionClicks == 1) {
+            check(wrapper.isMeltingSlot(screen.getMenu().getNumberOfStorageInventorySlots() - 1),
+                    "The client receives the melting range ending at the last storage slot");
+        }
+        MeltingInteractionClientTest.verifyContainerRow(screen, (MeltingUpgradeTab)melting, container);
+        String name = net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(wrapper.getFurnace().controller().getType()).getPath();
+        capture(event, "melting-slots-" + name + "-" + size + (slotPositionClicks == 0 ? "-start" : "-end"));
+        var button = melting.children().stream().filter(ToggleButton.class::isInstance)
+                .map(ToggleButton.class::cast).findFirst().orElseThrow();
+        check(button.getX() + button.getWidth() == melting.getX() + melting.getWidth() - 6
+                        && button.getY() == melting.getY() + 6,
+                "Place the melting slot position button in the upper-right corner");
+        click(screen, button.getX() + button.getWidth() / 2, button.getY() + button.getHeight() / 2);
+        slotPositionClicks++;
+        frames = 0;
+        return false;
     }
 
     private static void assertIconAnchor(UpgradeSettingsTab<?> tab) {

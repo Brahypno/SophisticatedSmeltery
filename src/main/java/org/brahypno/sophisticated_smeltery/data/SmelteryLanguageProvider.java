@@ -133,6 +133,8 @@ final class SmelteryLanguageProvider extends LanguageProvider {
         add("gui.sophisticated_smeltery.fuel_tank", "Tinkers Fuel Tank");
         add("gui.sophisticated_smeltery.heating_on", "Heat: ON");
         add("gui.sophisticated_smeltery.heating_off", "Heat: OFF");
+        add("gui.sophisticated_smeltery.melting_slots_start", "Melting slots: Start of storage. Click to switch.");
+        add("gui.sophisticated_smeltery.melting_slots_end", "Melting slots: End of storage. Click to switch.");
         add("gui.sophisticated_smeltery.temperature", "Temperature: %s C");
         add("gui.sophisticated_smeltery.empty", "Empty");
         add("gui.sophisticated_smeltery.fluid", "%s / %s mB");
@@ -243,6 +245,8 @@ final class SmelteryLanguageProvider extends LanguageProvider {
         add("gui.sophisticated_smeltery.fuel_tank", "匠魂燃料储罐");
         add("gui.sophisticated_smeltery.heating_on", "加热：开");
         add("gui.sophisticated_smeltery.heating_off", "加热：关");
+        add("gui.sophisticated_smeltery.melting_slots_start", "熔炼格：库存开头。点击切换。");
+        add("gui.sophisticated_smeltery.melting_slots_end", "熔炼格：库存末尾。点击切换。");
         add("gui.sophisticated_smeltery.temperature", "温度：%s ℃");
         add("gui.sophisticated_smeltery.empty", "空");
         add("gui.sophisticated_smeltery.fluid", "%s / %s mB");
