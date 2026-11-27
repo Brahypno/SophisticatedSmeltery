@@ -108,8 +108,9 @@ minecraft {
                 workingDirectory project.file('build/storage-compat/client')
                 mods { "${mod_id}" { source sourceSets.test } }
             }
-            if (project.hasProperty('tinkerStationSmoke')) {
+            if (project.hasProperty('tinkerStationSmoke') || project.hasProperty('tinkerResultTooltipSmoke')) {
                 property 'sophisticatedsmeltery.tinkerStationSmoke', 'true'
+                if (project.hasProperty('tinkerResultTooltipSmoke')) property 'sophisticatedsmeltery.tinkerResultTooltipSmoke', 'true'
                 workingDirectory project.file('build/tinker-station-client-run')
                 mods { "${mod_id}" { source sourceSets.test } }
             }

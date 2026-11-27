@@ -198,10 +198,13 @@ public final class TinkerStationUpgradeTab extends UpgradeSettingsTab<TinkerStat
             if (error != null) graphics.drawCenteredString(font, "!", x + 13, y + 9, 0xff9e3030);
         }
         @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
-            if (isMouseOver(mouseX, mouseY)) {
-                var error = getContainer().getUpgradeWrapper().error();
-                graphics.renderComponentTooltip(font, List.of(error == null ? text("tinker_station_help") : error), mouseX, mouseY);
-            }
+            if (!isMouseOver(mouseX, mouseY)) return;
+            // The status frame overlaps the result slot. Use the host's hover target, including the vanilla slot border.
+            var host = TinkerStationUpgradeTab.this.screen;
+            var hovered = host.getSlotUnderMouse();
+            if (hovered != null && hovered.hasItem() && host.getMenu().getCarried().isEmpty()) return;
+            var error = getContainer().getUpgradeWrapper().error();
+            graphics.renderComponentTooltip(font, List.of(error == null ? text("tinker_station_help") : error), mouseX, mouseY);
         }
     }
 }

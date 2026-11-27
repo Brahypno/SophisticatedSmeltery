@@ -3,11 +3,13 @@ package org.brahypno.sophisticated_smeltery;
 import java.nio.file.Path;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
@@ -17,7 +19,10 @@ import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.p3pp3rf1y.sophisticatedcore.client.gui.StorageScreenBase;
@@ -27,11 +32,12 @@ import org.brahypno.sophisticated_smeltery.upgrade.TinkerStationUpgradeContainer
 
 @Mod.EventBusSubscriber(modid = SophisticatedSmeltery.MODID, value = Dist.CLIENT)
 public final class TinkerStationUpgradeClientTest {
+    private static final boolean RESULT_TOOLTIP_ONLY = Boolean.getBoolean("sophisticatedsmeltery.tinkerResultTooltipSmoke");
     private static int stage, ticks, frames;
     private static boolean advanced, inspectingPreview;
     private static final java.util.List<Integer> ROW_COUNTS = java.util.List.of(1, 2, 3, 4, 5);
     private static int rowSetting, originalRows;
-    private static boolean checkingRowSettings = true;
+    private static boolean checkingRowSettings = !RESULT_TOOLTIP_ONLY;
     private static int equipmentStep;
     private static final java.util.List<net.minecraft.world.item.Item> EQUIPMENT = java.util.List.of(
             net.minecraft.world.item.Items.DIAMOND_HELMET, net.minecraft.world.item.Items.DIAMOND_CHESTPLATE,
@@ -78,6 +84,10 @@ public final class TinkerStationUpgradeClientTest {
                 check(tab.information().getX() + tab.information().getWidth() <= screen.getGuiLeft() - 25,
                         "Information floats to the left without covering the backpack controls");
                 verifySlotBounds(screen, tab, container);
+                if (checkingRowSettings && rowSetting == 0 && !advanced) {
+                    verifyTooltipOwnership(screen, event.getGuiGraphics(), tab.information());
+                    SophisticatedSmeltery.LOGGER.info("WORKSTATION TOOLTIP PASS");
+                }
                 capture(advanced ? "tinkers-anvil-small-empty" : "tinker-station-small-empty");
                 var layouts = wrapper.layouts();
                 if (layouts.size() > TinkerStationUpgradeTab.LAYOUT_COLUMNS * tab.layoutRows()) {
@@ -161,6 +171,19 @@ public final class TinkerStationUpgradeClientTest {
             case 9 -> { if (screen.getMenu().getCarried().isEmpty()) return; clickUpgradeSlot(screen, container, 3); }
             case 10 -> {
                 if (wrapper.result().isEmpty()) return;
+                verifyResultTooltip(screen, event.getGuiGraphics(), container.resultSlot());
+                SophisticatedSmeltery.LOGGER.info("WORKSTATION RESULT TOOLTIP PASS: {}", advanced ? "anvil" : "station");
+                if (RESULT_TOOLTIP_ONLY) {
+                    mc.player.closeContainer();
+                    stage = advanced ? 40 : 1;
+                    advanced = true;
+                    frames = 0;
+                    if (stage == 40) {
+                        ClientConfig.TINKER_STATION_TOOL_ROWS.set(originalRows);
+                        mc.stop();
+                    }
+                    return;
+                }
                 click(screen, tab.getX() + 40, tab.getY() + tab.getHeight() - 13);
                 for (char c : "Small pick".toCharArray()) check(screen.charTyped(c, 0), "Name field accepts typing");
             }
@@ -399,6 +422,46 @@ public final class TinkerStationUpgradeClientTest {
         var stray = new ScreenEvent.MouseDragged.Pre(screen, left + 100, top + 50, 0, 50, 20);
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(stray);
         check(!stray.isCanceled() && panel.getX() == left && panel.getY() == top, "Releasing the mouse ends dragging");
+    }
+    private static void verifyTooltipOwnership(StorageScreenBase<?> screen, GuiGraphics graphics, TinkerStationInformationPanel panel) {
+        var slot = screen.getMenu().slots.stream().filter(value -> value.container == Minecraft.getInstance().player.getInventory()
+                && value.getSlotIndex() == 11).findFirst().orElseThrow();
+        int slotX = screen.getGuiLeft() + slot.x + 8, slotY = screen.getGuiTop() + slot.y + 8;
+        int left = panel.getX(), top = panel.getY();
+        drag(screen, panel, slotX - 40, slotY - 80);
+        check(slot.hasItem() && panel.stats().isMouseOver(slotX, slotY), "A filled player slot is covered by the floating panel");
+        var font = Minecraft.getInstance().font;
+        var rendered = new java.util.ArrayList<Boolean>();
+        java.util.function.Consumer<RenderTooltipEvent.Pre> observe = event -> rendered.add(!event.isCanceled());
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderTooltipEvent.Pre.class, observe);
+        try {
+            graphics.renderTooltip(font, slot.getItem(), slotX, slotY);
+            panel.renderTooltip(screen, graphics, panel.getX() + 10, panel.getY() + 5);
+            graphics.renderTooltip(font, slot.getItem(), screen.width - 1, screen.height - 1);
+            check(rendered.equals(java.util.List.of(false, true, true)),
+                    "The covered item tooltip is canceled, the panel and uncovered item tooltips render");
+        } finally {
+            MinecraftForge.EVENT_BUS.unregister(observe);
+            drag(screen, panel, left, top);
+        }
+    }
+    private static void verifyResultTooltip(StorageScreenBase<?> screen, GuiGraphics graphics, Slot result) {
+        int x = screen.getGuiLeft() + result.x, y = screen.getGuiTop() + result.y;
+        var tooltips = new java.util.ArrayList<Boolean>();
+        java.util.function.Consumer<RenderTooltipEvent.Pre> observe = event -> tooltips.add(!event.getItemStack().isEmpty());
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderTooltipEvent.Pre.class, observe);
+        try {
+            screen.render(graphics, x + 8, y + 8, 0);
+            check(tooltips.equals(java.util.List.of(true)), "Only the crafted item tooltip appears over a filled result slot: " + tooltips);
+            tooltips.clear();
+            screen.render(graphics, x - 1, y + 8, 0);
+            check(tooltips.equals(java.util.List.of(true)), "The item's one-pixel hover border also takes precedence: " + tooltips);
+            tooltips.clear();
+            screen.render(graphics, x - 4, y + 8, 0);
+            check(tooltips.equals(java.util.List.of(false)), "The workstation help remains visible on the outer frame: " + tooltips);
+        } finally {
+            MinecraftForge.EVENT_BUS.unregister(observe);
+        }
     }
     private static void drag(StorageScreenBase<?> screen, TinkerStationInformationPanel panel, int left, int top) {
         int startX = panel.getX() + 12, startY = panel.getY() + 10;

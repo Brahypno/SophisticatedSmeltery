@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -40,7 +41,7 @@ public final class TinkerStationInformationPanel extends WidgetBase {
     private final UpgradeContainerBase<?, ?> container;
     private final Section stats, modifiers;
     private ItemStack displayed = ItemStack.EMPTY;
-    private boolean shift, control, positioned, dragging, toolInformation;
+    private boolean shift, control, positioned, dragging, toolInformation, renderingTooltip;
     private Section scrolling;
     private double grabX, grabY;
 
@@ -57,6 +58,11 @@ public final class TinkerStationInformationPanel extends WidgetBase {
     private boolean active() { return container.isOpen(); }
     private boolean advanced() {
         return container instanceof TinkerStationUpgradeContainer station && station.getUpgradeWrapper().isAdvanced();
+    }
+    private void positionIfNeeded() {
+        if (positioned) return;
+        position(screen.getGuiLeft() - WIDTH - 30, screen.getGuiTop());
+        positioned = true;
     }
     private void position(int left, int top) {
         setPosition(new Position(Math.max(0, Math.min(screen.width - WIDTH, left)),
@@ -170,7 +176,13 @@ public final class TinkerStationInformationPanel extends WidgetBase {
     }
     @Override public void renderTooltip(Screen screen, GuiGraphics graphics, int mouseX, int mouseY) {
         var section = sectionAt(mouseX, mouseY);
-        if (section != null) section.renderTooltip(screen, graphics, mouseX, mouseY);
+        if (section == null) return;
+        renderingTooltip = true;
+        try {
+            section.renderTooltip(screen, graphics, mouseX, mouseY);
+        } finally {
+            renderingTooltip = false;
+        }
     }
 
     public final class Section extends WidgetBase {
@@ -249,16 +261,21 @@ public final class TinkerStationInformationPanel extends WidgetBase {
                     return null;
                 }).filter(panel -> panel != null && panel.active()).findFirst().orElse(null);
     }
+    @SubscribeEvent public static void suppressCoveredTooltip(RenderTooltipEvent.Pre event) {
+        var panel = panel(Minecraft.getInstance().screen);
+        if (panel == null || panel.renderingTooltip) return;
+        panel.positionIfNeeded();
+        // Tooltips from the host and its controls are anchored at the mouse.
+        if (panel.sectionAt(event.getX(), event.getY()) != null) event.setCanceled(true);
+    }
     @SubscribeEvent public static void render(ScreenEvent.Render.Post event) {
         var panel = panel(event.getScreen());
         if (panel == null) return;
-        if (!panel.positioned) {
-            panel.position(panel.screen.getGuiLeft() - WIDTH - 30, panel.screen.getGuiTop());
-            panel.positioned = true;
-        }
+        panel.positionIfNeeded();
         var graphics = event.getGuiGraphics();
         graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 400);
+        // Draw above the inventory and below tooltips anchored outside the panel.
+        graphics.pose().translate(0, 0, 300);
         panel.render(graphics, event.getMouseX(), event.getMouseY(), event.getPartialTick());
         panel.renderTooltip(event.getScreen(), graphics, event.getMouseX(), event.getMouseY());
         graphics.pose().popPose();
