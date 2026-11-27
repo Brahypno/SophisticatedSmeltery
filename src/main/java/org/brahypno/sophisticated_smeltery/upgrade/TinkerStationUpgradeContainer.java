@@ -26,6 +26,7 @@ public final class TinkerStationUpgradeContainer extends UpgradeContainerBase<Ti
         slots.addAll(equipmentSlots);
     }
     public Slot resultSlot() { return output; }
+    public List<Slot> materialSlots() { return slots.subList(1, 1 + upgradeWrapper.getInputCount()); }
     public List<Slot> equipmentSlots() { return List.copyOf(equipmentSlots); }
     public void select(ResourceLocation name) {
         upgradeWrapper.select(name);
@@ -41,6 +42,10 @@ public final class TinkerStationUpgradeContainer extends UpgradeContainerBase<Ti
     }
     @Override public void handleMessage(CompoundTag data) {
         if (player.isSpectator()) return;
+        if (data.contains(TinkerStationRecipeTransfer.MESSAGE)) {
+            TinkerStationRecipeTransfer.handleRequest(this, data.getCompound(TinkerStationRecipeTransfer.MESSAGE));
+            return;
+        }
         upgradeWrapper.bind(player.level());
         if (data.contains("layout")) {
             var name = ResourceLocation.tryParse(data.getString("layout"));

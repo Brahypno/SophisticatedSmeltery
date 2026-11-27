@@ -43,6 +43,10 @@ final class SmelteryLanguageProvider extends LanguageProvider {
         add("gui.sophisticated_smeltery.tinker_station_page_modifiers", chinese ? "强化" : "Mods");
         add("gui.sophisticated_smeltery.tinker_station_information", chinese ? "工具数据" : "Tool information");
         add("gui.sophisticated_smeltery.tinker_station_drag_hint", chinese ? "按住标题栏拖动数据面板。" : "Drag the title bar to move the information panel.");
+        add("gui.sophisticated_smeltery.tinker_transfer_open", chinese ? "请先打开工匠站或工匠砧升级。" : "Open the Tinker Station or Tinker's Anvil upgrade first.");
+        add("gui.sophisticated_smeltery.tinker_transfer_layout", chinese ? "当前布局无法容纳配方材料。请选择合适的布局。" : "Select a layout that accepts these recipe materials.");
+        add("gui.sophisticated_smeltery.tinker_transfer_no_room", chinese ? "物品栏和储物空间不足，无法放回原有材料。" : "There is no room in storage or your inventory for the existing materials.");
+        add("gui.sophisticated_smeltery.tinker_transfer_changed", chinese ? "容器或配方已变化，请重新转移。" : "The container or recipe changed. Try transferring again.");
         add("gui.sophisticated_smeltery.tinker_station_info_empty", chinese ? "放入工具或部件后，可查看工具数值和强化数据。" : "Insert a tool or parts to inspect its stats and modifiers.");
         add("gui.sophisticated_smeltery.tinker_station_no_modifiers", chinese ? "没有可显示的强化或特性。" : "No visible modifiers or traits.");
         add("gui.sophisticated_smeltery.tinker_station_scroll_hint", chinese ? "滚动鼠标滚轮，或点击上下按钮翻页。" : "Scroll or use the arrows to page through the information.");
